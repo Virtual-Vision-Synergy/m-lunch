@@ -1,5 +1,6 @@
 from django.urls import path
+from . import views
 
 urlpatterns = [
-    # Add your app-specific views here
+    path('', views.index, name='backoffice_index'),
 ]
