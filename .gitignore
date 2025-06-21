@@ -18,10 +18,6 @@ __pycache__/
 *.tmp
 *.orig
 *.~
-# Django static/media
-staticfiles/
-static/
-media/
 # VSCode
 .vscode/
 # MacOS
