@@ -1,2 +1,44 @@
 .venv
-.idea
+.idea/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+*.pot
+*.mo
+*.swp
+*.swo
+.DS_Store
+.env
+.env.*
+*.bak
+*.tmp
+*.orig
+*.~
+# Django static/media
+staticfiles/
+static/
+media/
+# VSCode
+.vscode/
+# MacOS
+.AppleDouble
+.LSOverride
+# Test/coverage
+htmlcov/
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+.coverage.*
+.cache
+# Migrations (optional, keep if you want to ignore auto-generated migrations)
+**/migrations/*.pyc
+**/migrations/*.pyo
+**/migrations/*.pyd
+**/migrations/__pycache__/
+# System files
+Thumbs.db
