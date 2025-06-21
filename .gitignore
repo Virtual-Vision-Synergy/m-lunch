@@ -42,3 +42,4 @@ htmlcov/
 **/migrations/__pycache__/
 # System files
 Thumbs.db
+venv/
