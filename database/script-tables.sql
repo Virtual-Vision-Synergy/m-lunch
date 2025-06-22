@@ -63,6 +63,7 @@ CREATE TABLE commande_repas (
     id SERIAL PRIMARY KEY,
     commande_id INT REFERENCES commandes(id) ON DELETE CASCADE,
     repas_id INT REFERENCES repas(id),
+    quantite INT ,
     ajoute_le TIMESTAMP DEFAULT now()
 );
 
