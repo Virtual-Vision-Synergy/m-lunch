@@ -18,9 +18,14 @@ Sur cette page, cliquez sur **Installateur OSGeo4W** pour lancer le télécharge
 
 ## Prérequis
 
-- asgiref==3.8.1  
-- Django==5.2.3  
+- asgiref==3.8.1
+- Django==5.2.3
+- dotenv==0.9.9
+- psycopg2-binary==2.9.10
+- python-dotenv==1.1.0
 - sqlparse==0.5.3
+- tzdata==2025.2
+
 
 Pour installer les prérequis, run :
 
