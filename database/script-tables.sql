@@ -39,23 +39,90 @@ CREATE TABLE repas (
 CREATE TABLE restaurants (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(150),
+    horaire_debut TIME,
+    horaire_fin TIME,
     adresse TEXT,
     image TEXT,
     geo_position GEOGRAPHY(POINT, 4326)
 );
 
--- Zones de livraison
+-- Commissions
+CREATE TABLE commissions (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INT REFERENCES restaurants(id),
+    valeur INT,
+    mis_a_jour_le TIMESTAMP DEFAULT now()
+);
+
+-- Statuts
+CREATE TABLE statut_zone (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE statut_entite (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE statut_commande (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE statut_livreur (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE statut_livraison (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE statut_restaurant (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+-- Zones de livraison et entités
 CREATE TABLE zones (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(100),
+    description VARCHAR(100),
     zone GEOGRAPHY(POLYGON, 4326)
+);
+
+CREATE TABLE historique_statut_zone (
+    id SERIAL PRIMARY KEY,
+    zone_id INT REFERENCES zones(id),
+    statut_id INT REFERENCES statut_zone(id),
+    mis_a_jour_le TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE entites (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100)
+);
+
+CREATE TABLE historique_statut_entite (
+    id SERIAL PRIMARY KEY,
+    entite_id INT REFERENCES entites(id),
+    statut_id INT REFERENCES statut_entite(id),
+    mis_a_jour_le TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE reference_zone_entite (
+    id SERIAL PRIMARY KEY,
+    zone_id INT REFERENCES zones(id),
+    entite_id INT REFERENCES entites(id)
 );
 
 -- Commandes
 CREATE TABLE commandes (
     id SERIAL PRIMARY KEY,
     client_id INT REFERENCES clients(id),
-    cree_le TIMESTAMP NOT NULL DEFAULT NOW()
+    cree_le TIMESTAMP NOT NULL DEFAULT now()
 );
 
 -- Repas par commande
@@ -63,7 +130,7 @@ CREATE TABLE commande_repas (
     id SERIAL PRIMARY KEY,
     commande_id INT REFERENCES commandes(id) ON DELETE CASCADE,
     repas_id INT REFERENCES repas(id),
-    quantite INT ,
+    quantite INT,
     ajoute_le TIMESTAMP DEFAULT now()
 );
 
@@ -86,15 +153,15 @@ CREATE TABLE promotions (
 CREATE TABLE historique_statut_commande (
     id SERIAL PRIMARY KEY,
     commande_id INT REFERENCES commandes(id) ON DELETE CASCADE,
-    statut VARCHAR(50),
-    change_le TIMESTAMP DEFAULT now()
+    statut_id INT REFERENCES statut_commande(id),
+    mis_a_jour_le TIMESTAMP DEFAULT now()
 );
 
 -- Historique des statuts des livreurs
 CREATE TABLE historique_statut_livreur (
     id SERIAL PRIMARY KEY,
     livreur_id INT REFERENCES livreurs(id),
-    statut VARCHAR(50),
+    statut_id INT REFERENCES statut_livreur(id),
     mis_a_jour_le TIMESTAMP DEFAULT now()
 );
 
@@ -104,6 +171,14 @@ CREATE TABLE livraisons (
     livreur_id INT REFERENCES livreurs(id),
     commande_id INT REFERENCES commandes(id),
     attribue_le TIMESTAMP DEFAULT now()
+);
+
+-- Historique des statuts des livraisons
+CREATE TABLE historique_statut_livraison (
+    id SERIAL PRIMARY KEY,
+    livraison_id INT REFERENCES livraisons(id),
+    statut_id INT REFERENCES statut_livraison(id),
+    mis_a_jour_le TIMESTAMP DEFAULT now()
 );
 
 -- Repas proposés par un restaurant
@@ -132,20 +207,20 @@ CREATE TABLE zones_livreurs (
     id SERIAL PRIMARY KEY,
     livreur_id INT REFERENCES livreurs(id),
     zone_id INT REFERENCES zones(id),
-    disponible_depuis TIMESTAMP DEFAULT now()
+    mis_a_jour_le TIMESTAMP DEFAULT now()
 );
 
 -- Historique des statuts des restaurants
 CREATE TABLE historique_statut_restaurant (
     id SERIAL PRIMARY KEY,
     restaurant_id INT REFERENCES restaurants(id),
-    statut VARCHAR(50),
-    change_le TIMESTAMP DEFAULT now()
+    statut_id INT REFERENCES statut_restaurant(id),
+    mis_a_jour_le TIMESTAMP DEFAULT now()
 );
 
 -- Limite de commandes par jour
 CREATE TABLE limite_commandes_journalieres (
     id SERIAL PRIMARY KEY,
-    nombre_commandes INT CHECK (nombre_commandes >= 0),
+    nombre_commandes INT NOT NULL,
     date DATE NOT NULL
 );
