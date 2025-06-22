@@ -14,6 +14,9 @@ Vous pouvez le faire en téléchargeant l’installateur **OSGeo4W** depuis le l
 https://trac.osgeo.org/osgeo4w/wiki/OSGeo4W_fr
 
 Sur cette page, cliquez sur **Installateur OSGeo4W** pour lancer le téléchargement.
+
+Etape d'installation de GDAL : 
+osgeo4w-setup.exe > Advanced install > Install from internet > Just me > local package directory (a laisser par defaut) > Direct connection > https://download.osgeo.org > rechercher GDAL  et sur All changer default en install > suivant
 ---
 
 ## Prérequis
