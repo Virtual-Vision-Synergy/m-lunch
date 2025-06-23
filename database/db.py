@@ -1,21 +1,23 @@
-# database/db.py
-
 import psycopg2
-from psycopg2 import sql, extras
+from psycopg2 import extras
+import django
 import os
-from dotenv import load_dotenv
 
-# Charger les variables d'environnement depuis .env
-load_dotenv()
+# Configurer Django pour accéder aux settings
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mlunch.settings')
+django.setup()
 
-# Configuration base de données
+from django.conf import settings
+
+# Utiliser la configuration de la base depuis Django
 DB_CONFIG = {
-    'dbname': os.getenv('DB_NAME', 'mlunch'),
-    'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', ''),
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': os.getenv('DB_PORT', '5432'),
+    'dbname': settings.DATABASES['default']['NAME'],
+    'user': settings.DATABASES['default']['USER'],
+    'password': settings.DATABASES['default']['PASSWORD'],
+    'host': settings.DATABASES['default']['HOST'],
+    'port': settings.DATABASES['default']['PORT'],
 }
+
 
 def get_connection():
     """Établit une connexion PostgreSQL"""
