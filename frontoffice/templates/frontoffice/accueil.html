@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Carte des restaurants</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<h2>Restaurants autour de vous</h2>
+<div id="map" style="height: 600px;"></div>
+
+<script>
+const map = L.map('map').setView([-18.8792, 47.5204], 13); // centre par défaut : Antananarivo ?
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Charger les restaurants en GeoJSON
+fetch('/api/restaurants/')
+  .then(response => response.json())
+  .then(data => {
+    L.geoJSON(data, {
+      onEachFeature: function (feature, layer) {
+        const props = feature.properties;
+        const popupContent = `
+          <strong>${props.nom}</strong><br/>
+          ⭐ Note: ${props.note}<br/>
+          <img src="${props.image_url}" alt="${props.nom}" style="width:100px; height:auto;"><br/>
+          <a href="/menu/${props.id}/"><button>Voir le menu</button></a>
+        `;
+        layer.bindPopup(popupContent);
+        layer.bindTooltip(props.nom);
+      }
+    }).addTo(map);
+  });
+</script>
+
+</body>
+</html>
