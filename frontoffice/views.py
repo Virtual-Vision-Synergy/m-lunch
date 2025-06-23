@@ -30,12 +30,7 @@ def restaurants_geojson(request):
         return JsonResponse({'error': 'Non connecté'}, status=401)
 
     zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
-    print("Client's zone IDs:", list(zones))  # Convert queryset to list to print
-
     zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
-    print("Restaurants in client's zones:")
-    for zr in zone_restaurants:
-        print("-", zr.restaurant.nom, f"(Zone ID: {zr.zone_id})")
 
     features = []
     for zr in zone_restaurants:
