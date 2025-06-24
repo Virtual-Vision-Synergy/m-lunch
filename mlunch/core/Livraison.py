@@ -6,27 +6,59 @@ class Livraison:
     """Classe représentant une livraison dans le système."""
 
     @staticmethod
-    def create(livreur_id: int, commande_id: int) -> Dict[str, Any]:
+    def create(livreur_id,commande_id,initial_statut_id):
         """Crée une nouvelle livraison."""
         if not isinstance(livreur_id, int) or livreur_id <= 0:
             return {"error": "ID livreur invalide"}
         if not isinstance(commande_id, int) or commande_id <= 0:
             return {"error": "ID commande invalide"}
 
-        query = """
-            INSERT INTO livraisons (livreur_id, commande_id)
-            VALUES (%s, %s)
-            RETURNING id, livreur_id, commande_id, attribue_le
-        """
-        result, error = fetch_one(query, (livreur_id, commande_id))
-        if error:
-            if isinstance(error, psycopg2.errors.ForeignKeyViolation):
-                return {"error": "Livreur ou commande non trouvé"}
-            return {"error": f"Erreur lors de la création : {str(error)}"}
-        if not result:
-            return {"error": "Échec de la création de la livraison"}
-        return dict(result)
+        # Démarrer une transaction
+        try:
+            # Insérer la livraison
+            query_livraisons = """
+                INSERT INTO livraisons (livreur_id, commande_id)
+                VALUES (%s, %s)
+            """
+            result_livraison, error = fetch_one(query_livraisons, (livreur_id, commande_id))
+            if error:
+                if isinstance(error, psycopg2.errors.ForeignKeyViolation):
+                    return {"error": "Livreur ou commande non trouvé"}
+                return {"error": f"Erreur lors de la création : {str(error)}"}
+            if not result_livraison:
+                return {"error": "Échec de la création de la livraison"}
+            
+            livraison_id = result_livraison['id']
 
+            # Vérifier si le statut existe
+            query_statut = """
+                    SELECT id FROM statut_livraison WHERE id = %s
+                """
+            result_statut, error = fetch_one(query_statut, (initial_statut_id,))
+            if error or not result_statut:
+                return {"error": "Statut non trouvé"}
+
+            # Insérer dans l'historique
+            query_historique = """
+                    INSERT INTO historique_statut_livraison (livraison_id, statut_id)
+                    VALUES (%s, %s)
+                    RETURNING id, livraison_id, statut_id, mis_a_jour_le
+                """
+            result_historique, error = fetch_one(query_historique, ( livraison_id,initial_statut_id))
+            if error:
+                return {"error": f"Erreur lors de la création de l'historique : {str(error)}"}
+            if not result_historique:
+                return {"error": "Échec de la création de l'historique"}
+
+            # Retourner les informations complètes
+            return {
+                    "commande": dict(result_livraison),
+                    "historique": dict(result_historique)
+            }
+            
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}
+        
     @staticmethod
     def get_by_id(livraison_id: int) -> Optional[Dict[str, Any]]:
         """Récupère une livraison par son ID."""
