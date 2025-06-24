@@ -62,28 +62,42 @@ class Commande:
 
     @staticmethod
     def get_by_id(commande_id):
-        """Récupère une commande par son ID."""
+        """
+        Récupère toutes les lignes d'une commande par son ID, incluant l'historique des statuts.
+        
+        Args:
+            commande_id (int): L'ID de la commande à récupérer.
+        
+        Returns:
+            dict: Dictionnaire avec une clé 'data' contenant une liste de dictionnaires (chaque dictionnaire représente une ligne).
+                En cas d'erreur ou si aucune commande n'est trouvée, retourne un dictionnaire avec une clé 'error'.
+        """
         if not isinstance(commande_id, int) or commande_id <= 0:
             return {"error": "ID invalide"}
 
         query = """
-            SELECT c.id, c.client_id, c.cree_le,h.statut_id,mis_a_jour_le
-            FROM commandes c JOIN historique_statut_commande h 
-            on c.id = h.commande_id
+            SELECT c.id, c.client_id, c.cree_le, h.statut_id, h.mis_a_jour_le
+            FROM commandes c
+            JOIN historique_statut_commande h ON c.id = h.commande_id
             WHERE c.id = %s
+            ORDER BY h.mis_a_jour_le DESC
         """
-        result, error = fetch_one(query, (commande_id,))
-        if error:
-            return {"error": f"Erreur lors de la récupération : {str(error)}"}
-        return dict(result) if result else None
+        try:
+            rows, error = fetch_query(query, (commande_id,), as_dict=True)
+            if error:
+                return {"error": f"Erreur lors de la récupération : {str(error)}"}
+            if not rows:
+                return {"error": "Aucune commande trouvée"}
+            return {"data": rows}
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
     def get_all():
         """Récupère toutes les commandes."""
         query = """
-            SELECT c.id, c.client_id, c.cree_le
-            FROM commandes c JOIN historique_statut_commande h
-             on c.id = h.commande_id
+            SELECT id, client_id, cree_le
+            FROM commandes 
             ORDER BY cree_le DESC
         """
         results, error = fetch_query(query)
@@ -119,6 +133,22 @@ class Commande:
     @staticmethod
     def update(commande_id,statut_id):
         """Met à jour un Commane. Retourne les données mises à jour ou None si non trouvé."""
+        if not commande_id or statut_id <= 0:
+            return {"error": "ID invalide"}
+
+        query = """
+            insert into historique_statut_commande (commande_id,statut_id)
+            values(%s,%s) 
+            RETURNING id, commande_id, statut_id
+        """
+        result, error = fetch_one(query, (commande_id,statut_id))
+        if error:
+            return {"error": str(error)}
+        return result if result else None
+    
+    @staticmethod
+    def delete(commande_id,statut_id):
+        """Met à jour un Commande Retourne les données mises à jour ou None si non trouvé."""
         if not commande_id or statut_id <= 0:
             return {"error": "ID invalide"}
 

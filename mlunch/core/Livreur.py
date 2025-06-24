@@ -64,7 +64,7 @@ class Livreur:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_by_id(livreur_id: int) -> Optional[Dict[str, Any]]:
+    def get_by_id(livreur_id: int):
         """Récupère un livreur par son ID."""
         if not isinstance(livreur_id, int) or livreur_id <= 0:
             return {"error": "ID invalide"}
@@ -80,7 +80,7 @@ class Livreur:
         return dict(result) if result else None
 
     @staticmethod
-    def get_all() -> List[Dict[str, Any]]:
+    def get_all():
         """Récupère tous les livreurs."""
         query = """
             SELECT id, nom, contact, ST_AsText(position) as position
@@ -93,40 +93,54 @@ class Livreur:
         return [dict(row) for row in results]
 
     @staticmethod
-    def update(livreur_id: int, nom: Optional[str] = None, contact: Optional[str] = None, 
-               position: Optional[Tuple[float, float]] = None) -> Optional[Dict[str, Any]]:
-        """Met à jour un livreur."""
+    def update(livreur_id, nom=None, contact=None, position=None):
+        """Met à jour les informations d'un livreur. Retourne les données mises à jour ou un message d'erreur."""
         if not isinstance(livreur_id, int) or livreur_id <= 0:
             return {"error": "ID invalide"}
 
-        position_wkt = f'POINT({position[0]} {position[1]})' if position else None
+        # Validation de position
+        position_wkt = None
+        if position:
+            if not (isinstance(position, tuple) and len(position) == 2 and
+                    all(isinstance(coord, (int, float)) for coord in position)):
+                return {"error": "Position invalide : doit être un tuple de deux nombres"}
+            position_wkt = f'POINT({position[0]} {position[1]})'
+
+        # Validation de nom
+        if nom and len(nom) > 100:
+            return {"error": "Le nom dépasse la limite de 100 caractères"}
+
         query = """
             UPDATE livreurs
             SET nom = COALESCE(%s, nom),
                 contact = COALESCE(%s, contact),
                 position = COALESCE(ST_GeomFromText(%s, 4326), position)
             WHERE id = %s
-            RETURNING id, nom, contact, ST_AsText(position) as position
+            RETURNING id, nom, contact, ST_AsText(position) AS position
         """
-        result, error = fetch_one(query, (nom, contact, position_wkt, livreur_id))
-        if error:
-            if isinstance(error, psycopg2.errors.UniqueViolation):
-                return {"error": f"Le nom {nom} est déjà utilisé"}
-            return {"error": f"Erreur lors de la mise à jour : {str(error)}"}
-        return dict(result) if result else None
+        try:
+            result, error = fetch_one(query, (nom, contact, position_wkt, livreur_id))
+            if error:
+                return {"error": f"Erreur lors de la mise à jour : {str(error)}"}
+            if not result:
+                return {"error": "Livreur non trouvé"}
+            return {"data": dict(result)}
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def delete(livreur_id: int) -> Dict[str, Any]:
-        """Supprime un livreur."""
+    def delete(livreur_id):
+        """Marque un livreur comme renvoyé en mettant à jour son statut. Retourne les données mises à jour ou None si non trouvé."""
         if not isinstance(livreur_id, int) or livreur_id <= 0:
             return {"error": "ID invalide"}
 
+        statut_id = 3  # Statut "Renvoyé"
         query = """
-            DELETE FROM livreurs
-            WHERE id = %s
-            RETURNING id
+            INSERT INTO historique_statut_livreur (livreur_id, statut_id)
+            VALUES (%s, %s)
+            RETURNING id, livreur_id, statut_id, mis_a_jour_le
         """
-        result, error = fetch_one(query, (livreur_id,))
+        result, error = fetch_one(query, (livreur_id, statut_id))
         if error:
-            return {"error": f"Erreur lors de la suppression : {str(error)}"}
-        return {"success": bool(result), "id": livreur_id}
+            return {"error": str(error)}
+        return result if result else None
