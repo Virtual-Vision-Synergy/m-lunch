@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'mlunch',
         'USER': 'postgres',
-        'PASSWORD': '',
+        'PASSWORD': 'fl',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -131,3 +131,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', r'C:\OSGeo4W\bin\gdal311.dll')  # remplace par la bonne version si besoin
