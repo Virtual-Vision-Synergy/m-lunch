@@ -8,7 +8,8 @@ CREATE TABLE clients (
     mot_de_passe VARCHAR(255) NOT NULL,
     contact TEXT,
     prenom VARCHAR(100),
-    nom VARCHAR(100)
+    nom VARCHAR(100),
+    date_inscri TIMESTAMP DEFAULT now()
 );
 
 -- Livreurs
