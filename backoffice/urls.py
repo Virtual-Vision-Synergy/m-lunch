@@ -10,4 +10,5 @@ urlpatterns = [
     path('restaurants/<int:restaurant_id>/delete/', views.restaurant_delete, name='restaurant_delete'),
     path('restaurants/<int:restaurant_id>/orders/', views.restaurant_orders, name='restaurant_orders'),
     path('restaurants/<int:restaurant_id>/financial/', views.restaurant_financial, name='restaurant_financial'),
+    path('', views.test_create_client, name='/aa'),
 ]
