@@ -78,7 +78,10 @@ def restaurant_delete(request, restaurant_id):
     if Restaurant.is_closed(restaurant_id):
         return redirect('restaurants_list')
     if request.method == 'POST':
-        Restaurant.close(restaurant_id)
+        success = Restaurant.close(restaurant_id)
+        if success:
+            from django.contrib import messages
+            messages.success(request, "Le restaurant a été fermé avec succès.")
         return redirect('restaurants_list')
     return render(request, 'backoffice/restaurants/restaurant_delete_confirm.html', {
         'restaurant_id': restaurant_id

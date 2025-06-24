@@ -109,23 +109,21 @@ class Restaurant:
             SELECT r.*,
                    c.valeur as commission,
                    z.nom as secteur,
-                   s.appellation as statut
+                   s.statut as statut
             FROM restaurants r
             LEFT JOIN commissions c ON c.restaurant_id = r.id
             LEFT JOIN zones_restaurant zr ON zr.restaurant_id = r.id
             LEFT JOIN zones z ON z.id = zr.zone_id
             LEFT JOIN (
-                SELECT hsr.restaurant_id, sr.appellation
-                FROM historique_statut_restaurant hsr
+                SELECT hsr.restaurant_id, sr.appellation as statut
+                FROM (
+                    SELECT DISTINCT ON (restaurant_id) *
+                    FROM historique_statut_restaurant
+                    ORDER BY restaurant_id, mis_a_jour_le DESC, id DESC
+                ) hsr
                 JOIN statut_restaurant sr ON hsr.statut_id = sr.id
-                WHERE hsr.id = (
-                    SELECT id FROM historique_statut_restaurant
-                    WHERE restaurant_id = hsr.restaurant_id
-                    ORDER BY mis_a_jour_le DESC, id DESC
-                    LIMIT 1
-                )
             ) s ON s.restaurant_id = r.id
-            WHERE (s.appellation IS NULL OR s.appellation != 'Fermé')
+            WHERE (s.statut != 'Ferme' OR s.statut IS NULL)
         """
         if secteur:
             base_query += " AND z.nom = %s"
@@ -133,7 +131,7 @@ class Restaurant:
         if horaire:
             base_query += " AND r.horaire_debut <= %s AND r.horaire_fin >= %s"
             params.extend([horaire, horaire])
-        base_query += " GROUP BY r.id, c.valeur, z.nom, s.appellation ORDER BY r.id"
+        base_query += " GROUP BY r.id, c.valeur, z.nom, s.statut ORDER BY r.id"
         return db.fetch_query(base_query, params)
 
     @staticmethod
@@ -218,21 +216,11 @@ class Restaurant:
             ORDER BY hsr.mis_a_jour_le DESC, hsr.id DESC
             LIMIT 1
         """, (restaurant_id,))
-        return last_statut and last_statut['appellation'] == 'Fermé'
+        return last_statut and last_statut['appellation'] == 'Ferme'
 
     @staticmethod
     def close(restaurant_id):
-        last_statut = db.fetch_one("""
-            SELECT s.appellation
-            FROM historique_statut_restaurant hsr
-            JOIN statut_restaurant s ON hsr.statut_id = s.id
-            WHERE hsr.restaurant_id = %s
-            ORDER BY hsr.mis_a_jour_le DESC, hsr.id DESC
-            LIMIT 1
-        """, (restaurant_id,))
-        if last_statut and last_statut['appellation'] == 'Fermé':
-            return False
-        statut_ferme = db.fetch_one("SELECT id FROM statut_restaurant WHERE appellation='Fermé'")
+        statut_ferme = db.fetch_one("SELECT id FROM statut_restaurant WHERE appellation='Ferme'")
         if statut_ferme:
             db.execute_query("""
                 INSERT INTO historique_statut_restaurant 
