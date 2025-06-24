@@ -67,3 +67,50 @@ VALUES (5, NOW() - INTERVAL '1 hour', NOW() + INTERVAL '2 hours');
 -- This meal is NOT available
 INSERT INTO disponibilite_repas (repas_id, debut, fin)
 VALUES (6, NOW() - INTERVAL '5 hours', NOW() - INTERVAL '1 hour');
+
+INSERT INTO statut_commande (id, appellation) VALUES
+(1, 'En attente'),
+(2, 'En préparation'),
+(3, 'En livraison'),
+(4, 'Livrée'),
+(5, 'Annulée');
+
+-- Alice placed 2 orders
+INSERT INTO commandes (id, client_id, cree_le) VALUES
+(1, 1, NOW() - INTERVAL '5 days'),
+(2, 1, NOW() - INTERVAL '1 day');
+
+-- Bob placed 1 order
+INSERT INTO commandes (id, client_id, cree_le) VALUES
+(3, 2, NOW() - INTERVAL '2 days');
+
+-- Commande 1 (Alice)
+INSERT INTO commande_repas (commande_id, repas_id, quantite) VALUES
+(1, 5, 2),
+(1, 6, 1);
+
+-- Commande 2 (Alice)
+INSERT INTO commande_repas (commande_id, repas_id, quantite) VALUES
+(2, 7, 1);
+
+-- Commande 3 (Bob)
+INSERT INTO commande_repas (commande_id, repas_id, quantite) VALUES
+(3, 8, 3);
+
+-- Commande 1 (Alice): Livrée
+INSERT INTO historique_statut_commande (commande_id, statut_id, mis_a_jour_le) VALUES
+(1, 1, NOW() - INTERVAL '5 days'),
+(1, 2, NOW() - INTERVAL '4 days'),
+(1, 3, NOW() - INTERVAL '3 days'),
+(1, 4, NOW() - INTERVAL '2 days');
+
+-- Commande 2 (Alice): Annulée
+INSERT INTO historique_statut_commande (commande_id, statut_id, mis_a_jour_le) VALUES
+(2, 1, NOW() - INTERVAL '1 day'),
+(2, 5, NOW() - INTERVAL '12 hours');
+
+-- Commande 3 (Bob): En livraison
+INSERT INTO historique_statut_commande (commande_id, statut_id, mis_a_jour_le) VALUES
+(3, 1, NOW() - INTERVAL '2 days'),
+(3, 2, NOW() - INTERVAL '36 hours'),
+(3, 3, NOW() - INTERVAL '18 hours');

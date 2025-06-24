@@ -1,0 +1,23 @@
+
+<h2>🧾 Mes commandes passées</h2>
+
+<table>
+  <tr>
+    <th>Référence</th>
+    <th>📅 Date</th>
+    <th>📦 Articles</th>
+    <th>💰 Total</th>
+    <th>✔️ Statut</th>
+    <th></th>
+  </tr>
+  {% for c in commandes %}
+  <tr>
+    <td>#{{ c.commande.id }}</td>
+    <td>{{ c.commande.cree_le }}</td>
+    <td>{{ c.articles }}</td>
+    <td>{{ c.total }} Ar</td>
+    <td>{{ c.statut }}</td>
+    <td><a href="{% url 'detail_commande' c.commande.id %}">Voir détails</a></td>
+  </tr>
+  {% endfor %}
+</table>

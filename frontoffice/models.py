@@ -111,3 +111,45 @@ class DisponibiliteRepas(models.Model):
     class Meta:
         db_table = 'disponibilite_repas'
         managed = False
+
+class Commande(models.Model):
+    id = models.AutoField(primary_key=True)
+    client = models.ForeignKey('Client', on_delete=models.CASCADE)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'commandes'
+        managed = False
+
+
+class CommandeRepas(models.Model):
+    id = models.AutoField(primary_key=True)
+    commande = models.ForeignKey(Commande, on_delete=models.CASCADE)
+    repas = models.ForeignKey('Repas', on_delete=models.CASCADE)
+    quantite = models.IntegerField()
+    ajoute_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'commande_repas'
+        managed = False
+
+class StatutCommande(models.Model):
+    id = models.AutoField(primary_key=True)
+    appellation = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'statut_commande'
+        managed = False
+
+    def __str__(self):
+        return self.appellation
+
+class HistoriqueStatutCommande(models.Model):
+    id = models.AutoField(primary_key=True)
+    commande = models.ForeignKey('Commande', on_delete=models.CASCADE)
+    statut = models.ForeignKey(StatutCommande, on_delete=models.CASCADE)
+    mis_a_jour_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'historique_statut_commande'
+        managed = False

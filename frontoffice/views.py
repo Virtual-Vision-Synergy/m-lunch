@@ -1,9 +1,10 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas, DisponibiliteRepas
+from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas, DisponibiliteRepas, Commande, HistoriqueStatutCommande, CommandeRepas
 import random
 from django.contrib.auth.hashers import check_password
 from django.utils.timezone import now
+from django.db.models import Max, Sum, F
 
 def connexion_view(request):
     error_message = None
@@ -90,6 +91,59 @@ def restaurant_detail(request, restaurant_id):
         'types': types,
         'selected_type': int(selected_type) if selected_type else None
     })
+
+def mes_commandes(request):
+    client_id = request.session.get("client_id")
+
+    commandes = (
+        Commande.objects
+        .filter(client_id=client_id)
+        .order_by('-cree_le')
+    )
+
+    # Attach additional data (number of items, total, last status)
+    commandes_data = []
+    for c in commandes:
+        repas = CommandeRepas.objects.filter(commande=c)
+        total_articles = repas.aggregate(Sum('quantite'))['quantite__sum'] or 0
+        total_prix = sum([r.repas.prix * r.quantite for r in repas])
+        statut = (
+            HistoriqueStatutCommande.objects
+            .filter(commande=c)
+            .order_by('-mis_a_jour_le')
+            .first()
+        )
+        commandes_data.append({
+            'commande': c,
+            'articles': total_articles,
+            'total': total_prix,
+            'statut': statut.statut.appellation if statut else "Inconnu"
+        })
+
+    return render(request, 'frontoffice/mes_commandes.html', {
+        'commandes': commandes_data
+    })
+
+def detail_commande(request, commande_id):
+    commande = get_object_or_404(Commande, id=commande_id)
+    repas = CommandeRepas.objects.filter(commande=commande)
+    statut = (
+        HistoriqueStatutCommande.objects
+        .filter(commande=commande)
+        .order_by('-mis_a_jour_le')
+        .first()
+    )
+
+    total = sum([r.repas.prix * r.quantite for r in repas])
+
+    return render(request, 'frontoffice/detail_commande.html', {
+        'commande': commande,
+        'repas': repas,
+        'statut': statut.statut.appellation if statut else "Inconnu",
+        'total': total
+    })
+
+
 def accueil_view(request):
     return render(request, 'frontoffice/accueil.html')
 def index(request):
