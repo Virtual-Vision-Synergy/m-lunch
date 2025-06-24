@@ -64,3 +64,40 @@ class ZoneClient(models.Model):
     class Meta:
         db_table = 'zones_clients'
         managed = False
+
+class TypeRepas(models.Model):
+    id = models.AutoField(primary_key=True)
+    nom = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'types_repas'
+        managed = False
+
+    def __str__(self):
+        return self.nom
+
+
+class Repas(models.Model):
+    id = models.AutoField(primary_key=True)
+    nom = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    image = models.TextField(blank=True, null=True)
+    type = models.ForeignKey(TypeRepas, on_delete=models.DO_NOTHING)
+    prix = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        db_table = 'repas'
+        managed = False
+
+    def __str__(self):
+        return self.nom
+
+
+class RepasRestaurant(models.Model):
+    id = models.AutoField(primary_key=True)
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE)
+    repas = models.ForeignKey(Repas, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'repas_restaurant'
+        managed = False

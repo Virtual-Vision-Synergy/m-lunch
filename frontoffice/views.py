@@ -1,6 +1,7 @@
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from .models import Client, ZoneClient, ZoneRestaurant, Restaurant
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas
+import random
 from django.contrib.auth.hashers import check_password
 
 def connexion_view(request):
@@ -57,6 +58,28 @@ def restaurants_geojson(request):
         "features": features
     })
 
+def restaurant_detail(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    # Get selected type if filtered
+    selected_type = request.GET.get('type')
+
+    repas_qs = RepasRestaurant.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
+
+    if selected_type:
+        repas_qs = repas_qs.filter(repas__type__id=selected_type)
+
+    repas_list = [rr.repas for rr in repas_qs]
+    types = TypeRepas.objects.all()
+    #note = round(random.uniform(3.0, 5.0), 1)
+
+    return render(request, 'frontoffice/restaurant_detail.html', {
+        'restaurant': restaurant,
+        'repas': repas_list,
+        'note': 5,
+        'types': types,
+        'selected_type': int(selected_type) if selected_type else None
+    })
 def accueil_view(request):
     return render(request, 'frontoffice/accueil.html')
 def index(request):
