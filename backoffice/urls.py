@@ -2,5 +2,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.index, name='backoffice_index'),
+    path('', views.test_create_client, name='/aa'),
 ]

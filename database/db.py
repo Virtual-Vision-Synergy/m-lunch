@@ -1,15 +1,9 @@
 import psycopg2
 from psycopg2 import extras
-import django
-import os
-
-# Configurer Django pour accéder aux settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mlunch.settings')
-django.setup()
-
 from django.conf import settings
+from contextlib import contextmanager
 
-# Utiliser la configuration de la base depuis Django
+# Configuration de la base de données
 DB_CONFIG = {
     'dbname': settings.DATABASES['default']['NAME'],
     'user': settings.DATABASES['default']['USER'],
@@ -18,77 +12,63 @@ DB_CONFIG = {
     'port': settings.DATABASES['default']['PORT'],
 }
 
-
+@contextmanager
 def get_connection():
-    """Établit une connexion PostgreSQL"""
+    """Fournit une connexion PostgreSQL avec gestion contextuelle."""
+    conn = None
     try:
         conn = psycopg2.connect(**DB_CONFIG)
-        return conn
-    except Exception as e:
-        print(f"[Erreur de connexion] {e}")
-        return None
-
+        conn.autocommit = False
+        yield conn
+    except psycopg2.Error as e:
+        raise ConnectionError(f"Échec de la connexion : {str(e)}")
+    finally:
+        if conn is not None:
+            conn.close()
 
 def execute_query(query, params=None):
-    """
-    Exécute une requête SQL (INSERT, UPDATE, DELETE).
-    Ne retourne pas de résultat.
-    """
-    conn = get_connection()
-    if not conn:
-        return False
-
+    """Exécute une requête SQL (INSERT, UPDATE, DELETE) sans retour de données."""
     try:
-        with conn:
+        with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params)
-        return True
-    except Exception as e:
-        print(f"[Erreur d'exécution] {e}")
-        return False
-    finally:
-        conn.close()
+            conn.commit()
+        return True, None
+    except psycopg2.errors.UniqueViolation as e:
+        return False, e
+    except psycopg2.Error as e:
+        return False, e
 
-
-def fetch_query(query, params=None):
-    """
-    Exécute une requête SQL (SELECT) et retourne les résultats sous forme de liste de dictionnaires.
-    """
-    conn = get_connection()
-    if not conn:
-        return []
-
+def fetch_query(query, params=None, as_dict=True):
+    """Exécute une requête SQL (SELECT) et retourne les résultats."""
     try:
-        with conn.cursor(cursor_factory=extras.DictCursor) as cur:
-            cur.execute(query, params)
-            rows = cur.fetchall()
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[Erreur de récupération] {e}")
-        return []
-    finally:
-        conn.close()
+        with get_connection() as conn:
+            cursor_factory = extras.DictCursor if as_dict else None
+            with conn.cursor(cursor_factory=cursor_factory) as cur:
+                cur.execute(query, params)
+                rows = cur.fetchall()
+                if as_dict:
+                    return [dict(row) for row in rows], None
+                return rows, None
+    except psycopg2.Error as e:
+        return [], e
 
-
-def fetch_one(query, params=None):
-    """
-    Exécute une requête SQL et retourne une seule ligne sous forme de dictionnaire.
-    """
-    conn = get_connection()
-    if not conn:
-        return None
-
+def fetch_one(query, params=None, as_dict=True):
+    """Exécute une requête SQL et retourne une seule ligne."""
     try:
-        with conn.cursor(cursor_factory=extras.DictCursor) as cur:
-            cur.execute(query, params)
-            row = cur.fetchone()
-            return dict(row) if row else None
-    except Exception as e:
-        print(f"[Erreur fetch_one] {e}")
-        return None
-    finally:
-        conn.close()
-
+        with get_connection() as conn:
+            cursor_factory = extras.DictCursor if as_dict else None
+            with conn.cursor(cursor_factory=cursor_factory) as cur:
+                cur.execute(query, params)
+                row = cur.fetchone()
+            conn.commit()  # Valider la transaction
+            if row and as_dict:
+                return dict(row), None
+            return row, None
+    except psycopg2.errors.UniqueViolation as e:
+        return None, e
+    except psycopg2.Error as e:
+        return None, e
 
 def table_exists(table_name):
     """Vérifie si une table existe dans la base de données."""
@@ -96,7 +76,9 @@ def table_exists(table_name):
         SELECT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_name = %s
-        );
+        )
     """
-    result = fetch_one(query, (table_name,))
-    return result["exists"] if result else False
+    result, error = fetch_one(query, (table_name,), as_dict=True)
+    if error:
+        return False, error
+    return result["exists"], None
