@@ -1,7 +1,11 @@
 from django.shortcuts import render, redirect
 from mlunch.core.Restaurant import Restaurant
+from mlunch.core.Livreur import Livreur
 from database import db
 from datetime import datetime, timedelta
+from django.shortcuts import render
+from django.contrib import messages
+from mlunch.core.Client import Client
 
 def index(request):
     return render(request, 'backoffice/index.html')
@@ -138,9 +142,6 @@ def restaurant_financial(request, restaurant_id):
         'graph_labels': graph_labels,
         'graph_values': graph_values,
     })
-from django.shortcuts import render
-from django.contrib import messages
-from mlunch.core.Client import Client
 
 def test_create_client(request):
 
