@@ -23,9 +23,15 @@
       <img src="{{ r.image }}" alt="{{ r.nom }}" width="100">
       <strong>{{ r.nom }}</strong> - {{ r.prix }} Ar<br>
       <em>{{ r.description }}</em><br>
-      <a href="#">
+      {% if r.disponible %}
+        <span style="color:green;">✅ Disponible</span><br>
+        <a href="#">
           <button>➕ Ajouter au panier</button>
-      </a>
+        </a>
+      {% else %}
+        <span style="color:red;">❌ Indisponible</span><br>
+        <button disabled>Ajouter au panier</button>
+      {% endif %}
     </li>
   {% empty %}
     <p>Aucun plat disponible.</p>

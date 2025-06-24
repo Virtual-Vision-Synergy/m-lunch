@@ -101,3 +101,13 @@ class RepasRestaurant(models.Model):
     class Meta:
         db_table = 'repas_restaurant'
         managed = False
+
+class DisponibiliteRepas(models.Model):
+    id = models.AutoField(primary_key=True)
+    repas = models.ForeignKey('Repas', on_delete=models.CASCADE)
+    debut = models.DateTimeField()
+    fin = models.DateTimeField()
+
+    class Meta:
+        db_table = 'disponibilite_repas'
+        managed = False

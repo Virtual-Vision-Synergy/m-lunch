@@ -59,3 +59,11 @@ VALUES (1, 1), (1, 2), (1, 3), (1, 4);
 
 INSERT INTO repas_restaurant (restaurant_id, repas_id) VALUES
 (2, 5), (2, 6), (2, 7), (2, 8);
+
+-- This meal is available now
+INSERT INTO disponibilite_repas (repas_id, debut, fin)
+VALUES (5, NOW() - INTERVAL '1 hour', NOW() + INTERVAL '2 hours');
+
+-- This meal is NOT available
+INSERT INTO disponibilite_repas (repas_id, debut, fin)
+VALUES (6, NOW() - INTERVAL '5 hours', NOW() - INTERVAL '1 hour');

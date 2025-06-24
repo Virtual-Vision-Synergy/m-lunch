@@ -1,8 +1,9 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas
+from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas, DisponibiliteRepas
 import random
 from django.contrib.auth.hashers import check_password
+from django.utils.timezone import now
 
 def connexion_view(request):
     error_message = None
@@ -70,6 +71,15 @@ def restaurant_detail(request, restaurant_id):
         repas_qs = repas_qs.filter(repas__type__id=selected_type)
 
     repas_list = [rr.repas for rr in repas_qs]
+    current_time = now()
+    for r in repas_list:
+        is_dispo = DisponibiliteRepas.objects.filter(
+            repas=r,
+            debut__lte=current_time,
+            fin__gte=current_time
+        ).exists()
+        r.disponible = is_dispo
+
     types = TypeRepas.objects.all()
     #note = round(random.uniform(3.0, 5.0), 1)
 
