@@ -155,6 +155,7 @@ CREATE TABLE reference_zone_entite (
 CREATE TABLE commandes (
     id SERIAL PRIMARY KEY,
     client_id INT REFERENCES clients(id),
+    point_recup_id INT REFERENCES point_de_recuperation(id),
     cree_le TIMESTAMP NOT NULL DEFAULT now()
 );
 
