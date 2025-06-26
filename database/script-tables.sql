@@ -225,3 +225,25 @@ CREATE TABLE limite_commandes_journalieres (
     nombre_commandes INT NOT NULL,
     date DATE NOT NULL
 );
+
+
+
+
+
+----------------------XXX------------------
+CREATE TABLE statut_repas (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE historique_statut_repas (
+    id SERIAL PRIMARY KEY,
+    repas_id INT REFERENCES repas(id),
+    statut_id INT REFERENCES statut_repas(id),
+    nom VARCHAR(100),
+    description TEXT,
+    image TEXT,
+    type_id INT REFERENCES types_repas(id),
+    prix NUMERIC(10,2),
+    mis_a_jour_le TIMESTAMP DEFAULT now()
+);
