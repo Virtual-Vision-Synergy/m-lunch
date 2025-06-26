@@ -1,29 +1,14 @@
 from django.shortcuts import render, redirect
 from mlunch.core.Restaurant import Restaurant
 from mlunch.core.Livreur import Livreur
-from database import db
-from datetime import datetime, timedelta
-from django.shortcuts import render
-from django.contrib import messages
-from mlunch.core.Client import Client
-from mlunch.core.Commande import Commande
-from mlunch.core.Livraison import Livraison
-from mlunch.core.Livreur import Livreur
-from mlunch.core.Repas import Repas
-from mlunch.core.Restaurant import Restaurant
-from mlunch.core.Zone import Zone
-
-def index(request):
-    return render(request, 'backoffice/index.html')
-
-from django.shortcuts import render, redirect
-from mlunch.core.Restaurant import Restaurant
-from mlunch.core.Livreur import Livreur
 from mlunch.core.Livraison import Livraison
 from database import db
 from datetime import datetime, timedelta
 import json
+from django.contrib import messages
+import traceback
 from django.http import JsonResponse
+from mlunch.core.Zone import Zone
 
 def index(request):
     return render(request, 'backoffice/index.html')
@@ -99,7 +84,7 @@ def restaurant_delete(request, restaurant_id):
         success = Restaurant.close(restaurant_id)
         if success:
             from django.contrib import messages
-            messages.success(request, "Le restaurant a été fermé avec succès.")
+            messages.success(request, "Le restaurant a ete ferme avec succès.")
         return redirect('restaurants_list')
     return render(request, 'backoffice/restaurants/restaurant_delete_confirm.html', {
         'restaurant_id': restaurant_id
@@ -145,8 +130,8 @@ def restaurant_financial(request, restaurant_id):
     periode_label = {
         'today': "Aujourd'hui",
         'month': "Ce mois",
-        'year': "Cette année",
-        'custom': "Période personnalisée"
+        'year': "Cette annee",
+        'custom': "Periode personnalisee"
     }.get(periode, "Aujourd'hui")
 
     return render(request, 'backoffice/restaurants/restaurant_financial.html', {
@@ -220,7 +205,7 @@ def livreur_edit(request, livreur_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             changements = []
             
-            # Vérifier les changements de nom
+            # Verifier les changements de nom
             if livreur['nom'] != data['nom']:
                 changements.append({
                     'champ': 'Nom',
@@ -228,37 +213,37 @@ def livreur_edit(request, livreur_id):
                     'apres': data['nom']
                 })
                 
-            # Vérifier les changements de contact
+            # Verifier les changements de contact
             if livreur['contact'] != data['contact']:
                 changements.append({
                     'champ': 'Contact',
-                    'avant': livreur['contact'] or 'Non défini',
-                    'apres': data['contact'] or 'Non défini'
+                    'avant': livreur['contact'] or 'Non defini',
+                    'apres': data['contact'] or 'Non defini'
                 })
                 
-            # Vérifier les changements de secteur
+            # Verifier les changements de secteur
             if livreur['secteur'] != data['secteur']:
                 changements.append({
                     'champ': 'Secteur',
-                    'avant': livreur['secteur'] or 'Non défini',
+                    'avant': livreur['secteur'] or 'Non defini',
                     'apres': data['secteur']
                 })
                 
-            # Vérifier les changements de statut
+            # Verifier les changements de statut
             if livreur['statut'] != data['statut']:
                 changements.append({
                     'champ': 'Statut',
-                    'avant': livreur['statut'] or 'Non défini',
+                    'avant': livreur['statut'] or 'Non defini',
                     'apres': data['statut']
                 })
                 
-            # Vérifier les changements de photo
+            # Verifier les changements de photo
             before_photo = livreur.get('photo', None)
             if before_photo != data['photo']:
                 changements.append({
                     'champ': 'Photo',
-                    'avant': before_photo or 'Non définie',
-                    'apres': data['photo'] or 'Non définie'
+                    'avant': before_photo or 'Non definie',
+                    'apres': data['photo'] or 'Non definie'
                 })
                 
             return JsonResponse({'changements': changements})
@@ -290,16 +275,16 @@ def livreur_delete(request, livreur_id):
     })
 
 def livraisons_list(request):
-    # Récupérer les filtres
+    # Recuperer les filtres
     secteur = request.GET.get('secteur')
     statut = request.GET.get('statut')
     adresse = request.GET.get('adresse')
     livreur_id = request.GET.get('livreur')
     
-    # Récupérer les livraisons filtrées
+    # Recuperer les livraisons filtrees
     livraisons = Livraison.list(secteur=secteur, statut=statut, adresse=adresse, livreur_id=livreur_id)
     
-    # Récupérer les données pour les filtres
+    # Recuperer les donnees pour les filtres
     secteurs = db.fetch_query("SELECT nom FROM zones")
     statuts = db.fetch_query("SELECT appellation FROM statut_livraison")
     livreurs = db.fetch_query("SELECT id, nom FROM livreurs")
@@ -334,22 +319,22 @@ def livraison_edit(request, livraison_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             changements = []
             
-            # Vérifier les changements de livreur
+            # Verifier les changements de livreur
             old_livreur = db.fetch_one("SELECT nom FROM livreurs WHERE id=%s", (livraison['livreur_id'],))
             new_livreur = db.fetch_one("SELECT nom FROM livreurs WHERE id=%s", (data['livreur_id'],))
             
             if livraison['livreur_id'] != int(data['livreur_id']):
                 changements.append({
                     'champ': 'Livreur',
-                    'avant': old_livreur['nom'] if old_livreur else 'Non défini',
-                    'apres': new_livreur['nom'] if new_livreur else 'Non défini'
+                    'avant': old_livreur['nom'] if old_livreur else 'Non defini',
+                    'apres': new_livreur['nom'] if new_livreur else 'Non defini'
                 })
                 
-            # Vérifier les changements de statut
+            # Verifier les changements de statut
             if livraison['statut'] != data['statut']:
                 changements.append({
                     'champ': 'Statut',
-                    'avant': livraison['statut'] or 'Non défini',
+                    'avant': livraison['statut'] or 'Non defini',
                     'apres': data['statut']
                 })
                 
@@ -374,29 +359,71 @@ def livraison_edit(request, livraison_id):
     })
 
 def livraison_delete(request, livraison_id):
-    livraison = Livraison.detail(livraison_id)
-    if not livraison:
-        return redirect('livraisons_list')
+    from django.contrib import messages
+    import traceback
+    
+    try:
+        livraison_id = int(livraison_id)  # S'assurer que l'ID est bien un int
         
-    # Vérifier si la livraison peut être annulée
-    if livraison['statut'] == 'Livrée':
-        return render(request, 'backoffice/livraisons/livraison_delete_error.html', {
-            'reason': "Impossible d'annuler une livraison déjà effectuée."
-        })
+        livraison = Livraison.detail(livraison_id)
+        if not livraison:
+            messages.error(request, f"La livraison avec l'ID {livraison_id} n'existe pas.")
+            return redirect('livraisons_list')
         
-    if livraison['statut'] == 'Annulée':
-        return redirect('livraisons_list')
+        # Verifier si la livraison peut être annulee
+        if livraison['statut'] == 'Livree' or livraison['statut'] == 'Livree':
+            return render(request, 'backoffice/livraisons/livraison_delete_error.html', {
+                'reason': "Impossible d'annuler une livraison dejà effectuee."
+            })
         
-    if request.method == 'POST':
-        statut_annule = db.fetch_one("SELECT id FROM statut_livraison WHERE appellation='Annulée'")
-        if statut_annule:
-            Livraison.update_status(livraison_id, statut_annule['id'])
-            from django.contrib import messages
-            messages.success(request, "La livraison a été annulée avec succès.")
+        if livraison['statut'] == 'Annulee' or livraison['statut'] == 'Annulee':
+            messages.info(request, "Cette livraison est dejà annulee.")
+            return redirect('livraisons_list')
+        
+        if request.method == 'POST':
+            # Recuperer l'ID du statut 'Annulee'
+            statut_annule = db.fetch_one("SELECT id FROM statut_livraison WHERE appellation = 'Annulee'")
+            
+            if not statut_annule:
+                # Si le statut n'existe pas avec 'Annulee', essayer avec 'Annulee' (avec accent)
+                statut_annule = db.fetch_one("SELECT id FROM statut_livraison WHERE appellation = 'Annulee'")
+                
+            if not statut_annule:
+                # Si le statut n'existe toujours pas, le creer
+                db.execute_query("INSERT INTO statut_livraison (appellation) VALUES ('Annulee')")
+                statut_annule = db.fetch_one("SELECT id FROM statut_livraison WHERE appellation = 'Annulee'")
+            
+            if not statut_annule:
+                messages.error(request, "Impossible de creer ou trouver le statut 'Annulee'.")
+                return redirect('livraisons_list')
+            
+            print(f"Tentative d'annulation de la livraison {livraison_id} avec le statut ID {statut_annule['id']}")
+            
+            # Utiliser update_status pour changer le statut
+            success = Livraison.update_status(livraison_id, statut_annule['id'])
+            
+            if success:
+                # Verifier que le changement a bien ete applique
+                updated_livraison = Livraison.detail(livraison_id)
+                if updated_livraison and updated_livraison['statut'] in ['Annulee', 'Annulee']:
+                    messages.success(request, "La livraison a ete annulee avec succès.")
+                else:
+                    messages.warning(request, "La fonction a indique un succès mais le statut pourrait ne pas être mis à jour. Verifiez la liste des livraisons.")
+            else:
+                messages.error(request, "Un problème est survenu lors de l'annulation de la livraison.")
+            
+            # Afficher tous les statuts disponibles pour le debogage
+            all_statuses = db.fetch_query("SELECT id, appellation FROM statut_livraison")
+            print(f"Statuts disponibles: {all_statuses}")
+            
+            return redirect('livraisons_list')
+            
+    except Exception as e:
+        messages.error(request, f"Erreur: {str(e)}")
+        traceback.print_exc()
         return redirect('livraisons_list')
         
     return render(request, 'backoffice/livraisons/livraison_delete_confirm.html', {
-        'livraison_id': livraison_id,
         'livraison': livraison
     })
 

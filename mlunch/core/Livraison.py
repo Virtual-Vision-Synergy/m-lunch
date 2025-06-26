@@ -228,12 +228,66 @@ class Livraison:
     @staticmethod
     def update_status(livraison_id, statut_id):
         """Met à jour le statut d'une livraison."""
-        query = """
-            INSERT INTO historique_statut_livraison (livraison_id, statut_id, mis_a_jour_le)
-            VALUES (%s, %s, CURRENT_TIMESTAMP)
-        """
-        db.execute_query(query, (livraison_id, statut_id))
-        return True
+        try:
+            # Vérification que les paramètres sont des entiers
+            livraison_id = int(livraison_id)
+            statut_id = int(statut_id)
+            
+            # Vérification de l'existence du statut
+            statut = db.fetch_one("SELECT id, appellation FROM statut_livraison WHERE id = %s", (statut_id,))
+            if not statut:
+                print(f"Erreur: Le statut avec l'ID {statut_id} n'existe pas")
+                return False
+            
+            # Vérification de l'existence de la livraison
+            livraison = db.fetch_one("SELECT id FROM livraisons WHERE id = %s", (livraison_id,))
+            if not livraison:
+                print(f"Erreur: La livraison avec l'ID {livraison_id} n'existe pas")
+                return False
+            
+            # Vérifier si le statut actuel est déjà celui qu'on veut mettre
+            current_status = db.fetch_one("""
+                SELECT sl.id, sl.appellation
+                FROM historique_statut_livraison hsl
+                JOIN statut_livraison sl ON hsl.statut_id = sl.id
+                WHERE hsl.livraison_id = %s
+                ORDER BY hsl.mis_a_jour_le DESC, hsl.id DESC
+                LIMIT 1
+            """, (livraison_id,))
+            
+            if current_status and current_status['id'] == statut_id:
+                print(f"La livraison a déjà le statut {statut['appellation']}")
+                return True  # On retourne True car c'est déjà le bon statut
+            
+            print(f"Mise à jour du statut: livraison_id={livraison_id}, statut_id={statut_id}, statut={statut['appellation']}")
+            
+            # Exécution de l'insertion avec une transaction explicite pour s'assurer qu'elle est bien exécutée
+            db.execute_query("""
+                BEGIN;
+                INSERT INTO historique_statut_livraison (livraison_id, statut_id, mis_a_jour_le)
+                VALUES (%s, %s, CURRENT_TIMESTAMP);
+                COMMIT;
+            """, (livraison_id, statut_id))
+            
+            # Vérification que l'insertion a bien été effectuée
+            check_result = db.fetch_one("""
+                SELECT COUNT(*) as count 
+                FROM historique_statut_livraison 
+                WHERE livraison_id = %s AND statut_id = %s
+            """, (livraison_id, statut_id))
+            
+            if check_result and check_result['count'] > 0:
+                print(f"Mise à jour réussie pour la livraison {livraison_id} avec le statut {statut['appellation']}")
+                return True
+            else:
+                print(f"Échec de la mise à jour pour la livraison {livraison_id}")
+                return False
+    
+        except Exception as e:
+            print(f"Erreur lors de la mise à jour du statut: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     @staticmethod
     def update_livreur(livraison_id, livreur_id):
