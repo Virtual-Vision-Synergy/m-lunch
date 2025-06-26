@@ -411,6 +411,7 @@ class Restaurant:
         """, (restaurant_id,))
         
         # Calculer le montant total des commandes livrées pour ce restaurant
+        # en utilisant le statut de livraison au lieu du statut de commande
         query = """
             SELECT COALESCE(SUM(cr.quantite * rp.prix), 0) as total_brut,
                    COUNT(DISTINCT c.id) as nb_commandes
@@ -418,16 +419,20 @@ class Restaurant:
             JOIN commande_repas cr ON cr.commande_id = c.id
             JOIN repas rp ON rp.id = cr.repas_id
             JOIN repas_restaurant rr ON rr.repas_id = rp.id
-            JOIN historique_statut_commande hsc ON hsc.commande_id = c.id
-            JOIN statut_commande sc ON sc.id = hsc.statut_id
+            JOIN livraisons l ON l.commande_id = c.id
+            JOIN (
+                SELECT hsl.livraison_id, sl.appellation
+                FROM historique_statut_livraison hsl
+                JOIN statut_livraison sl ON sl.id = hsl.statut_id
+                WHERE hsl.id = (
+                    SELECT id FROM historique_statut_livraison
+                    WHERE livraison_id = hsl.livraison_id
+                    ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
+                )
+            ) latest_status ON latest_status.livraison_id = l.id
             WHERE rr.restaurant_id = %s
-            AND sc.appellation = 'Livrée'
+            AND latest_status.appellation = 'Livree'
             AND c.cree_le >= %s AND c.cree_le < %s
-            AND hsc.id = (
-                SELECT id FROM historique_statut_commande 
-                WHERE commande_id = c.id 
-                ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
-            )
         """
         result = db.fetch_one(query, (restaurant_id, date_from, date_to))
         total_brut = result['total_brut'] if result else 0
@@ -474,16 +479,20 @@ class Restaurant:
                 JOIN commande_repas cr ON cr.commande_id = c.id
                 JOIN repas rp ON rp.id = cr.repas_id
                 JOIN repas_restaurant rr ON rr.repas_id = rp.id
-                JOIN historique_statut_commande hsc ON hsc.commande_id = c.id
-                JOIN statut_commande sc ON sc.id = hsc.statut_id
+                JOIN livraisons l ON l.commande_id = c.id
+                JOIN (
+                    SELECT hsl.livraison_id, sl.appellation
+                    FROM historique_statut_livraison hsl
+                    JOIN statut_livraison sl ON sl.id = hsl.statut_id
+                    WHERE hsl.id = (
+                        SELECT id FROM historique_statut_livraison
+                        WHERE livraison_id = hsl.livraison_id
+                        ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
+                    )
+                ) latest_status ON latest_status.livraison_id = l.id
                 WHERE rr.restaurant_id = %s
-                AND sc.appellation = 'Livrée'
+                AND latest_status.appellation = 'Livree'
                 AND c.cree_le >= %s AND c.cree_le < %s
-                AND hsc.id = (
-                    SELECT id FROM historique_statut_commande 
-                    WHERE commande_id = c.id 
-                    ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
-                )
                 GROUP BY DATE(c.cree_le)
                 ORDER BY jour
             """
@@ -500,16 +509,20 @@ class Restaurant:
                 JOIN commande_repas cr ON cr.commande_id = c.id
                 JOIN repas rp ON rp.id = cr.repas_id
                 JOIN repas_restaurant rr ON rr.repas_id = rp.id
-                JOIN historique_statut_commande hsc ON hsc.commande_id = c.id
-                JOIN statut_commande sc ON sc.id = hsc.statut_id
+                JOIN livraisons l ON l.commande_id = c.id
+                JOIN (
+                    SELECT hsl.livraison_id, sl.appellation
+                    FROM historique_statut_livraison hsl
+                    JOIN statut_livraison sl ON sl.id = hsl.statut_id
+                    WHERE hsl.id = (
+                        SELECT id FROM historique_statut_livraison
+                        WHERE livraison_id = hsl.livraison_id
+                        ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
+                    )
+                ) latest_status ON latest_status.livraison_id = l.id
                 WHERE rr.restaurant_id = %s
-                AND sc.appellation = 'Livrée'
+                AND latest_status.appellation = 'Livree'
                 AND c.cree_le >= %s AND c.cree_le < %s
-                AND hsc.id = (
-                    SELECT id FROM historique_statut_commande 
-                    WHERE commande_id = c.id 
-                    ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
-                )
                 GROUP BY DATE_TRUNC('month', c.cree_le)
                 ORDER BY DATE_TRUNC('month', c.cree_le)
             """
