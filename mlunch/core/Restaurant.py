@@ -401,92 +401,122 @@ class Restaurant:
 
     @staticmethod
     def financial(restaurant_id, date_from, date_to):
+        """Calcule les données financières pour un restaurant."""
         restaurant = db.fetch_one("""
-            SELECT r.nom, r.image, z.nom as secteur, c.valeur as commission
+            SELECT r.nom, r.image, r.adresse, r.horaire_debut, r.horaire_fin,
+                   c.valeur as commission
             FROM restaurants r
-            LEFT JOIN zones_restaurant zr ON zr.restaurant_id = r.id
-            LEFT JOIN zones z ON z.id = zr.zone_id
             LEFT JOIN commissions c ON c.restaurant_id = r.id
             WHERE r.id = %s
-            GROUP BY r.nom, r.image, z.nom, c.valeur
         """, (restaurant_id,))
+        
+        # Calculer le montant total des commandes livrées pour ce restaurant
         query = """
-            SELECT 
-                COALESCE(SUM(cr.quantite * r.prix), 0) as total_brut
-            FROM commandes co
-            JOIN commande_repas cr ON cr.commande_id = co.id
-            JOIN repas r ON r.id = cr.repas_id
-            JOIN repas_restaurant rr ON rr.repas_id = r.id
-            JOIN historique_statut_commande hsc ON hsc.commande_id = co.id
+            SELECT COALESCE(SUM(cr.quantite * rp.prix), 0) as total_brut,
+                   COUNT(DISTINCT c.id) as nb_commandes
+            FROM commandes c
+            JOIN commande_repas cr ON cr.commande_id = c.id
+            JOIN repas rp ON rp.id = cr.repas_id
+            JOIN repas_restaurant rr ON rr.repas_id = rp.id
+            JOIN historique_statut_commande hsc ON hsc.commande_id = c.id
+            JOIN statut_commande sc ON sc.id = hsc.statut_id
             WHERE rr.restaurant_id = %s
-            AND hsc.statut_id = (
-                SELECT id FROM statut_commande WHERE appellation = 'Livrée' LIMIT 1
+            AND sc.appellation = 'Livrée'
+            AND c.cree_le >= %s AND c.cree_le < %s
+            AND hsc.id = (
+                SELECT id FROM historique_statut_commande 
+                WHERE commande_id = c.id 
+                ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
             )
-            AND co.cree_le >= %s AND co.cree_le < %s
         """
-        total_brut = db.fetch_one(query, (restaurant_id, date_from, date_to))['total_brut']
-        commission = restaurant['commission'] if restaurant and restaurant['commission'] is not None else 0
-        montant_commission = round(total_brut * commission / 100, 2)
-        frais = db.fetch_one("""
+        result = db.fetch_one(query, (restaurant_id, date_from, date_to))
+        total_brut = result['total_brut'] if result else 0
+        nb_commandes = result['nb_commandes'] if result else 0
+        
+        # Calculer les commissions (pourcentage du total brut)
+        commission_percent = restaurant.get('commission', 0)
+        commission_montant = (total_brut * commission_percent / 100) if total_brut else 0
+        
+        # Récupérer les frais éventuels
+        query_frais = """
             SELECT COALESCE(SUM(montant), 0) as total_frais
             FROM frais_restaurant
-            WHERE restaurant_id = %s AND date >= %s AND date < %s
-        """, (restaurant_id, date_from, date_to))
+            WHERE restaurant_id = %s
+            AND date >= %s AND date < %s
+        """
+        frais = db.fetch_one(query_frais, (restaurant_id, date_from, date_to))
         total_frais = frais['total_frais'] if frais else 0
-        benefice_net = total_brut - montant_commission - total_frais
+        
+        # Calculer le bénéfice net
+        benefice_net = total_brut - commission_montant - total_frais
+        
         return {
             'restaurant': restaurant,
             'total_brut': total_brut,
-            'commission': commission,
-            'montant_commission': montant_commission,
+            'commission_percent': commission_percent,
+            'commission_montant': commission_montant,
             'total_frais': total_frais,
             'benefice_net': benefice_net,
+            'nb_commandes': nb_commandes
         }
 
     @staticmethod
     def financial_graph(restaurant_id, date_from, date_to, periode):
+        """Génère les données de graphique financier pour un restaurant."""
         graph_labels = []
         graph_values = []
-        db_graph = db
+        
         if periode in ['today', 'custom'] and isinstance(date_from, datetime) and isinstance(date_to, datetime) and (date_to - date_from).days < 31:
+            # Détail jour par jour
             query_graph = """
-                SELECT DATE(co.cree_le) as jour, COALESCE(SUM(cr.quantite * r.prix), 0) as total
-                FROM commandes co
-                JOIN commande_repas cr ON cr.commande_id = co.id
-                JOIN repas r ON r.id = cr.repas_id
-                JOIN repas_restaurant rr ON rr.repas_id = r.id
-                JOIN historique_statut_commande hsc ON hsc.commande_id = co.id
+                SELECT DATE(c.cree_le) as jour, COALESCE(SUM(cr.quantite * rp.prix), 0) as total
+                FROM commandes c
+                JOIN commande_repas cr ON cr.commande_id = c.id
+                JOIN repas rp ON rp.id = cr.repas_id
+                JOIN repas_restaurant rr ON rr.repas_id = rp.id
+                JOIN historique_statut_commande hsc ON hsc.commande_id = c.id
+                JOIN statut_commande sc ON sc.id = hsc.statut_id
                 WHERE rr.restaurant_id = %s
-                AND hsc.statut_id = (
-                    SELECT id FROM statut_commande WHERE appellation = 'Livrée' LIMIT 1
+                AND sc.appellation = 'Livrée'
+                AND c.cree_le >= %s AND c.cree_le < %s
+                AND hsc.id = (
+                    SELECT id FROM historique_statut_commande 
+                    WHERE commande_id = c.id 
+                    ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
                 )
-                AND co.cree_le >= %s AND co.cree_le < %s
-                GROUP BY DATE(co.cree_le)
+                GROUP BY DATE(c.cree_le)
                 ORDER BY jour
             """
-            rows = db_graph.fetch_query(query_graph, (restaurant_id, date_from, date_to))
+            rows = db.fetch_query(query_graph, (restaurant_id, date_from, date_to))
             for row in rows:
                 graph_labels.append(row['jour'].strftime('%d/%m'))
                 graph_values.append(float(row['total']))
         else:
+            # Regroupement par mois
             query_graph = """
-                SELECT TO_CHAR(DATE_TRUNC('month', co.cree_le), 'MM/YYYY') as mois, COALESCE(SUM(cr.quantite * r.prix), 0) as total
-                FROM commandes co
-                JOIN commande_repas cr ON cr.commande_id = co.id
-                JOIN repas r ON r.id = cr.repas_id
-                JOIN repas_restaurant rr ON rr.repas_id = r.id
-                JOIN historique_statut_commande hsc ON hsc.commande_id = co.id
+                SELECT TO_CHAR(DATE_TRUNC('month', c.cree_le), 'MM/YYYY') as mois, 
+                       COALESCE(SUM(cr.quantite * rp.prix), 0) as total
+                FROM commandes c
+                JOIN commande_repas cr ON cr.commande_id = c.id
+                JOIN repas rp ON rp.id = cr.repas_id
+                JOIN repas_restaurant rr ON rr.repas_id = rp.id
+                JOIN historique_statut_commande hsc ON hsc.commande_id = c.id
+                JOIN statut_commande sc ON sc.id = hsc.statut_id
                 WHERE rr.restaurant_id = %s
-                AND hsc.statut_id = (
-                    SELECT id FROM statut_commande WHERE appellation = 'Livrée' LIMIT 1
+                AND sc.appellation = 'Livrée'
+                AND c.cree_le >= %s AND c.cree_le < %s
+                AND hsc.id = (
+                    SELECT id FROM historique_statut_commande 
+                    WHERE commande_id = c.id 
+                    ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
                 )
-                AND co.cree_le >= %s AND co.cree_le < %s
-                GROUP BY DATE_TRUNC('month', co.cree_le)
-                ORDER BY DATE_TRUNC('month', co.cree_le)
+                GROUP BY DATE_TRUNC('month', c.cree_le)
+                ORDER BY DATE_TRUNC('month', c.cree_le)
             """
-            rows = db_graph.fetch_query(query_graph, (restaurant_id, date_from, date_to))
+            rows = db.fetch_query(query_graph, (restaurant_id, date_from, date_to))
             for row in rows:
                 graph_labels.append(row['mois'])
                 graph_values.append(float(row['total']))
+            
         return graph_labels, graph_values
 

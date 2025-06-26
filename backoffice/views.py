@@ -16,6 +16,18 @@ from mlunch.core.Zone import Zone
 def index(request):
     return render(request, 'backoffice/index.html')
 
+from django.shortcuts import render, redirect
+from mlunch.core.Restaurant import Restaurant
+from mlunch.core.Livreur import Livreur
+from mlunch.core.Livraison import Livraison
+from database import db
+from datetime import datetime, timedelta
+import json
+from django.http import JsonResponse
+
+def index(request):
+    return render(request, 'backoffice/index.html')
+
 def restaurants_list(request):
     secteur = request.GET.get('secteur')
     horaire = request.GET.get('horaire')
@@ -140,16 +152,252 @@ def restaurant_financial(request, restaurant_id):
     return render(request, 'backoffice/restaurants/restaurant_financial.html', {
         'restaurant': result['restaurant'],
         'total_brut': result['total_brut'],
-        'commission': result['commission'],
-        'montant_commission': result['montant_commission'],
+        'commission_percent': result['commission_percent'],
+        'commission_montant': result['commission_montant'],
         'total_frais': result['total_frais'],
         'benefice_net': result['benefice_net'],
+        'nb_commandes': result['nb_commandes'],
         'periode': periode,
         'periode_label': periode_label,
         'date_from': date_from.strftime("%Y-%m-%d") if isinstance(date_from, datetime) else '',
         'date_to': (date_to - timedelta(days=1)).strftime("%Y-%m-%d") if isinstance(date_to, datetime) else '',
-        'graph_labels': graph_labels,
-        'graph_values': graph_values,
+        'graph_labels': json.dumps(graph_labels),
+        'graph_values': json.dumps(graph_values),
+    })
+
+def livreurs_list(request):
+    secteur = request.GET.get('secteur')
+    statut = request.GET.get('statut')
+    livreurs = Livreur.list(secteur, statut)
+    secteurs = db.fetch_query("SELECT nom FROM zones")
+    statuts = db.fetch_query("SELECT appellation FROM statut_livreur")
+    return render(request, 'backoffice/livreurs/livreurs_list.html', {
+        'livreurs': livreurs,
+        'secteurs': secteurs,
+        'statuts': statuts,
+        'selected_secteur': secteur,
+        'selected_statut': statut,
+    })
+
+def livreur_detail(request, livreur_id):
+    livreur = Livreur.detail(livreur_id)
+    return render(request, 'backoffice/livreurs/livreur_detail.html', {'livreur': livreur})
+
+def livreur_add(request):
+    if request.method == 'POST':
+        data = {
+            'nom': request.POST.get('nom'),
+            'contact': request.POST.get('contact'),
+            'secteur': request.POST.get('secteur'),
+            'statut': request.POST.get('statut'),
+            'photo': request.POST.get('photo'),
+        }
+        Livreur.add(data)
+        return redirect('livreurs_list')
+    secteurs = db.fetch_query("SELECT nom FROM zones")
+    statuts = db.fetch_query("SELECT appellation FROM statut_livreur")
+    return render(request, 'backoffice/livreurs/livreur_form.html', {
+        'secteurs': secteurs,
+        'statuts': statuts,
+        'action': 'Ajouter'
+    })
+
+def livreur_edit(request, livreur_id):
+    livreur = Livreur.detail(livreur_id)
+    secteurs = db.fetch_query("SELECT nom FROM zones")
+    statuts = db.fetch_query("SELECT appellation FROM statut_livreur")
+    
+    if request.method == 'POST':
+        data = {
+            'nom': request.POST.get('nom'),
+            'contact': request.POST.get('contact'),
+            'secteur': request.POST.get('secteur'),
+            'statut': request.POST.get('statut'),
+            'photo': request.POST.get('photo'),
+        }
+        
+        # Si c'est une requête AJAX, on renvoie les changements
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            changements = []
+            
+            # Vérifier les changements de nom
+            if livreur['nom'] != data['nom']:
+                changements.append({
+                    'champ': 'Nom',
+                    'avant': livreur['nom'],
+                    'apres': data['nom']
+                })
+                
+            # Vérifier les changements de contact
+            if livreur['contact'] != data['contact']:
+                changements.append({
+                    'champ': 'Contact',
+                    'avant': livreur['contact'] or 'Non défini',
+                    'apres': data['contact'] or 'Non défini'
+                })
+                
+            # Vérifier les changements de secteur
+            if livreur['secteur'] != data['secteur']:
+                changements.append({
+                    'champ': 'Secteur',
+                    'avant': livreur['secteur'] or 'Non défini',
+                    'apres': data['secteur']
+                })
+                
+            # Vérifier les changements de statut
+            if livreur['statut'] != data['statut']:
+                changements.append({
+                    'champ': 'Statut',
+                    'avant': livreur['statut'] or 'Non défini',
+                    'apres': data['statut']
+                })
+                
+            # Vérifier les changements de photo
+            before_photo = livreur.get('photo', None)
+            if before_photo != data['photo']:
+                changements.append({
+                    'champ': 'Photo',
+                    'avant': before_photo or 'Non définie',
+                    'apres': data['photo'] or 'Non définie'
+                })
+                
+            return JsonResponse({'changements': changements})
+        
+        # Si confirm=1, on effectue les modifications
+        if request.POST.get('confirm') == '1':
+            Livreur.edit(livreur_id, data)
+            return redirect('livreurs_list')
+            
+    return render(request, 'backoffice/livreurs/livreur_form.html', {
+        'livreur': livreur,
+        'secteurs': secteurs,
+        'statuts': statuts,
+        'action': 'Modifier'
+    })
+
+def livreur_delete(request, livreur_id):
+    if not Livreur.can_delete(livreur_id):
+        return render(request, 'backoffice/livreurs/livreur_delete_error.html', {
+            'reason': "Impossible de supprimer ce livreur : il a des livraisons en cours."
+        })
+    if Livreur.is_inactive(livreur_id):
+        return redirect('livreurs_list')
+    if request.method == 'POST':
+        Livreur.deactivate(livreur_id)
+        return redirect('livreurs_list')
+    return render(request, 'backoffice/livreurs/livreur_delete_confirm.html', {
+        'livreur_id': livreur_id
+    })
+
+def livraisons_list(request):
+    # Récupérer les filtres
+    secteur = request.GET.get('secteur')
+    statut = request.GET.get('statut')
+    adresse = request.GET.get('adresse')
+    livreur_id = request.GET.get('livreur')
+    
+    # Récupérer les livraisons filtrées
+    livraisons = Livraison.list(secteur=secteur, statut=statut, adresse=adresse, livreur_id=livreur_id)
+    
+    # Récupérer les données pour les filtres
+    secteurs = db.fetch_query("SELECT nom FROM zones")
+    statuts = db.fetch_query("SELECT appellation FROM statut_livraison")
+    livreurs = db.fetch_query("SELECT id, nom FROM livreurs")
+    
+    return render(request, 'backoffice/livraisons/livraisons_list.html', {
+        'livraisons': livraisons,
+        'secteurs': secteurs,
+        'statuts': statuts,
+        'livreurs': livreurs,
+        'selected_secteur': secteur,
+        'selected_statut': statut,
+        'selected_adresse': adresse,
+        'selected_livreur': livreur_id,
+    })
+
+def livraison_detail(request, livraison_id):
+    livraison = Livraison.detail(livraison_id)
+    return render(request, 'backoffice/livraisons/livraison_detail.html', {'livraison': livraison})
+
+def livraison_edit(request, livraison_id):
+    livraison = Livraison.detail(livraison_id)
+    statuts = db.fetch_query("SELECT id, appellation FROM statut_livraison")
+    livreurs = db.fetch_query("SELECT id, nom FROM livreurs")
+    
+    if request.method == 'POST':
+        data = {
+            'livreur_id': request.POST.get('livreur_id'),
+            'statut': request.POST.get('statut'),
+        }
+        
+        # Si c'est une requête AJAX, on renvoie les changements
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            changements = []
+            
+            # Vérifier les changements de livreur
+            old_livreur = db.fetch_one("SELECT nom FROM livreurs WHERE id=%s", (livraison['livreur_id'],))
+            new_livreur = db.fetch_one("SELECT nom FROM livreurs WHERE id=%s", (data['livreur_id'],))
+            
+            if livraison['livreur_id'] != int(data['livreur_id']):
+                changements.append({
+                    'champ': 'Livreur',
+                    'avant': old_livreur['nom'] if old_livreur else 'Non défini',
+                    'apres': new_livreur['nom'] if new_livreur else 'Non défini'
+                })
+                
+            # Vérifier les changements de statut
+            if livraison['statut'] != data['statut']:
+                changements.append({
+                    'champ': 'Statut',
+                    'avant': livraison['statut'] or 'Non défini',
+                    'apres': data['statut']
+                })
+                
+            return JsonResponse({'changements': changements})
+        
+        # Si confirm=1, on effectue les modifications
+        if request.POST.get('confirm') == '1':
+            statut_id = db.fetch_one("SELECT id FROM statut_livraison WHERE appellation=%s", (data['statut'],))
+            if statut_id:
+                Livraison.update_status(livraison_id, statut_id['id'])
+            
+            if livraison['livreur_id'] != int(data['livreur_id']):
+                Livraison.update_livreur(livraison_id, int(data['livreur_id']))
+                
+            return redirect('livraisons_list')
+            
+    return render(request, 'backoffice/livraisons/livraison_form.html', {
+        'livraison': livraison,
+        'statuts': statuts,
+        'livreurs': livreurs,
+        'action': 'Modifier'
+    })
+
+def livraison_delete(request, livraison_id):
+    livraison = Livraison.detail(livraison_id)
+    if not livraison:
+        return redirect('livraisons_list')
+        
+    # Vérifier si la livraison peut être annulée
+    if livraison['statut'] == 'Livrée':
+        return render(request, 'backoffice/livraisons/livraison_delete_error.html', {
+            'reason': "Impossible d'annuler une livraison déjà effectuée."
+        })
+        
+    if livraison['statut'] == 'Annulée':
+        return redirect('livraisons_list')
+        
+    if request.method == 'POST':
+        statut_annule = db.fetch_one("SELECT id FROM statut_livraison WHERE appellation='Annulée'")
+        if statut_annule:
+            Livraison.update_status(livraison_id, statut_annule['id'])
+            from django.contrib import messages
+            messages.success(request, "La livraison a été annulée avec succès.")
+        return redirect('livraisons_list')
+        
+    return render(request, 'backoffice/livraisons/livraison_delete_confirm.html', {
+        'livraison_id': livraison_id,
+        'livraison': livraison
     })
 
 def test_create_client(request):

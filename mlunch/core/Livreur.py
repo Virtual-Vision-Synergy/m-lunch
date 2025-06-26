@@ -1,6 +1,7 @@
 import psycopg2.errors
 from typing import Optional, Dict, List, Any, Tuple
 from database.db import execute_query, fetch_query, fetch_one
+from database import db
 
 class Livreur:
     """Classe représentant un livreur dans le système."""
@@ -144,3 +145,134 @@ class Livreur:
         if error:
             return {"error": str(error)}
         return result if result else None
+    
+    @staticmethod
+    def list(secteur=None, statut=None):
+        params = []
+        query = """
+            SELECT l.id, l.nom, l.contact,
+                   z.nom as secteur,
+                   s.appellation as statut
+            FROM livreurs l
+            LEFT JOIN zones_livreurs zl ON zl.livreur_id = l.id
+            LEFT JOIN zones z ON z.id = zl.zone_id
+            LEFT JOIN (
+                SELECT hsl.livreur_id, sl.appellation
+                FROM historique_statut_livreur hsl
+                JOIN statut_livreur sl ON hsl.statut_id = sl.id
+                WHERE hsl.id = (
+                    SELECT id FROM historique_statut_livreur
+                    WHERE livreur_id = hsl.livreur_id
+                    ORDER BY mis_a_jour_le DESC, id DESC
+                    LIMIT 1
+                )
+            ) s ON s.livreur_id = l.id
+            WHERE 1=1
+        """
+        if secteur:
+            query += " AND z.nom = %s"
+            params.append(secteur)
+        if statut:
+            query += " AND s.appellation = %s"
+            params.append(statut)
+        else:
+            query += " AND (s.appellation IS NULL OR s.appellation != 'Inactif')"
+        query += " GROUP BY l.id, l.nom, l.contact, z.nom, s.appellation ORDER BY l.id"
+        return db.fetch_query(query, params)
+
+    @staticmethod
+    def detail(livreur_id):
+        query = """
+            SELECT l.*, z.nom as secteur, s.appellation as statut
+            FROM livreurs l
+            LEFT JOIN zones_livreurs zl ON zl.livreur_id = l.id
+            LEFT JOIN zones z ON z.id = zl.zone_id
+            LEFT JOIN (
+                SELECT hsl.livreur_id, sl.appellation
+                FROM historique_statut_livreur hsl
+                JOIN statut_livreur sl ON hsl.statut_id = sl.id
+                WHERE hsl.id = (
+                    SELECT id FROM historique_statut_livreur
+                    WHERE livreur_id = hsl.livreur_id
+                    ORDER BY mis_a_jour_le DESC, id DESC
+                    LIMIT 1
+                )
+            ) s ON s.livreur_id = l.id
+            WHERE l.id = %s
+            GROUP BY l.id, z.nom, s.appellation
+        """
+        return db.fetch_one(query, (livreur_id,))
+
+    @staticmethod
+    def add(data):
+        db.execute_query(
+            "INSERT INTO livreurs (nom, contact) VALUES (%s, %s) RETURNING id",
+            (data['nom'], data['contact'])
+        )
+        livreur = db.fetch_one("SELECT id FROM livreurs WHERE nom=%s ORDER BY id DESC LIMIT 1", (data['nom'],))
+        livreur_id = livreur['id']
+        zone = db.fetch_one("SELECT id FROM zones WHERE nom=%s", (data['secteur'],))
+        if zone:
+            db.execute_query("INSERT INTO zones_livreurs (livreur_id, zone_id) VALUES (%s, %s)", (livreur_id, zone['id']))
+        statut_obj = db.fetch_one("SELECT id FROM statut_livreur WHERE appellation=%s", (data['statut'],))
+        if statut_obj:
+            db.execute_query("INSERT INTO historique_statut_livreur (livreur_id, statut_id) VALUES (%s, %s)", (livreur_id, statut_obj['id']))
+        return livreur_id
+
+    @staticmethod
+    def edit(livreur_id, data):
+        db.execute_query(
+            "UPDATE livreurs SET nom=%s, contact=%s, photo=%s WHERE id=%s",
+            (data['nom'], data['contact'], data['photo'], livreur_id)
+        )
+        zone = db.fetch_one("SELECT id FROM zones WHERE nom=%s", (data['secteur'],))
+        if zone:
+            db.execute_query("UPDATE zones_livreurs SET zone_id=%s WHERE livreur_id=%s", (zone['id'], livreur_id))
+        statut_obj = db.fetch_one("SELECT id FROM statut_livreur WHERE appellation=%s", (data['statut'],))
+        if statut_obj:
+            db.execute_query("INSERT INTO historique_statut_livreur (livreur_id, statut_id) VALUES (%s, %s)", (livreur_id, statut_obj['id']))
+
+    @staticmethod
+    def can_delete(livreur_id):
+        en_cours = db.fetch_one("""
+            SELECT COUNT(*) as nb
+            FROM livraisons l
+            JOIN historique_statut_livraison hsl ON hsl.livraison_id = l.id
+            JOIN statut_livraison sl ON sl.id = hsl.statut_id
+            WHERE l.livreur_id = %s AND sl.appellation IN ('En livraison')
+        """, (livreur_id,))
+        return not (en_cours and en_cours['nb'] > 0)
+
+    @staticmethod
+    def is_inactive(livreur_id):
+        last_statut = db.fetch_one("""
+            SELECT sl.appellation
+            FROM historique_statut_livreur hsl
+            JOIN statut_livreur sl ON hsl.statut_id = sl.id
+            WHERE hsl.livreur_id = %s
+            ORDER BY hsl.mis_a_jour_le DESC, hsl.id DESC
+            LIMIT 1
+        """, (livreur_id,))
+        return last_statut and last_statut['appellation'] == 'Inactif'
+
+    @staticmethod
+    def deactivate(livreur_id):
+        last_statut = db.fetch_one("""
+            SELECT sl.appellation
+            FROM historique_statut_livreur hsl
+            JOIN statut_livreur sl ON hsl.statut_id = sl.id
+            WHERE hsl.livreur_id = %s
+            ORDER BY hsl.mis_a_jour_le DESC, hsl.id DESC
+            LIMIT 1
+        """, (livreur_id,))
+        if last_statut and last_statut['appellation'] == 'Inactif':
+            return False
+        statut_inactif = db.fetch_one("SELECT id FROM statut_livreur WHERE appellation='Inactif'")
+        if statut_inactif:
+            db.execute_query("""
+                INSERT INTO historique_statut_livreur 
+                (livreur_id, statut_id, mis_a_jour_le) 
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+            """, (livreur_id, statut_inactif['id']))
+            return True
+        return False

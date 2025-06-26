@@ -1,6 +1,7 @@
 import psycopg2.errors
 from typing import Optional, Dict, List, Any
 from database.db import execute_query, fetch_query, fetch_one
+from database import db
 
 class Livraison:
     """Classe représentant une livraison dans le système."""
@@ -131,3 +132,116 @@ class Livraison:
         if error:
             return {"error": str(error)}
         return result if result else None
+
+    @staticmethod
+    def list(secteur=None, statut=None, adresse=None, livreur_id=None):
+        """Récupère la liste des livraisons avec filtres."""
+        params = []
+        query = """
+            SELECT l.id, l.livreur_id, l.commande_id, l.attribue_le,
+                   lr.nom as livreur_nom,
+                   r.nom as restaurant_nom,
+                   c.id as commande_id,
+                   z.nom as secteur,
+                   sl.appellation as statut,
+                   SUM(cr.quantite * rp.prix) as total_commande
+            FROM livraisons l
+            JOIN livreurs lr ON l.livreur_id = lr.id
+            JOIN commandes c ON l.commande_id = c.id
+            JOIN commande_repas cr ON c.id = cr.commande_id
+            JOIN repas rp ON cr.repas_id = rp.id
+            JOIN repas_restaurant rr ON rp.id = rr.repas_id
+            JOIN restaurants r ON rr.restaurant_id = r.id
+            JOIN zones_restaurant zr ON r.id = zr.restaurant_id
+            JOIN zones z ON zr.zone_id = z.id
+            JOIN (
+                SELECT hsl.livraison_id, sl.appellation
+                FROM historique_statut_livraison hsl
+                JOIN statut_livraison sl ON hsl.statut_id = sl.id
+                WHERE hsl.id = (
+                    SELECT id FROM historique_statut_livraison
+                    WHERE livraison_id = hsl.livraison_id
+                    ORDER BY mis_a_jour_le DESC, id DESC
+                    LIMIT 1
+                )
+            ) sl ON sl.livraison_id = l.id
+            WHERE 1=1
+        """
+        
+        if secteur:
+            query += " AND z.nom = %s"
+            params.append(secteur)
+            
+        if statut:
+            query += " AND sl.appellation = %s"
+            params.append(statut)
+            
+        if adresse and False:  # Désactivé car cette colonne n'existe pas
+            query += " AND c.adresse_livraison ILIKE %s"
+            params.append(f"%{adresse}%")
+            
+        if livreur_id:
+            query += " AND l.livreur_id = %s"
+            params.append(livreur_id)
+            
+        query += " GROUP BY l.id, l.livreur_id, l.commande_id, l.attribue_le, lr.nom, r.nom, c.id, z.nom, sl.appellation ORDER BY l.attribue_le DESC"
+        
+        return db.fetch_query(query, params)
+    
+    @staticmethod
+    def detail(livraison_id):
+        """Récupère les détails d'une livraison."""
+        query = """
+            SELECT l.id, l.livreur_id, l.commande_id, l.attribue_le,
+                   lr.nom as livreur_nom,
+                   r.nom as restaurant_nom,
+                   c.id as commande_id,
+                   z.nom as secteur,
+                   sl.appellation as statut,
+                   SUM(cr.quantite * rp.prix) as total_commande
+            FROM livraisons l
+            JOIN livreurs lr ON l.livreur_id = lr.id
+            JOIN commandes c ON l.commande_id = c.id
+            JOIN commande_repas cr ON c.id = cr.commande_id
+            JOIN repas rp ON cr.repas_id = rp.id
+            JOIN repas_restaurant rr ON rp.id = rr.repas_id
+            JOIN restaurants r ON rr.restaurant_id = r.id
+            JOIN zones_restaurant zr ON r.id = zr.restaurant_id
+            JOIN zones z ON zr.zone_id = z.id
+            JOIN (
+                SELECT hsl.livraison_id, sl.appellation
+                FROM historique_statut_livraison hsl
+                JOIN statut_livraison sl ON hsl.statut_id = sl.id
+                WHERE hsl.id = (
+                    SELECT id FROM historique_statut_livraison
+                    WHERE livraison_id = hsl.livraison_id
+                    ORDER BY mis_a_jour_le DESC, id DESC
+                    LIMIT 1
+                )
+            ) sl ON sl.livraison_id = l.id
+            WHERE l.id = %s
+            GROUP BY l.id, l.livreur_id, l.commande_id, l.attribue_le, lr.nom, r.nom, c.id, z.nom, sl.appellation
+        """
+        
+        return db.fetch_one(query, (livraison_id,))
+    
+    @staticmethod
+    def update_status(livraison_id, statut_id):
+        """Met à jour le statut d'une livraison."""
+        query = """
+            INSERT INTO historique_statut_livraison (livraison_id, statut_id, mis_a_jour_le)
+            VALUES (%s, %s, CURRENT_TIMESTAMP)
+        """
+        db.execute_query(query, (livraison_id, statut_id))
+        return True
+    
+    @staticmethod
+    def update_livreur(livraison_id, livreur_id):
+        """Met à jour le livreur assigné à une livraison."""
+        query = """
+            UPDATE livraisons
+            SET livreur_id = %s
+            WHERE id = %s
+        """
+        db.execute_query(query, (livreur_id, livraison_id))
+        return True
