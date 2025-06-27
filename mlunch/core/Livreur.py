@@ -149,58 +149,18 @@ class Livreur:
     @staticmethod
     def list(secteur=None, statut=None):
         params = []
-        query = """
-            SELECT l.id, l.nom, l.contact,
-                   z.nom as secteur,
-                   s.appellation as statut
-            FROM livreurs l
-            LEFT JOIN zones_livreurs zl ON zl.livreur_id = l.id
-            LEFT JOIN zones z ON z.id = zl.zone_id
-            LEFT JOIN (
-                SELECT hsl.livreur_id, sl.appellation
-                FROM historique_statut_livreur hsl
-                JOIN statut_livreur sl ON hsl.statut_id = sl.id
-                WHERE hsl.id = (
-                    SELECT id FROM historique_statut_livreur
-                    WHERE livreur_id = hsl.livreur_id
-                    ORDER BY mis_a_jour_le DESC, id DESC
-                    LIMIT 1
-                )
-            ) s ON s.livreur_id = l.id
-            WHERE 1=1
-        """
+        query = "SELECT * FROM v_livreurs_list WHERE 1=1"
         if secteur:
-            query += " AND z.nom = %s"
+            query += " AND secteur = %s"
             params.append(secteur)
         if statut:
-            query += " AND s.appellation = %s"
+            query += " AND statut = %s"
             params.append(statut)
-        else:
-            query += " AND (s.appellation IS NULL OR s.appellation != 'Inactif')"
-        query += " GROUP BY l.id, l.nom, l.contact, z.nom, s.appellation ORDER BY l.id"
-        return db.fetch_query(query, params)
+        return db.fetch_query(query, tuple(params))
 
     @staticmethod
     def detail(livreur_id):
-        query = """
-            SELECT l.*, z.nom as secteur, s.appellation as statut
-            FROM livreurs l
-            LEFT JOIN zones_livreurs zl ON zl.livreur_id = l.id
-            LEFT JOIN zones z ON z.id = zl.zone_id
-            LEFT JOIN (
-                SELECT hsl.livreur_id, sl.appellation
-                FROM historique_statut_livreur hsl
-                JOIN statut_livreur sl ON hsl.statut_id = sl.id
-                WHERE hsl.id = (
-                    SELECT id FROM historique_statut_livreur
-                    WHERE livreur_id = hsl.livreur_id
-                    ORDER BY mis_a_jour_le DESC, id DESC
-                    LIMIT 1
-                )
-            ) s ON s.livreur_id = l.id
-            WHERE l.id = %s
-            GROUP BY l.id, z.nom, s.appellation
-        """
+        query = "SELECT * FROM v_livreurs_detail WHERE id = %s"
         return db.fetch_one(query, (livreur_id,))
 
     @staticmethod

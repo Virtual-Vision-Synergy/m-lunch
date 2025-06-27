@@ -107,13 +107,7 @@ class Restaurant:
             
             # Requête pour l'historique des statuts
             query_historique = """
-                SELECT 
-                    h.id, h.statut_id, h.mis_a_jour_le,
-                    sr.appellation as statut_nom
-                FROM historique_statut_restaurant h
-                JOIN statut_restaurant sr ON h.statut_id = sr.id
-                WHERE h.restaurant_id = %s
-                ORDER BY h.mis_a_jour_le DESC
+                SELECT * FROM v_restaurant_status_history WHERE restaurant_id = %s ORDER BY mis_a_jour_le DESC
             """
 
             # Exécution des requêtes
@@ -260,57 +254,19 @@ class Restaurant:
     @staticmethod
     def list(secteur=None, horaire=None):
         params = []
-        base_query = """
-            SELECT r.*,
-                   c.valeur as commission,
-                   z.nom as secteur,
-                   s.statut as statut
-            FROM restaurants r
-            LEFT JOIN commissions c ON c.restaurant_id = r.id
-            LEFT JOIN zones_restaurant zr ON zr.restaurant_id = r.id
-            LEFT JOIN zones z ON z.id = zr.zone_id
-            LEFT JOIN (
-                SELECT hsr.restaurant_id, sr.appellation as statut
-                FROM (
-                    SELECT DISTINCT ON (restaurant_id) *
-                    FROM historique_statut_restaurant
-                    ORDER BY restaurant_id, mis_a_jour_le DESC, id DESC
-                ) hsr
-                JOIN statut_restaurant sr ON hsr.statut_id = sr.id
-            ) s ON s.restaurant_id = r.id
-            WHERE (s.statut != 'Ferme' OR s.statut IS NULL)
-        """
+        query = "SELECT * FROM v_restaurants_list WHERE 1=1"
         if secteur:
-            base_query += " AND z.nom = %s"
+            query += " AND secteur = %s"
             params.append(secteur)
         if horaire:
-            base_query += " AND r.horaire_debut <= %s AND r.horaire_fin >= %s"
-            params.extend([horaire, horaire])
-        base_query += " GROUP BY r.id, c.valeur, z.nom, s.statut ORDER BY r.id"
-        return db.fetch_query(base_query, params)
+            query += " AND %s BETWEEN horaire_debut AND horaire_fin"
+            params.append(horaire)
+        return db.fetch_query(query, tuple(params))
 
     @staticmethod
     def detail(restaurant_id):
-        query = """
-            SELECT r.*,
-                c.valeur as commission,
-                s.appellation as statut,
-                z.nom as secteur
-            FROM restaurants r
-            LEFT JOIN commissions c ON c.restaurant_id = r.id
-            LEFT JOIN (
-                SELECT DISTINCT ON (restaurant_id) restaurant_id, statut_id
-                FROM historique_statut_restaurant
-                WHERE restaurant_id = %s
-                ORDER BY restaurant_id, mis_a_jour_le DESC
-            ) hsr ON hsr.restaurant_id = r.id
-            LEFT JOIN statut_restaurant s ON s.id = hsr.statut_id
-            LEFT JOIN zones_restaurant zr ON zr.restaurant_id = r.id
-            LEFT JOIN zones z ON z.id = zr.zone_id
-            WHERE r.id = %s
-            GROUP BY r.id, c.valeur, s.appellation, z.nom
-        """
-        return db.fetch_one(query, (restaurant_id, restaurant_id))
+        query = "SELECT * FROM v_restaurants_detail WHERE id = %s"
+        return db.fetch_one(query, (restaurant_id,))
 
     @staticmethod
     def add(data):
@@ -345,20 +301,9 @@ class Restaurant:
 
     @staticmethod
     def can_delete(restaurant_id):
-        en_cours = db.fetch_one("""
-            SELECT COUNT(*) as nb
-            FROM commandes c
-            JOIN commande_repas cr ON cr.commande_id = c.id
-            JOIN repas r ON r.id = cr.repas_id
-            JOIN repas_restaurant rr ON rr.repas_id = r.id
-            WHERE rr.restaurant_id = %s
-            AND c.id IN (
-                SELECT hsc.commande_id
-                FROM historique_statut_commande hsc
-                JOIN statut_commande sc ON sc.id = hsc.statut_id
-                WHERE sc.appellation IN ('En attente', 'En cours')
-            )
-        """, (restaurant_id,))
+        en_cours = db.fetch_one(
+            "SELECT nb FROM v_restaurant_commandes_en_cours WHERE restaurant_id = %s", (restaurant_id,)
+        )
         return not (en_cours and en_cours['nb'] > 0)
 
     @staticmethod
@@ -387,17 +332,8 @@ class Restaurant:
 
     @staticmethod
     def orders(restaurant_id):
-        return db.fetch_query("""
-            SELECT c.id, c.cree_le, cl.nom as client_nom
-            FROM commandes c
-            JOIN clients cl ON cl.id = c.client_id
-            JOIN commande_repas cr ON cr.commande_id = c.id
-            JOIN repas r ON r.id = cr.repas_id
-            JOIN repas_restaurant rr ON rr.repas_id = r.id
-            WHERE rr.restaurant_id = %s
-            GROUP BY c.id, cl.nom
-            ORDER BY c.cree_le DESC
-        """, (restaurant_id,))
+        query = "SELECT * FROM v_restaurant_orders WHERE restaurant_id = %s"
+        return db.fetch_query(query, (restaurant_id,))
 
     @staticmethod
     def financial(restaurant_id, date_from, date_to):
@@ -409,40 +345,22 @@ class Restaurant:
             LEFT JOIN commissions c ON c.restaurant_id = r.id
             WHERE r.id = %s
         """, (restaurant_id,))
-        
-        # Calculer le montant total des commandes livrées pour ce restaurant
-        # en utilisant le statut de livraison au lieu du statut de commande
+
+        # Utilisation de la vue pour le total brut et le nombre de commandes
         query = """
-            SELECT COALESCE(SUM(cr.quantite * rp.prix), 0) as total_brut,
-                   COUNT(DISTINCT c.id) as nb_commandes
-            FROM commandes c
-            JOIN commande_repas cr ON cr.commande_id = c.id
-            JOIN repas rp ON rp.id = cr.repas_id
-            JOIN repas_restaurant rr ON rr.repas_id = rp.id
-            JOIN livraisons l ON l.commande_id = c.id
-            JOIN (
-                SELECT hsl.livraison_id, sl.appellation
-                FROM historique_statut_livraison hsl
-                JOIN statut_livraison sl ON sl.id = hsl.statut_id
-                WHERE hsl.id = (
-                    SELECT id FROM historique_statut_livraison
-                    WHERE livraison_id = hsl.livraison_id
-                    ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
-                )
-            ) latest_status ON latest_status.livraison_id = l.id
-            WHERE rr.restaurant_id = %s
-            AND latest_status.appellation = 'Livree'
-            AND c.cree_le >= %s AND c.cree_le < %s
+            SELECT COALESCE(SUM(total), 0) as total_brut,
+                   COALESCE(SUM(nb_commandes), 0) as nb_commandes
+            FROM v_restaurant_financial_daily
+            WHERE restaurant_id = %s
+              AND jour >= %s AND jour < %s
         """
         result = db.fetch_one(query, (restaurant_id, date_from, date_to))
         total_brut = result['total_brut'] if result else 0
         nb_commandes = result['nb_commandes'] if result else 0
-        
-        # Calculer les commissions (pourcentage du total brut)
+
         commission_percent = restaurant.get('commission', 0)
         commission_montant = (total_brut * commission_percent / 100) if total_brut else 0
-        
-        # Récupérer les frais éventuels
+
         query_frais = """
             SELECT COALESCE(SUM(montant), 0) as total_frais
             FROM frais_restaurant
@@ -451,10 +369,9 @@ class Restaurant:
         """
         frais = db.fetch_one(query_frais, (restaurant_id, date_from, date_to))
         total_frais = frais['total_frais'] if frais else 0
-        
-        # Calculer le bénéfice net
+
         benefice_net = total_brut - commission_montant - total_frais
-        
+
         return {
             'restaurant': restaurant,
             'total_brut': total_brut,
@@ -470,30 +387,14 @@ class Restaurant:
         """Génère les données de graphique financier pour un restaurant."""
         graph_labels = []
         graph_values = []
-        
+
         if periode in ['today', 'custom'] and isinstance(date_from, datetime) and isinstance(date_to, datetime) and (date_to - date_from).days < 31:
-            # Détail jour par jour
+            # Utilisation de la vue jour par jour
             query_graph = """
-                SELECT DATE(c.cree_le) as jour, COALESCE(SUM(cr.quantite * rp.prix), 0) as total
-                FROM commandes c
-                JOIN commande_repas cr ON cr.commande_id = c.id
-                JOIN repas rp ON rp.id = cr.repas_id
-                JOIN repas_restaurant rr ON rr.repas_id = rp.id
-                JOIN livraisons l ON l.commande_id = c.id
-                JOIN (
-                    SELECT hsl.livraison_id, sl.appellation
-                    FROM historique_statut_livraison hsl
-                    JOIN statut_livraison sl ON sl.id = hsl.statut_id
-                    WHERE hsl.id = (
-                        SELECT id FROM historique_statut_livraison
-                        WHERE livraison_id = hsl.livraison_id
-                        ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
-                    )
-                ) latest_status ON latest_status.livraison_id = l.id
-                WHERE rr.restaurant_id = %s
-                AND latest_status.appellation = 'Livree'
-                AND c.cree_le >= %s AND c.cree_le < %s
-                GROUP BY DATE(c.cree_le)
+                SELECT jour, total
+                FROM v_restaurant_financial_daily
+                WHERE restaurant_id = %s
+                  AND jour >= %s AND jour < %s
                 ORDER BY jour
             """
             rows = db.fetch_query(query_graph, (restaurant_id, date_from, date_to))
@@ -501,35 +402,17 @@ class Restaurant:
                 graph_labels.append(row['jour'].strftime('%d/%m'))
                 graph_values.append(float(row['total']))
         else:
-            # Regroupement par mois
+            # Utilisation de la vue par mois
             query_graph = """
-                SELECT TO_CHAR(DATE_TRUNC('month', c.cree_le), 'MM/YYYY') as mois, 
-                       COALESCE(SUM(cr.quantite * rp.prix), 0) as total
-                FROM commandes c
-                JOIN commande_repas cr ON cr.commande_id = c.id
-                JOIN repas rp ON rp.id = cr.repas_id
-                JOIN repas_restaurant rr ON rr.repas_id = rp.id
-                JOIN livraisons l ON l.commande_id = c.id
-                JOIN (
-                    SELECT hsl.livraison_id, sl.appellation
-                    FROM historique_statut_livraison hsl
-                    JOIN statut_livraison sl ON sl.id = hsl.statut_id
-                    WHERE hsl.id = (
-                        SELECT id FROM historique_statut_livraison
-                        WHERE livraison_id = hsl.livraison_id
-                        ORDER BY mis_a_jour_le DESC, id DESC LIMIT 1
-                    )
-                ) latest_status ON latest_status.livraison_id = l.id
-                WHERE rr.restaurant_id = %s
-                AND latest_status.appellation = 'Livree'
-                AND c.cree_le >= %s AND c.cree_le < %s
-                GROUP BY DATE_TRUNC('month', c.cree_le)
-                ORDER BY DATE_TRUNC('month', c.cree_le)
+                SELECT mois, total
+                FROM v_restaurant_financial_monthly
+                WHERE restaurant_id = %s
+                  AND TO_DATE(mois, 'MM/YYYY') >= %s AND TO_DATE(mois, 'MM/YYYY') < %s
+                ORDER BY TO_DATE(mois, 'MM/YYYY')
             """
             rows = db.fetch_query(query_graph, (restaurant_id, date_from, date_to))
             for row in rows:
                 graph_labels.append(row['mois'])
                 graph_values.append(float(row['total']))
-            
-        return graph_labels, graph_values
 
+        return graph_labels, graph_values

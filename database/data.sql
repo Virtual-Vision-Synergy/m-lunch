@@ -200,3 +200,266 @@ INSERT INTO historique_statut_livraison (livraison_id, statut_id, mis_a_jour_le)
 (8, 1, NOW() - INTERVAL '4 hours');
 
 --/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+-- View: v_restaurants_list
+CREATE OR REPLACE VIEW v_restaurants_list AS
+SELECT
+    r.id,
+    r.nom,
+    r.horaire_debut,
+    r.horaire_fin,
+    r.adresse,
+    r.image,
+    c.valeur AS commission,
+    z.nom AS secteur,
+    s.statut AS statut
+FROM restaurants r
+LEFT JOIN commissions c ON c.restaurant_id = r.id
+LEFT JOIN zones_restaurant zr ON zr.restaurant_id = r.id
+LEFT JOIN zones z ON z.id = zr.zone_id
+LEFT JOIN (
+    SELECT hsr.restaurant_id, sr.appellation AS statut
+    FROM (
+        SELECT DISTINCT ON (restaurant_id) *
+        FROM historique_statut_restaurant
+        ORDER BY restaurant_id, mis_a_jour_le DESC, id DESC
+    ) hsr
+    JOIN statut_restaurant sr ON hsr.statut_id = sr.id
+) s ON s.restaurant_id = r.id;
+
+-- View: v_livreurs_list
+CREATE OR REPLACE VIEW v_livreurs_list AS
+SELECT
+    l.id,
+    l.nom,
+    l.contact,
+    l.photo,
+    z.nom AS secteur,
+    s.appellation AS statut
+FROM livreurs l
+LEFT JOIN zones_livreurs zl ON zl.livreur_id = l.id
+LEFT JOIN zones z ON z.id = zl.zone_id
+LEFT JOIN (
+    SELECT hsl.livreur_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livreur_id) *
+        FROM historique_statut_livreur
+        ORDER BY livreur_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livreur sl ON hsl.statut_id = sl.id
+) s ON s.livreur_id = l.id;
+
+-- View: v_livraisons_list
+CREATE OR REPLACE VIEW v_livraisons_list AS
+SELECT
+    l.id,
+    l.livreur_id,
+    l.commande_id,
+    l.attribue_le,
+    lr.nom AS livreur_nom,
+    r.nom AS restaurant_nom,
+    z.nom AS secteur,
+    sl.appellation AS statut,
+    SUM(cr.quantite * rp.prix) AS total_commande
+FROM livraisons l
+JOIN livreurs lr ON l.livreur_id = lr.id
+JOIN commandes c ON l.commande_id = c.id
+JOIN commande_repas cr ON c.id = cr.commande_id
+JOIN repas rp ON cr.repas_id = rp.id
+JOIN repas_restaurant rr ON rp.id = rr.repas_id
+JOIN restaurants r ON rr.restaurant_id = r.id
+JOIN zones_restaurant zr ON r.id = zr.restaurant_id
+JOIN zones z ON z.id = zr.zone_id
+LEFT JOIN (
+    SELECT hsl.livraison_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livraison_id) *
+        FROM historique_statut_livraison
+        ORDER BY livraison_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livraison sl ON hsl.statut_id = sl.id
+) sl ON sl.livraison_id = l.id
+GROUP BY l.id, lr.nom, r.nom, z.nom, sl.appellation;
+
+--view livreur-detail
+CREATE OR REPLACE VIEW v_livreurs_detail AS
+SELECT
+    l.*,
+    z.nom AS secteur,
+    s.appellation AS statut
+FROM livreurs l
+LEFT JOIN zones_livreurs zl ON zl.livreur_id = l.id
+LEFT JOIN zones z ON z.id = zl.zone_id
+LEFT JOIN (
+    SELECT hsl.livreur_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livreur_id) *
+        FROM historique_statut_livreur
+        ORDER BY livreur_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livreur sl ON hsl.statut_id = sl.id
+) s ON s.livreur_id = l.id;
+
+--view restaurant-detail
+CREATE OR REPLACE VIEW v_restaurants_detail AS
+SELECT
+    r.*,
+    c.valeur as commission,
+    s.appellation as statut,
+    z.nom as secteur
+FROM restaurants r
+LEFT JOIN commissions c ON c.restaurant_id = r.id
+LEFT JOIN (
+    SELECT DISTINCT ON (restaurant_id) restaurant_id, statut_id
+    FROM historique_statut_restaurant
+    ORDER BY restaurant_id, mis_a_jour_le DESC, id DESC
+) hsr ON hsr.restaurant_id = r.id
+LEFT JOIN statut_restaurant s ON s.id = hsr.statut_id
+LEFT JOIN zones_restaurant zr ON zr.restaurant_id = r.id
+LEFT JOIN zones z ON z.id = zr.zone_id;
+
+--view livraisons-detail
+CREATE OR REPLACE VIEW v_livraisons_detail AS
+SELECT
+    l.id,
+    l.livreur_id,
+    l.commande_id,
+    l.attribue_le,
+    lr.nom AS livreur_nom,
+    r.nom AS restaurant_nom,
+    z.nom AS secteur,
+    sl.appellation AS statut,
+    SUM(cr.quantite * rp.prix) AS total_commande
+FROM livraisons l
+JOIN livreurs lr ON l.livreur_id = lr.id
+JOIN commandes c ON l.commande_id = c.id
+JOIN commande_repas cr ON c.id = cr.commande_id
+JOIN repas rp ON cr.repas_id = rp.id
+JOIN repas_restaurant rr ON rp.id = rr.repas_id
+JOIN restaurants r ON rr.restaurant_id = r.id
+JOIN zones_restaurant zr ON r.id = zr.restaurant_id
+JOIN zones z ON z.id = zr.zone_id
+LEFT JOIN (
+    SELECT hsl.livraison_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livraison_id) *
+        FROM historique_statut_livraison
+        ORDER BY livraison_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livraison sl ON hsl.statut_id = sl.id
+) sl ON sl.livraison_id = l.id
+WHERE l.id = %s
+GROUP BY l.id, lr.nom, r.nom, z.nom, sl.appellation;
+
+--restaurant-orders
+CREATE OR REPLACE VIEW v_restaurant_orders AS
+SELECT
+    c.id,
+    c.cree_le,
+    cl.nom AS client_nom,
+    r.id AS restaurant_id
+FROM commandes c
+JOIN clients cl ON cl.id = c.client_id
+JOIN commande_repas cr ON cr.commande_id = c.id
+JOIN repas_restaurant rr ON rr.repas_id = cr.repas_id
+JOIN restaurants r ON r.id = rr.restaurant_id
+GROUP BY c.id, c.cree_le, cl.nom, r.id;
+
+--view restaurant-commandes-en-cours
+CREATE OR REPLACE VIEW v_restaurant_commandes_en_cours AS
+SELECT
+    rr.restaurant_id,
+    COUNT(DISTINCT c.id) AS nb
+FROM commandes c
+JOIN commande_repas cr ON cr.commande_id = c.id
+JOIN repas r ON r.id = cr.repas_id
+JOIN repas_restaurant rr ON rr.repas_id = r.id
+WHERE c.id IN (
+    SELECT hsc.commande_id
+    FROM historique_statut_commande hsc
+    JOIN statut_commande sc ON sc.id = hsc.statut_id
+    WHERE sc.appellation IN ('En attente', 'En cours')
+)
+GROUP BY rr.restaurant_id;
+
+--view restaurant-status-history
+CREATE OR REPLACE VIEW v_restaurant_status_history AS
+SELECT 
+    h.id, h.restaurant_id, h.statut_id, h.mis_a_jour_le,
+    sr.appellation as statut_nom
+FROM historique_statut_restaurant h
+JOIN statut_restaurant sr ON h.statut_id = sr.id;
+
+
+-- Vue pour le total brut et le nombre de commandes livrées par restaurant et par jour
+CREATE OR REPLACE VIEW v_restaurant_financial_daily AS
+SELECT
+    rr.restaurant_id,
+    DATE(c.cree_le) AS jour,
+    COALESCE(SUM(cr.quantite * rp.prix), 0) AS total,
+    COUNT(DISTINCT c.id) AS nb_commandes
+FROM commandes c
+JOIN commande_repas cr ON cr.commande_id = c.id
+JOIN repas rp ON rp.id = cr.repas_id
+JOIN repas_restaurant rr ON rr.repas_id = rp.id
+JOIN livraisons l ON l.commande_id = c.id
+JOIN (
+    SELECT hsl.livraison_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livraison_id) *
+        FROM historique_statut_livraison
+        ORDER BY livraison_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livraison sl ON hsl.statut_id = sl.id
+) latest_status ON latest_status.livraison_id = l.id
+WHERE latest_status.appellation = 'Livree'
+GROUP BY rr.restaurant_id, DATE(c.cree_le);
+
+-- Vue pour le total brut et le nombre de commandes livrées par restaurant et par mois
+CREATE OR REPLACE VIEW v_restaurant_financial_monthly AS
+SELECT
+    rr.restaurant_id,
+    TO_CHAR(DATE_TRUNC('month', c.cree_le), 'MM/YYYY') AS mois,
+    COALESCE(SUM(cr.quantite * rp.prix), 0) AS total,
+    COUNT(DISTINCT c.id) AS nb_commandes
+FROM commandes c
+JOIN commande_repas cr ON cr.commande_id = c.id
+JOIN repas rp ON rp.id = cr.repas_id
+JOIN repas_restaurant rr ON rr.repas_id = rp.id
+JOIN livraisons l ON l.commande_id = c.id
+JOIN (
+    SELECT hsl.livraison_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livraison_id) *
+        FROM historique_statut_livraison
+        ORDER BY livraison_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livraison sl ON hsl.statut_id = sl.id
+) latest_status ON latest_status.livraison_id = l.id
+WHERE latest_status.appellation = 'Livree'
+GROUP BY rr.restaurant_id, DATE_TRUNC('month', c.cree_le);
+
+-- Vue pour le total brut et le nombre de commandes livrées sur une période
+CREATE OR REPLACE VIEW v_restaurant_financial_period AS
+SELECT
+    rr.restaurant_id,
+    COALESCE(SUM(cr.quantite * rp.prix), 0) AS total_brut,
+    COUNT(DISTINCT c.id) AS nb_commandes
+FROM commandes c
+JOIN commande_repas cr ON cr.commande_id = c.id
+JOIN repas rp ON rp.id = cr.repas_id
+JOIN repas_restaurant rr ON rr.repas_id = rp.id
+JOIN livraisons l ON l.commande_id = c.id
+JOIN (
+    SELECT hsl.livraison_id, sl.appellation
+    FROM (
+        SELECT DISTINCT ON (livraison_id) *
+        FROM historique_statut_livraison
+        ORDER BY livraison_id, mis_a_jour_le DESC, id DESC
+    ) hsl
+    JOIN statut_livraison sl ON hsl.statut_id = sl.id
+) latest_status ON latest_status.livraison_id = l.id
+WHERE latest_status.appellation = 'Livree'
+GROUP BY rr.restaurant_id;
