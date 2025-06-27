@@ -5,176 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Back-Office Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-orange: #e67e22;
-            --dark-orange: #d35400;
-            --bg-dark: #1a1a1a;
-            --text-light: #ffffff;
-            --text-gray: #d1d1d1;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-        }
-
-        /* Header and Navigation */
-        header {
-            background-color: #000000;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-        }
-
-        .logo img {
-            width: 40px;
-            margin-right: 0.5rem;
-        }
-
-        .logo span {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-orange);
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 2rem;
-        }
-
-        nav ul li a {
-            color: var(--text-light);
-            text-decoration: none;
-            font-size: 1.1rem;
-            transition: color 0.3s;
-        }
-
-        nav ul li a:hover {
-            color: var(--primary-orange);
-        }
-
-        /* Filter Section */
-        .filters {
-            padding: 2rem;
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .filters select, .filters button {
-            padding: 0.5rem;
-            border: none;
-            border-radius: 5px;
-            background-color: #333;
-            color: var(--text-light);
-            font-size: 1rem;
-        }
-
-        .filters button {
-            background-color: var(--primary-orange);
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .filters button:hover {
-            background-color: var(--dark-orange);
-        }
-
-        /* Charts */
-        .charts {
-            padding: 2rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            justify-content: center;
-        }
-
-        .chart-container {
-            width: 100%;
-            max-width: 600px;
-            background-color: #222;
-            padding: 1rem;
-            border-radius: 10px;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: #222;
-            margin: 10% auto;
-            padding: 2rem;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 500px;
-            max-height: 70vh;
-            overflow-y: auto;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(0); }
-        }
-
-        .modal-content ul {
-            list-style: none;
-        }
-
-        .modal-content li {
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .modal-content li:hover {
-            background-color: var(--primary-orange);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .filters {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .charts {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -235,13 +65,14 @@
 
         async function fetchZones() {
             const response = await fetch('/zones/');
-            return awaitCommitment
+            return await response.json();
+        }
 
         async function fetchStats() {
             const base = document.getElementById('base-filter').value;
             const temporal = document.getElementById('temporal-filter').value;
             const content = document.getElementById('content-filter').value;
-            const selectedId = document.getElementById('base-filter').value !== 'general' ? 
+            const selectedId = document.getElementById('base-filter').value !== 'general' ?
                 document.getElementById('base-filter').value : null;
             const general = document.getElementById('base-filter').value === 'general';
 
@@ -329,7 +160,6 @@
             });
         }
 
-        // Close modal when clicking outside
         document.getElementById('selectionModal').onclick = function(e) {
             if (e.target === this) this.style.display = 'none';
         };

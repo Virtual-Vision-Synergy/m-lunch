@@ -1,14 +1,28 @@
 import psycopg2.errors
-from typing import Optional, Dict, List, Any
+from typing import Optional, List, Dict, Any
 from database.db import execute_query, fetch_query, fetch_one
 
 class Zone:
-    """Classe représentant une zone de livraison dans le système."""
+    def __init__(
+        self,
+        id: Optional[int] = None,
+        nom: Optional[str] = None,
+        description: Optional[str] = None,
+        zone: Optional[str] = None  # WKT string "POLYGON(...)"
+    ):
+        self.id = id
+        self.nom = nom
+        self.description = description
+        self.zone = zone  # WKT polygon string
+        self.historique_statut: Optional[List[Dict[str, Any]]] = None
 
     @staticmethod
-    def create(nom, description, coordinates, initial_statut_id):
-        """Crée une nouvelle zone avec son historique et statut initial."""
-        # Validation des entrées
+    def Create(
+        nom: str,
+        description: str,
+        coordinates: List[List[float]],  # [[lon, lat], ...] minimum 3 points
+        initial_statut_id: int
+    ):
         if not isinstance(nom, str) or len(nom) > 100 or not nom.strip():
             return {"error": "Nom de zone invalide"}
         if not isinstance(description, str) or len(description) > 100:
@@ -18,12 +32,9 @@ class Zone:
         if not isinstance(coordinates, list) or len(coordinates) < 3:
             return {"error": "Coordonnées du polygone invalides (minimum 3 points)"}
 
-        # Démarrer une transaction
         try:
-            # Convertir les coordonnées en format WKT pour PostgreSQL
-            polygon_wkt = "POLYGON((" + ",".join([f"{lon} {lat}" for lon, lat in coordinates]) + "))"
+            polygon_wkt = "POLYGON((" + ",".join(f"{lon} {lat}" for lon, lat in coordinates) + "))"
 
-            # Insérer la zone
             query_zone = """
                 INSERT INTO zones (nom, description, zone)
                 VALUES (%s, %s, ST_GeomFromText(%s, 4326))
@@ -31,252 +42,185 @@ class Zone:
             """
             result_zone, error = fetch_one(query_zone, (nom, description, polygon_wkt))
             if error:
-                return {"error": f"Erreur lors de la création de la zone : {str(error)}"}
+                if isinstance(error, psycopg2.errors.UniqueViolation):
+                    return {"error": "Zone déjà existante"}
+                return {"error": f"Erreur création zone : {str(error)}"}
             if not result_zone:
                 return {"error": "Échec de la création de la zone"}
 
-            zone_id = result_zone['id']
+            zone_id = result_zone["id"]
 
-            # Vérifier si le statut existe
-            query_statut = """
-                SELECT id FROM statut_zone WHERE id = %s
-            """
-            result_statut, error = fetch_one(query_statut, (initial_statut_id,))
-            if error or not result_statut:
+            query_statut = "SELECT id FROM statut_zone WHERE id = %s"
+            statut_res, error = fetch_one(query_statut, (initial_statut_id,))
+            if error or not statut_res:
                 return {"error": "Statut zone non trouvé"}
 
-            # Insérer dans l'historique
             query_historique = """
                 INSERT INTO historique_statut_zone (zone_id, statut_id)
                 VALUES (%s, %s)
                 RETURNING id, zone_id, statut_id, mis_a_jour_le
             """
-            result_historique, error = fetch_one(query_historique, (zone_id, initial_statut_id))
-            if error:
-                return {"error": f"Erreur lors de la création de l'historique : {str(error)}"}
-            if not result_historique:
-                return {"error": "Échec de la création de l'historique"}
+            hist_res, error = fetch_one(query_historique, (zone_id, initial_statut_id))
+            if error or not hist_res:
+                return {"error": f"Erreur création historique statut : {str(error)}"}
 
-            # Retourner les informations complètes
-            return {
-                "zone": dict(result_zone),
-                "historique": dict(result_historique)
-            }
+            zone = Zone(**result_zone)
+            zone.historique_statut = [dict(hist_res)]
+            return zone
 
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_by_id(zone_id):
-        """
-        Récupère une zone par son ID avec son historique complet des statuts.
-        
-        Args:
-            zone_id (int): L'ID de la zone à récupérer.
-        
-        Returns:
-            dict: Dictionnaire avec:
-                - 'zone': les infos de la zone
-                - 'statuts': liste des statuts historiques
-                En cas d'erreur, retourne un dictionnaire avec une clé 'error'.
-        """
+    def GetById(zone_id: int):
         if not isinstance(zone_id, int) or zone_id <= 0:
             return {"error": "ID zone invalide"}
 
         try:
-            # Requête pour les infos de la zone
             query_zone = """
                 SELECT 
-                    z.id, z.nom, z.description, ST_AsText(z.zone) as zone,
-                    sz.appellation as statut_actuel
+                    z.id, z.nom, z.description, ST_AsText(z.zone) as zone
                 FROM zones z
-                LEFT JOIN (
-                    SELECT zone_id, statut_id
-                    FROM historique_statut_zone
-                    WHERE id = (
-                        SELECT MAX(id) 
-                        FROM historique_statut_zone 
-                        WHERE zone_id = %s
-                    )
-                ) latest ON z.id = latest.zone_id
-                LEFT JOIN statut_zone sz ON latest.statut_id = sz.id
                 WHERE z.id = %s
             """
-            
-            # Requête pour l'historique des statuts
-            query_historique = """
-                SELECT 
-                    h.id, h.statut_id, h.mis_a_jour_le,
-                    sz.appellation as statut_nom
+            zone_res, error = fetch_one(query_zone, (zone_id,))
+            if error:
+                return {"error": str(error)}
+            if not zone_res:
+                return None
+
+            query_hist = """
+                SELECT h.id, h.statut_id, h.mis_a_jour_le, sz.appellation
                 FROM historique_statut_zone h
                 JOIN statut_zone sz ON h.statut_id = sz.id
                 WHERE h.zone_id = %s
                 ORDER BY h.mis_a_jour_le DESC
             """
-
-            # Exécution des requêtes
-            zone, error = fetch_one(query_zone, (zone_id, zone_id))
-            if error or not zone:
-                return {"error": "Zone non trouvée" if not error else f"Erreur : {str(error)}"}
-            
-            historiques, error = fetch_query(query_historique, (zone_id,))
+            histos, error = fetch_query(query_hist, (zone_id,))
             if error:
-                return {"error": f"Erreur historique : {str(error)}"}
+                return {"error": str(error)}
 
-            # Formatage des résultats
-            result = {
-                "zone": dict(zone),
-                "statuts": [dict(h) for h in historiques] if historiques else []
-            }
-            
-            return result
+            zone = Zone(**zone_res)
+            zone.historique_statut = [dict(h) for h in histos] if histos else []
+            return zone
 
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_all() -> List[Dict[str, Any]]:
-            """Récupère toutes les zones."""
-            query = """
-                SELECT id, nom, description, ST_AsText(zone) as zone
-                FROM zones
-                ORDER BY nom
-            """
-            results, error = fetch_query(query)
-            if error:
-                return [{"error": f"Erreur lors de la récupération : {str(error)}"}]
-            return [dict(row) for row in results]
+    def GetAll() -> List["Zone"]:
+        query = """
+            SELECT id, nom, description, ST_AsText(zone) as zone
+            FROM zones
+            ORDER BY nom
+        """
+        results, error = fetch_query(query)
+        if error:
+            return [{"error": str(error)}]
+        return [Zone(**row) for row in results]
 
-    @staticmethod
-    def update(zone_id, statut_id=None, nom=None, description=None, coordinates=None):
-        """
-        Met à jour une zone et son historique de statut.
-        
-        Args:
-            zone_id (int): ID de la zone à mettre à jour
-            statut_id (int, optional): Nouveau statut ID
-            nom (str, optional): Nouveau nom (100 caractères max)
-            description (str, optional): Nouvelle description (100 caractères max)
-            coordinates (list, optional): Liste de tuples (longitude, latitude) pour le polygone
-        
-        Returns:
-            dict: Dictionnaire avec les données mises à jour ou message d'erreur
-        """
-        # Validation des paramètres
-        if not isinstance(zone_id, int) or zone_id <= 0:
+    def Update(
+        self,
+        statut_id: Optional[int] = None,
+        nom: Optional[str] = None,
+        description: Optional[str] = None,
+        coordinates: Optional[List[List[float]]] = None
+    ):
+        if not self.id or self.id <= 0:
             return {"error": "ID zone invalide"}
+
         if statut_id is not None and (not isinstance(statut_id, int) or statut_id <= 0):
             return {"error": "ID statut invalide"}
+
         if nom is not None and (not isinstance(nom, str) or len(nom) > 100):
             return {"error": "Nom invalide (100 caractères max)"}
+
         if description is not None and (not isinstance(description, str) or len(description) > 100):
             return {"error": "Description invalide (100 caractères max)"}
-        if coordinates is not None and (not isinstance(coordinates, list) or len(coordinates) < 3):
-            return {"error": "Coordonnées invalides (minimum 3 points)"}
+
+        if coordinates is not None:
+            if not isinstance(coordinates, list) or len(coordinates) < 3:
+                return {"error": "Coordonnées invalides (minimum 3 points)"}
 
         try:
-            # Vérifier si la zone existe
-            query_check_zone = "SELECT id FROM zones WHERE id = %s"
-            result_check, error = fetch_one(query_check_zone, (zone_id,))
-            if error or not result_check:
+            check_q = "SELECT id FROM zones WHERE id = %s"
+            res_check, error = fetch_one(check_q, (self.id,))
+            if error or not res_check:
                 return {"error": "Zone non trouvée"}
 
-            # Vérifier si le statut existe (si fourni)
             if statut_id is not None:
-                query_check_statut = "SELECT id FROM statut_zone WHERE id = %s"
-                result_statut, error = fetch_one(query_check_statut, (statut_id,))
-                if error or not result_statut:
+                check_statut_q = "SELECT id FROM statut_zone WHERE id = %s"
+                res_statut, error = fetch_one(check_statut_q, (statut_id,))
+                if error or not res_statut:
                     return {"error": "Statut zone non trouvé"}
 
-            # Préparation de la géométrie
-            zone_geom = None
+            zone_wkt = None
             if coordinates is not None:
-                polygon_wkt = "POLYGON((" + ",".join(f"{lon} {lat}" for lon, lat in coordinates) + "))"
-                zone_geom = f"ST_GeomFromText('{polygon_wkt}', 4326)"
+                zone_wkt = "POLYGON((" + ",".join(f"{lon} {lat}" for lon, lat in coordinates) + "))"
 
-            # Mettre à jour la zone
-            query_update = """
+            update_q = """
                 UPDATE zones
-                SET 
+                SET
                     nom = COALESCE(%s, nom),
                     description = COALESCE(%s, description),
-                    zone = CASE WHEN %s IS NULL THEN zone ELSE %s::geography END
+                    zone = CASE WHEN %s IS NULL THEN zone ELSE ST_GeomFromText(%s, 4326) END
                 WHERE id = %s
                 RETURNING id, nom, description, ST_AsText(zone) as zone
             """
-            result_zone, error = fetch_one(query_update, (
-                nom, description, 
-                zone_geom, zone_geom, 
-                zone_id
+            res_upd, error = fetch_one(update_q, (
+                nom, description,
+                zone_wkt, zone_wkt,
+                self.id
             ))
             if error:
-                return {"error": f"Erreur lors de la mise à jour : {str(error)}"}
+                return {"error": f"Erreur mise à jour zone : {str(error)}"}
 
-            # Mettre à jour l'historique si statut changé
-            result_historique = None
+            self.__init__(**res_upd)
+
+            hist_res = None
             if statut_id is not None:
-                query_historique = """
+                hist_q = """
                     INSERT INTO historique_statut_zone (zone_id, statut_id)
                     VALUES (%s, %s)
                     RETURNING id, zone_id, statut_id, mis_a_jour_le
                 """
-                result_historique, error = fetch_one(query_historique, (zone_id, statut_id))
+                hist_res, error = fetch_one(hist_q, (self.id, statut_id))
                 if error:
-                    return {"error": f"Erreur historique : {str(error)}"}
+                    return {"error": f"Erreur insertion historique statut : {str(error)}"}
 
-            # Formatage du résultat
-            response = {
-                "zone": dict(result_zone) if result_zone else None,
-                "historique": dict(result_historique) if result_historique else None
-            }
-
-            return response
+            self.historique_statut = [dict(hist_res)] if hist_res else None
+            return self
 
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
-    @staticmethod
-    def delete(zone_id, statut_id):
-        """
-        Marque une zone comme supprimée en mettant à jour son statut dans l'historique.
-        
-        Args:
-            zone_id (int): ID de la zone à marquer comme supprimée
-            statut_id (int): ID du statut "supprimé" ou "inactif"
-        
-        Returns:
-            dict: Résultat de la mise à jour ou message d'erreur
-        """
-        # Validation des paramètres
-        if not isinstance(zone_id, int) or zone_id <= 0:
+    def Delete(self, statut_id: int):
+        if not self.id or self.id <= 0:
             return {"error": "ID zone invalide"}
         if not isinstance(statut_id, int) or statut_id <= 0:
             return {"error": "ID statut invalide"}
 
         try:
-            # Vérifier si la zone existe
             query_check_zone = "SELECT id FROM zones WHERE id = %s"
-            zone_exists, error = fetch_one(query_check_zone, (zone_id,))
+            zone_exists, error = fetch_one(query_check_zone, (self.id,))
             if error or not zone_exists:
                 return {"error": "Zone non trouvée"}
 
-            # Vérifier si le statut existe
             query_check_statut = "SELECT id FROM statut_zone WHERE id = %s"
             statut_exists, error = fetch_one(query_check_statut, (statut_id,))
             if error or not statut_exists:
                 return {"error": "Statut zone non trouvé"}
 
-            # Mettre à jour l'historique avec le nouveau statut
             query = """
                 INSERT INTO historique_statut_zone (zone_id, statut_id)
                 VALUES (%s, %s)
                 RETURNING id, zone_id, statut_id, mis_a_jour_le
             """
-            result, error = fetch_one(query, (zone_id, statut_id))
+            result, error = fetch_one(query, (self.id, statut_id))
             if error:
-                return {"error": f"Erreur lors de la mise à jour du statut : {str(error)}"}
-            
-            return dict(result) if result else None
+                return {"error": str(error)}
+
+            return {"success": True, "historique": dict(result)} if result else {"success": False}
 
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}

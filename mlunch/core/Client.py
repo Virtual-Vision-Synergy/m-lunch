@@ -2,18 +2,24 @@ import psycopg2.errors
 from database.db import execute_query, fetch_query, fetch_one
 
 class Client:
-    """Classe représentant un client dans le système."""
+    def __init__(self, id=None, email=None, mot_de_passe=None, contact=None, prenom=None, nom=None, date_inscri=None):
+        self.id = id
+        self.email = email
+        self.mot_de_passe = mot_de_passe
+        self.contact = contact
+        self.prenom = prenom
+        self.nom = nom
+        self.date_inscri = date_inscri
 
     @staticmethod
-    def create(email, mot_de_passe, contact=None, prenom=None, nom=None):
-        """Crée un client. Retourne les données du client ou une erreur."""
+    def Create(email, mot_de_passe, contact=None, prenom=None, nom=None):
         if not email or not mot_de_passe:
             return {"error": "Email et mot de passe requis"}
 
         query = """
             INSERT INTO clients (email, mot_de_passe, contact, prenom, nom)
             VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, email, contact, prenom, nom
+            RETURNING id, email, mot_de_passe, contact, prenom, nom, date_inscri
         """
         result, error = fetch_one(query, (email, mot_de_passe, contact, prenom, nom))
         if error:
@@ -22,57 +28,52 @@ class Client:
             return {"error": str(error)}
         if not result:
             return {"error": "Échec de la création"}
-        return dict(result)
+        return Client(**result)
 
     @staticmethod
-    def get_by_id(client_id):
-        """Récupère un client par son ID. Retourne None si non trouvé."""
+    def GetById(client_id):
         if not client_id or client_id <= 0:
             return {"error": "ID invalide"}
 
         query = """
-            SELECT id, email, contact, prenom, nom
+            SELECT id, email, mot_de_passe, contact, prenom, nom, date_inscri
             FROM clients
             WHERE id = %s
         """
         result, error = fetch_one(query, (client_id,))
         if error:
             return {"error": str(error)}
-        return dict(result) if result else None
+        return Client(**result) if result else None
 
     @staticmethod
-    def get_by_email(email):
-        """Récupère un client par son email. Retourne None si non trouvé."""
+    def GetByEmail(email):
         if not email:
             return {"error": "Email invalide"}
 
         query = """
-            SELECT id, email, contact, prenom, nom
+            SELECT id, email, mot_de_passe, contact, prenom, nom, date_inscri
             FROM clients
             WHERE email = %s
         """
         result, error = fetch_one(query, (email,))
         if error:
             return {"error": str(error)}
-        return dict(result) if result else None
+        return Client(**result) if result else None
 
     @staticmethod
-    def get_all():
-        """Récupère tous les clients."""
+    def GetAll():
         query = """
-            SELECT id, email, contact, prenom, nom
+            SELECT id, email, mot_de_passe, contact, prenom, nom, date_inscri
             FROM clients
             ORDER BY nom, prenom
         """
         results, error = fetch_query(query)
         if error:
             return [{"error": str(error)}]
-        return [dict(row) for row in results]
+        return [Client(**row) for row in results]
 
-    @staticmethod
-    def update(client_id, email=None, mot_de_passe=None, contact=None, prenom=None, nom=None):
-        """Met à jour un client. Retourne les données mises à jour ou None si non trouvé."""
-        if not client_id or client_id <= 0:
+    def Update(self):
+        if not self.id or self.id <= 0:
             return {"error": "ID invalide"}
 
         query = """
@@ -83,19 +84,27 @@ class Client:
                 prenom = COALESCE(%s, prenom),
                 nom = COALESCE(%s, nom)
             WHERE id = %s
-            RETURNING id, email, contact, prenom, nom
+            RETURNING id, email, mot_de_passe, contact, prenom, nom, date_inscri
         """
-        result, error = fetch_one(query, (email, mot_de_passe, contact, prenom, nom, client_id))
+        result, error = fetch_one(query, (
+            self.email,
+            self.mot_de_passe,
+            self.contact,
+            self.prenom,
+            self.nom,
+            self.id
+        ))
         if error:
             if isinstance(error, psycopg2.errors.UniqueViolation):
                 return {"error": "Email déjà utilisé"}
             return {"error": str(error)}
-        return dict(result) if result else None
+        if result:
+            self.__init__(**result)
+            return self
+        return None
 
-    @staticmethod
-    def delete(client_id):
-        """Supprime un client. Retourne le statut de l'opération."""
-        if not client_id or client_id <= 0:
+    def Delete(self):
+        if not self.id or self.id <= 0:
             return {"error": "ID invalide"}
 
         query = """
@@ -103,7 +112,7 @@ class Client:
             WHERE id = %s
             RETURNING id
         """
-        result, error = fetch_one(query, (client_id,))
+        result, error = fetch_one(query, (self.id,))
         if error:
             return {"error": str(error)}
-        return {"success": bool(result), "id": client_id}
+        return {"success": bool(result), "id": self.id}

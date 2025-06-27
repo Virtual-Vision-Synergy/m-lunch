@@ -1,65 +1,50 @@
 import psycopg2.errors
 from typing import Optional, Dict, List, Any
-from database.db import execute_query, fetch_query, fetch_one
+from database.db import fetch_query, fetch_one
 
 class Entite:
-    """Classe représentant une entité dans le système."""
+    def __init__(self, id=None, nom=None):
+        self.id = id
+        self.nom = nom
 
     @staticmethod
-    def create(nom):
-        """Crée une nouvelle entité et enregistre dans l'historique. Retourne les données insérées ou un message d'erreur."""
+    def Create(nom):
         if nom is not None and (not isinstance(nom, str) or len(nom) > 100):
             return {"error": "Nom invalide : doit être une chaîne de 100 caractères maximum"}
 
-        # Vérifier si statut_id = 1 (Actif) existe
-        statut_id = 1  # Statut "Actif"
-        query_check_statut = """
-            SELECT id FROM statut_entite WHERE id = %s
-        """
-        result_check_statut, error = fetch_one(query_check_statut, (statut_id,))
-        if error or not result_check_statut:
+        statut_id = 1
+
+        queryCheckStatut = "SELECT id FROM statut_entite WHERE id = %s"
+        resultStatut, error = fetch_one(queryCheckStatut, (statut_id,))
+        if error or not resultStatut:
             return {"error": "Statut d'entité non trouvé"}
 
-        try:
-            # Insérer dans entites
-            query_entite = """
-                INSERT INTO entites (nom)
-                VALUES (%s)
-                RETURNING id, nom
-            """
-            result_entite, error = fetch_one(query_entite, (nom,))
-            if error:
-                return {"error": f"Erreur lors de la création de l'entité : {str(error)}"}
-            if not result_entite:
-                return {"error": "Échec de la création de l'entité"}
+        queryInsertEntite = """
+            INSERT INTO entites (nom)
+            VALUES (%s)
+            RETURNING id, nom
+        """
+        resultEntite, error = fetch_one(queryInsertEntite, (nom,))
+        if error:
+            return {"error": f"Erreur lors de la création de l'entité : {str(error)}"}
+        if not resultEntite:
+            return {"error": "Échec de la création de l'entité"}
 
-            # Insérer dans historique_statut_entite
-            query_historique = """
-                INSERT INTO historique_statut_entite (entite_id, statut_id)
-                VALUES (%s, %s)
-                RETURNING id, entite_id, statut_id, mis_a_jour_le
-            """
-            result_historique, error = fetch_one(query_historique, (result_entite['id'], statut_id))
-            if error:
-                return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
+        queryInsertHistorique = """
+            INSERT INTO historique_statut_entite (entite_id, statut_id)
+            VALUES (%s, %s)
+            RETURNING id, entite_id, statut_id, mis_a_jour_le
+        """
+        resultHistorique, error = fetch_one(queryInsertHistorique, (resultEntite["id"], statut_id))
+        if error:
+            return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
 
-            return {"data": {"entite": result_entite, "historique": result_historique}}
-        except Exception as e:
-            return {"error": f"Erreur inattendue : {str(e)}"}
+        entite = Entite(**resultEntite)
+        return {"entite": entite, "historique": resultHistorique}
 
     @staticmethod
-    def get_by_id(entite_id):
-        """
-        Récupère toutes les lignes d'une entité par son ID, incluant l'historique des statuts.
-        
-        Args:
-            entite_id (int): L'ID de l'entité à récupérer.
-        
-        Returns:
-            dict: Dictionnaire avec une clé 'data' contenant une liste de dictionnaires (chaque dictionnaire représente une ligne).
-                En cas d'erreur ou si aucune entité n'est trouvée, retourne un dictionnaire avec une clé 'error'.
-        """
-        if not isinstance(entite_id, int) or entite_id <= 0:
+    def GetById(entiteId):
+        if not isinstance(entiteId, int) or entiteId <= 0:
             return {"error": "ID invalide"}
 
         query = """
@@ -73,114 +58,85 @@ class Entite:
             WHERE e.id = %s
             ORDER BY h.mis_a_jour_le DESC
         """
-        try:
-            rows, error = fetch_query(query, (entite_id,), as_dict=True)
-            if error:
-                return {"error": f"Erreur lors de la récupération : {str(error)}"}
-            if not rows:
-                return {"error": "Aucune entité trouvée"}
-            return {"data": rows}
-        except Exception as e:
-            return {"error": f"Erreur inattendue : {str(e)}"}
+        rows, error = fetch_query(query, (entiteId,), as_dict=True)
+        if error:
+            return {"error": f"Erreur lors de la récupération : {str(error)}"}
+        if not rows:
+            return {"error": "Aucune entité trouvée"}
+        return {"data": rows}
 
     @staticmethod
-    def get_all() -> List[Dict[str, Any]]:
-        """Récupère toutes les entités."""
-        query = """
-            SELECT id, nom
-            FROM entites
-            ORDER BY nom
-        """
+    def GetAll():
+        query = "SELECT id, nom FROM entites ORDER BY nom"
         results, error = fetch_query(query)
         if error:
             return [{"error": f"Erreur lors de la récupération : {str(error)}"}]
-        return [dict(row) for row in results]
+        return [Entite(**row) for row in results]
 
     @staticmethod
-    def update(entite_id, statut_id, nom=None):
-        """Met à jour une entité et son historique. Retourne les données mises à jour ou None si non trouvé."""
-        if not isinstance(entite_id, int) or entite_id <= 0 or not isinstance(statut_id, int) or statut_id <= 0:
+    def Update(entiteId, statutId, nom=None):
+        if not isinstance(entiteId, int) or entiteId <= 0 or not isinstance(statutId, int) or statutId <= 0:
             return {"error": "ID invalide"}
         if nom is not None and (not isinstance(nom, str) or len(nom) > 100):
-            return {"error": "Nom invalide : doit être une chaîne de 100 caractères maximum"}
+            return {"error": "Nom invalide"}
 
-        # Vérifier si entite_id existe
-        query_check_entite = """
-            SELECT id FROM entites WHERE id = %s
-        """
-        result_check_entite, error = fetch_one(query_check_entite, (entite_id,))
-        if error or not result_check_entite:
+        checkEntiteQuery = "SELECT id FROM entites WHERE id = %s"
+        foundEntite, error = fetch_one(checkEntiteQuery, (entiteId,))
+        if error or not foundEntite:
             return {"error": "Entité non trouvée"}
 
-        # Vérifier si statut_id existe
-        query_check_statut = """
-            SELECT id FROM statut_entite WHERE id = %s
-        """
-        result_check_statut, error = fetch_one(query_check_statut, (statut_id,))
-        if error or not result_check_statut:
+        checkStatutQuery = "SELECT id FROM statut_entite WHERE id = %s"
+        foundStatut, error = fetch_one(checkStatutQuery, (statutId,))
+        if error or not foundStatut:
             return {"error": "Statut d'entité non trouvé"}
 
-        try:
-            # Mettre à jour la table entites
-            query_update_entite = """
-                UPDATE entites
-                SET nom = COALESCE(%s, nom)
-                WHERE id = %s
-                RETURNING id, nom
-            """
-            result_entite, error = fetch_one(query_update_entite, (nom, entite_id))
-            if error:
-                return {"error": f"Erreur lors de la mise à jour de l'entité : {str(error)}"}
-            if not result_entite:
-                return {"error": "Échec de la mise à jour de l'entité"}
+        queryUpdate = """
+            UPDATE entites
+            SET nom = COALESCE(%s, nom)
+            WHERE id = %s
+            RETURNING id, nom
+        """
+        resultEntite, error = fetch_one(queryUpdate, (nom, entiteId))
+        if error:
+            return {"error": f"Erreur lors de la mise à jour de l'entité : {str(error)}"}
+        if not resultEntite:
+            return {"error": "Échec de la mise à jour"}
 
-            # Insérer dans historique_statut_entite
-            query_historique = """
-                INSERT INTO historique_statut_entite (entite_id, statut_id)
-                VALUES (%s, %s)
-                RETURNING id, entite_id, statut_id, mis_a_jour_le
-            """
-            result_historique, error = fetch_one(query_historique, (result_entite['id'], statut_id))
-            if error:
-                return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
+        queryHistorique = """
+            INSERT INTO historique_statut_entite (entite_id, statut_id)
+            VALUES (%s, %s)
+            RETURNING id, entite_id, statut_id, mis_a_jour_le
+        """
+        resultHistorique, error = fetch_one(queryHistorique, (entiteId, statutId))
+        if error:
+            return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
 
-            return result_historique if result_historique else None
-        except Exception as e:
-            return {"error": f"Erreur inattendue : {str(e)}"}
+        return {"entite": Entite(**resultEntite), "historique": resultHistorique}
 
     @staticmethod
-    def delete(entite_id):
-        """Marque une entité comme inactive dans l'historique. Retourne les données mises à jour ou None si non trouvé."""
-        if not isinstance(entite_id, int) or entite_id <= 0:
+    def Delete(entiteId):
+        if not isinstance(entiteId, int) or entiteId <= 0:
             return {"error": "ID invalide"}
 
-        # Vérifier si entite_id existe
-        query_check_entite = """
-            SELECT id FROM entites WHERE id = %s
-        """
-        result_check_entite, error = fetch_one(query_check_entite, (entite_id,))
-        if error or not result_check_entite:
+        queryCheck = "SELECT id FROM entites WHERE id = %s"
+        found, error = fetch_one(queryCheck, (entiteId,))
+        if error or not found:
             return {"error": "Entité non trouvée"}
 
-        # Vérifier si statut_id = 2 (Inactif) existe
-        statut_id = 2  # Statut "Inactif"
-        query_check_statut = """
-            SELECT id FROM statut_entite WHERE id = %s
-        """
-        result_check_statut, error = fetch_one(query_check_statut, (statut_id,))
-        if error or not result_check_statut:
+        statutId = 2
+
+        checkStatutQuery = "SELECT id FROM statut_entite WHERE id = %s"
+        foundStatut, error = fetch_one(checkStatutQuery, (statutId,))
+        if error or not foundStatut:
             return {"error": "Statut d'entité non trouvé"}
 
-        try:
-            # Insérer dans historique_statut_entite
-            query_historique = """
-                INSERT INTO historique_statut_entite (entite_id, statut_id)
-                VALUES (%s, %s)
-                RETURNING id, entite_id, statut_id, mis_a_jour_le
-            """
-            result_historique, error = fetch_one(query_historique, (entite_id, statut_id))
-            if error:
-                return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
-            return result_historique if result_historique else None
-        except Exception as e:
-            return {"error": f"Erreur inattendue : {str(e)}"}
+        queryHistorique = """
+            INSERT INTO historique_statut_entite (entite_id, statut_id)
+            VALUES (%s, %s)
+            RETURNING id, entite_id, statut_id, mis_a_jour_le
+        """
+        resultHistorique, error = fetch_one(queryHistorique, (entiteId, statutId))
+        if error:
+            return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
+
+        return {"success": True, "historique": resultHistorique}

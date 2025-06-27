@@ -13,17 +13,17 @@ from django.db import connection
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-def test_create_client(request):
-
-        # Créer le client
-        result = Zone.delete(1,2)
-               
-        if 'error' in result:
-            messages.error(request, result['error'])
-        else:
-            #messages.success(request, f"Client créé avec succès : {result['email']}")
-            print(result)
-        return render(request, 'backoffice/index.html')
+# def test_create_client(request):
+#
+#         # Créer le client
+#         result = Zone.delete(1,2)
+#
+#         if 'error' in result:
+#             messages.error(request, result['error'])
+#         else:
+#             #messages.success(request, f"Client créé avec succès : {result['email']}")
+#             print(result)
+#         return render(request, 'backoffice/index.html')
 
 def PageAcceuil(request):
     return render(request, 'backoffice/PageAcceuil.html')
