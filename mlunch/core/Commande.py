@@ -129,6 +129,33 @@ class Commande:
     #         return {"error": "Échec de l'ajout du repas"}
     #     return dict(result)
 
+
+    @staticmethod
+    def get_commande_en_cours(user_id):
+        query = """
+            SELECT id FROM commandes
+            WHERE client_id = %s
+            ORDER BY cree_le DESC
+            LIMIT 1
+        """
+        result = fetch_one(query, (user_id,))
+        return result['id'] if result else None
+
+    @staticmethod
+    def choisir_livreur(zone_id):
+        query = """
+            SELECT livreur_id FROM zones_livreurs
+            WHERE zone_id = %s
+            ORDER BY mis_a_jour_le DESC
+            LIMIT 1
+        """
+        result = fetch_one(query, (zone_id,))
+        return result['livreur_id'] if result else None
+
+    @staticmethod
+    def vider_panier(commande_id):
+        query = "DELETE FROM commande_repas WHERE commande_id = %s"
+        execute_query(query, (commande_id,))
     
     @staticmethod
     def update(commande_id,statut_id):
