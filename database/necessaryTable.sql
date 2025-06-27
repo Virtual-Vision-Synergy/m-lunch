@@ -70,3 +70,9 @@ INSERT INTO statut_repas (appellation) VALUES
     ('Indisponible'),
     ('Retiré du menu');
 
+INSERT INTO types_repas (nom) VALUES
+    ('Petit-déjeuner'),
+    ('Déjeuner'),
+    ('Dîner'),
+    ('Collation'),
+    ('Goûter');

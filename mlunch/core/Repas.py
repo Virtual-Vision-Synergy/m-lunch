@@ -48,22 +48,23 @@ class Repas:
     #         return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def create(nom, description, image, type_id, prix):
-        """Crée un nouveau repas et enregistre dans l'historique. Retourne les données insérées ou un message d'erreur."""
-        # Validation des paramètres
-        if not isinstance(prix, (int, float)) or prix <= 0:
-            return {"error": "Prix invalide : doit être un nombre positif"}
-        if nom and (not isinstance(nom, str) or len(nom) > 100):
-            return {"error": "Nom invalide : doit être une chaîne de 100 caractères maximum"}
-        if description and not isinstance(description, str):
-            return {"error": "Description invalide : doit être une chaîne"}
-        if image and not isinstance(image, str):
-            return {"error": "Image invalide : doit être une chaîne"}
-        if type_id and (not isinstance(type_id, int) or type_id <= 0):
-            return {"error": "ID type invalide : doit être un entier positif"}
+    def CreateRepas(nom, type_id, prix, description=None, image=None, est_dispo=True):
+        """Crée un nouveau repas avec une disponibilité initiale. Retourne un dictionnaire avec les données ou une erreur."""
+        if not isinstance(nom, str) or not nom or len(nom) > 100:
+            return {"error": "Le nom doit être une chaîne non vide de 100 caractères maximum"}
+        if not isinstance(type_id, int) or type_id <= 0:
+            return {"error": "L'ID du type de repas doit être un entier positif"}
+        if not isinstance(prix, int) or prix <= 0:
+            return {"error": "Le prix doit être un entier positif"}
+        if description is not None and not isinstance(description, str):
+            return {"error": "La description doit être une chaîne"}
+        if image is not None and not isinstance(image, str):
+            return {"error": "L'image doit être une chaîne"}
+        if not isinstance(est_dispo, bool):
+            return {"error": "La disponibilité doit être un booléen"}
 
-        # Vérifier si type_id existe (si fourni)
-        if type_id:
+        try:
+            # Vérifier si le type de repas existe
             query_check_type = """
                 SELECT id FROM types_repas WHERE id = %s
             """
@@ -71,16 +72,6 @@ class Repas:
             if error or not result_check_type:
                 return {"error": "Type de repas non trouvé"}
 
-        # Vérifier si statut_id = 1 (Disponible) existe
-        statut_id = 1  # Statut "Disponible"
-        query_check_statut = """
-            SELECT id FROM statut_repas WHERE id = %s
-        """
-        result_check_statut, error = fetch_one(query_check_statut, (statut_id,))
-        if error or not result_check_statut:
-            return {"error": "Statut de repas non trouvé"}
-
-        try:
             # Insérer dans repas
             query_repas = """
                 INSERT INTO repas (nom, description, image, type_id, prix)
@@ -89,52 +80,44 @@ class Repas:
             """
             result_repas, error = fetch_one(query_repas, (nom, description, image, type_id, prix))
             if error:
+                if isinstance(error, psycopg2.errors.ForeignKeyViolation):
+                    return {"error": "Type de repas non trouvé"}
                 return {"error": f"Erreur lors de la création du repas : {str(error)}"}
             if not result_repas:
                 return {"error": "Échec de la création du repas"}
 
-            # Insérer dans historique_statut_repas
-            query_historique = """
-                INSERT INTO historique_statut_repas (repas_id, statut_id, nom, description, image, type_id, prix)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING id, repas_id, statut_id, nom, description, image, type_id, prix, mis_a_jour_le
+            # Insérer dans disponibilite_repas
+            query_disponibilite = """
+                INSERT INTO disponibilite_repas (repas_id, est_dispo)
+                VALUES (%s, %s)
+                RETURNING id, repas_id, est_dispo, mis_a_jour_le
             """
-            result_historique, error = fetch_one(query_historique, (
-                result_repas['id'], statut_id, nom, description, image, type_id, prix
-            ))
+            result_disponibilite, error = fetch_one(query_disponibilite, (result_repas['id'], est_dispo))
             if error:
-                return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
+                return {"error": f"Erreur lors de l'enregistrement de la disponibilité : {str(error)}"}
+            if not result_disponibilite:
+                return {"error": "Échec de l'enregistrement de la disponibilité"}
 
-            return {"data": {"repas": result_repas, "historique": result_historique}}
+            return {"repas": dict(result_repas), "disponibilite": dict(result_disponibilite)}
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
     
     @staticmethod
-    def get_by_id(repas_id):
-        """
-        Récupère toutes les lignes d'un repas par son ID, incluant l'historique des statuts.
-        
-        Args:
-            repas_id (int): L'ID du repas à récupérer.
-        
-        Returns:
-            dict: Dictionnaire avec une clé 'data' contenant une liste de dictionnaires (chaque dictionnaire représente une ligne).
-                En cas d'erreur ou si aucun repas n'est trouvé, retourne un dictionnaire avec une clé 'error'.
-        """
+    def GetRepasFromId(repas_id):
+        """Récupère un repas par son ID avec son historique de disponibilité. Retourne un dictionnaire ou une erreur."""
         if not isinstance(repas_id, int) or repas_id <= 0:
-            return {"error": "ID invalide"}
+            return {"error": "L'ID du repas doit être un entier positif"}
 
         query = """
             SELECT 
-                r.id AS repas_id, r.nom AS repas_nom, r.description AS repas_description, 
-                r.image AS repas_image, r.type_id AS repas_type_id, r.prix AS repas_prix,
-                h.id AS historique_id, h.statut_id, h.nom, h.description, h.image, h.type_id, h.prix, 
-                h.mis_a_jour_le, s.appellation AS statut_appellation
+                r.id AS repas_id, r.nom, r.description, r.image, r.type_id, r.prix,
+                t.nom AS type_nom,
+                d.id AS disponibilite_id, d.est_dispo, d.mis_a_jour_le
             FROM repas r
-            LEFT JOIN historique_statut_repas h ON r.id = h.repas_id
-            LEFT JOIN statut_repas s ON h.statut_id = s.id
+            LEFT JOIN types_repas t ON r.type_id = t.id
+            LEFT JOIN disponibilite_repas d ON r.id = d.repas_id
             WHERE r.id = %s
-            ORDER BY h.mis_a_jour_le DESC
+            ORDER BY d.mis_a_jour_le DESC
         """
         try:
             rows, error = fetch_query(query, (repas_id,), as_dict=True)
@@ -147,61 +130,72 @@ class Repas:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_all():
-        """Récupère tous les repas."""
+    def GetAllRepas():
+        """Récupère tous les repas avec leur disponibilité actuelle. Retourne une liste de dictionnaires ou une erreur."""
         query = """
-            SELECT id, nom, description, image, type_id, prix
-            FROM repas
-            ORDER BY nom
+            SELECT 
+                r.id, r.nom, r.description, r.image, r.type_id, r.prix,
+                t.nom AS type_nom,
+                d.est_dispo
+            FROM repas r
+            LEFT JOIN types_repas t ON r.type_id = t.id
+            LEFT JOIN (
+                SELECT repas_id, est_dispo
+                FROM disponibilite_repas
+                WHERE (repas_id, mis_a_jour_le) IN (
+                    SELECT repas_id, MAX(mis_a_jour_le)
+                    FROM disponibilite_repas
+                    GROUP BY repas_id
+                )
+            ) d ON r.id = d.repas_id
+            ORDER BY r.nom
         """
-        results, error = fetch_query(query)
-        if error:
-            return [{"error": f"Erreur lors de la récupération : {str(error)}"}]
-        return [dict(row) for row in results]
+        try:
+            results, error = fetch_query(query)
+            if error:
+                return {"error": f"Erreur lors de la récupération : {str(error)}"}
+            if not results:
+                return {"error": "Aucun repas trouvé"}
+            return [dict(row) for row in results]
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def update(repas_id, statut_id, nom=None, description=None, image=None, type_id=None, prix=None):
-        """Met à jour un repas et son historique. Retourne les données mises à jour ou None si non trouvé."""
-        # Validation des paramètres
-        if not isinstance(repas_id, int) or repas_id <= 0 or not isinstance(statut_id, int) or statut_id <= 0:
-            return {"error": "ID invalide"}
-        if prix is not None and (not isinstance(prix, (int, float)) or prix <= 0):
-            return {"error": "Prix invalide : doit être un nombre positif"}
-        if nom is not None and (not isinstance(nom, str) or len(nom) > 100):
-            return {"error": "Nom invalide : doit être une chaîne de 100 caractères maximum"}
-        if description is not None and not isinstance(description, str):
-            return {"error": "Description invalide : doit être une chaîne"}
-        if image is not None and not isinstance(image, str):
-            return {"error": "Image invalide : doit être une chaîne"}
+    def UpdateRepas(repas_id, type_id=None, prix=None, nom=None, description=None, image=None, est_dispo=None):
+        """Met à jour un repas et sa disponibilité. Retourne un dictionnaire avec les données ou une erreur."""
+        if not isinstance(repas_id, int) or repas_id <= 0:
+            return {"error": "L'ID du repas doit être un entier positif"}
         if type_id is not None and (not isinstance(type_id, int) or type_id <= 0):
-            return {"error": "ID type invalide : doit être un entier positif"}
-
-        # Vérifier si repas_id existe
-        query_check_repas = """
-            SELECT id FROM repas WHERE id = %s
-        """
-        result_check_repas, error = fetch_one(query_check_repas, (repas_id,))
-        if error or not result_check_repas:
-            return {"error": "Repas non trouvé"}
-
-        # Vérifier si statut_id existe
-        query_check_statut = """
-            SELECT id FROM statut_repas WHERE id = %s
-        """
-        result_check_statut, error = fetch_one(query_check_statut, (statut_id,))
-        if error or not result_check_statut:
-            return {"error": "Statut de repas non trouvé"}
-
-        # Vérifier si type_id existe (si fourni)
-        if type_id is not None:
-            query_check_type = """
-                SELECT id FROM types_repas WHERE id = %s
-            """
-            result_check_type, error = fetch_one(query_check_type, (type_id,))
-            if error or not result_check_type:
-                return {"error": "Type de repas non trouvé"}
+            return {"error": "L'ID du type de repas doit être un entier positif"}
+        if prix is not None and (not isinstance(prix, int) or prix <= 0):
+            return {"error": "Le prix doit être un entier positif"}
+        if nom is not None and (not isinstance(nom, str) or not nom or len(nom) > 100):
+            return {"error": "Le nom doit être une chaîne non vide de 100 caractères maximum"}
+        if description is not None and not isinstance(description, str):
+            return {"error": "La description doit être une chaîne"}
+        if image is not None and not isinstance(image, str):
+            return {"error": "L'image doit être une chaîne"}
+        if est_dispo is not None and not isinstance(est_dispo, bool):
+            return {"error": "La disponibilité doit être un booléen"}
 
         try:
+            # Vérifier si le repas existe
+            query_check_repas = """
+                SELECT id FROM repas WHERE id = %s
+            """
+            result_check_repas, error = fetch_one(query_check_repas, (repas_id,))
+            if error or not result_check_repas:
+                return {"error": "Repas non trouvé"}
+
+            # Vérifier si le type de repas existe (si fourni)
+            if type_id is not None:
+                query_check_type = """
+                    SELECT id FROM types_repas WHERE id = %s
+                """
+                result_check_type, error = fetch_one(query_check_type, (type_id,))
+                if error or not result_check_type:
+                    return {"error": "Type de repas non trouvé"}
+
             # Mettre à jour la table repas
             query_update_repas = """
                 UPDATE repas
@@ -215,39 +209,58 @@ class Repas:
             """
             result_repas, error = fetch_one(query_update_repas, (nom, description, image, type_id, prix, repas_id))
             if error:
+                if isinstance(error, psycopg2.errors.ForeignKeyViolation):
+                    return {"error": "Type de repas non trouvé"}
                 return {"error": f"Erreur lors de la mise à jour du repas : {str(error)}"}
             if not result_repas:
                 return {"error": "Échec de la mise à jour du repas"}
 
-            # Insérer dans historique_statut_repas
-            query_historique = """
-                INSERT INTO historique_statut_repas (repas_id, statut_id, nom, description, image, type_id, prix)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING id, repas_id, statut_id, nom, description, image, type_id, prix, mis_a_jour_le
-            """
-            result_historique, error = fetch_one(query_historique, (
-                result_repas['id'], statut_id, result_repas['nom'], result_repas['description'], 
-                result_repas['image'], result_repas['type_id'], result_repas['prix']
-            ))
-            if error:
-                return {"error": f"Erreur lors de l'enregistrement dans l'historique : {str(error)}"}
+            # Si est_dispo est fourni, mettre à jour la disponibilité
+            if est_dispo is not None:
+                query_disponibilite = """
+                    INSERT INTO disponibilite_repas (repas_id, est_dispo)
+                    VALUES (%s, %s)
+                    RETURNING id, repas_id, est_dispo, mis_a_jour_le
+                """
+                result_disponibilite, error = fetch_one(query_disponibilite, (repas_id, est_dispo))
+                if error:
+                    return {"error": f"Erreur lors de l'enregistrement de la disponibilité : {str(error)}"}
+                if not result_disponibilite:
+                    return {"error": "Échec de l'enregistrement de la disponibilité"}
+            else:
+                result_disponibilite = None
 
-            return result_historique if result_historique else None
+            return {"repas": dict(result_repas), "disponibilite": dict(result_disponibilite) if result_disponibilite else None}
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def delete(repas_id,statut_id):
-        """Met à jour un repas Retourne les données mises à jour ou None si non trouvé."""
-        if not repas_id or statut_id <= 0:
-            return {"error": "ID invalide"}
+    def DeleteRepas(repas_id):
+        """Marque un repas comme non disponible (est_dispo=False) dans l'historique de disponibilité. Retourne un dictionnaire ou une erreur."""
+        if not isinstance(repas_id, int) or repas_id <= 0:
+            return {"error": "L'ID du repas doit être un entier positif"}
 
-        query = """
-            insert into historique_statut_repas (repas_id,statut_id)
-            values(%s,%s) 
-            RETURNING id, repas_id, statut_id
-        """
-        result, error = fetch_one(query, (repas_id,statut_id))
-        if error:
-            return {"error": str(error)}
-        return result if result else None
+        try:
+            # Vérifier si le repas existe
+            query_check_repas = """
+                SELECT id FROM repas WHERE id = %s
+            """
+            result_check_repas, error = fetch_one(query_check_repas, (repas_id,))
+            if error or not result_check_repas:
+                return {"error": "Repas non trouvé"}
+
+            # Insérer dans disponibilite_repas avec est_dispo=False
+            query_disponibilite = """
+                INSERT INTO disponibilite_repas (repas_id, est_dispo)
+                VALUES (%s, %s)
+                RETURNING id, repas_id, est_dispo, mis_a_jour_le
+            """
+            result_disponibilite, error = fetch_one(query_disponibilite, (repas_id, False))
+            if error:
+                return {"error": f"Erreur lors de l'enregistrement de la disponibilité : {str(error)}"}
+            if not result_disponibilite:
+                return {"error": "Échec de l'enregistrement de la disponibilité"}
+
+            return dict(result_disponibilite)
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}

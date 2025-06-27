@@ -6,25 +6,26 @@ class Commande:
     """Classe représentant une commande dans le système."""
 
     @staticmethod
-    def create(client_id, initial_statut_id):
-        """Crée une nouvelle commande avec son historique et statut initial."""
+    def CreateCommande(client_id, point_recup_id, initial_statut_id):
+        """Crée une nouvelle commande avec son historique et statut initial. Retourne un dictionnaire avec les données ou une erreur."""
         if not isinstance(client_id, int) or client_id <= 0:
-            return {"error": "ID client invalide"}
+            return {"error": "L'ID du client doit être un entier positif"}
+        if not isinstance(point_recup_id, int) or point_recup_id <= 0:
+            return {"error": "L'ID du point de récupération doit être un entier positif"}
         if not isinstance(initial_statut_id, int) or initial_statut_id <= 0:
-            return {"error": "ID statut invalide"}
+            return {"error": "L'ID du statut doit être un entier positif"}
 
-        # Démarrer une transaction
         try:
             # Insérer la commande
             query_commande = """
-                INSERT INTO commandes (client_id)
-                VALUES (%s)
-                RETURNING id, client_id, cree_le
+                INSERT INTO commandes (client_id, point_recup_id)
+                VALUES (%s, %s)
+                RETURNING id, client_id, point_recup_id, cree_le
             """
-            result_commande, error = fetch_one(query_commande, (client_id,))
+            result_commande, error = fetch_one(query_commande, (client_id, point_recup_id))
             if error:
                 if isinstance(error, psycopg2.errors.ForeignKeyViolation):
-                    return {"error": "Client non trouvé"}
+                    return {"error": "Client ou point de récupération non trouvé"}
                 return {"error": f"Erreur lors de la création de la commande : {str(error)}"}
             if not result_commande:
                 return {"error": "Échec de la création de la commande"}
@@ -51,7 +52,6 @@ class Commande:
             if not result_historique:
                 return {"error": "Échec de la création de l'historique"}
 
-            # Retourner les informations complètes
             return {
                 "commande": dict(result_commande),
                 "historique": dict(result_historique)
@@ -61,24 +61,16 @@ class Commande:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_by_id(commande_id):
-        """
-        Récupère toutes les lignes d'une commande par son ID, incluant l'historique des statuts.
-        
-        Args:
-            commande_id (int): L'ID de la commande à récupérer.
-        
-        Returns:
-            dict: Dictionnaire avec une clé 'data' contenant une liste de dictionnaires (chaque dictionnaire représente une ligne).
-                En cas d'erreur ou si aucune commande n'est trouvée, retourne un dictionnaire avec une clé 'error'.
-        """
+    def GetCommandeFromId(commande_id):
+        """Récupère une commande par son ID avec son historique de statuts. Retourne un dictionnaire ou une erreur."""
         if not isinstance(commande_id, int) or commande_id <= 0:
-            return {"error": "ID invalide"}
+            return {"error": "L'ID de la commande doit être un entier positif"}
 
         query = """
-            SELECT c.id, c.client_id, c.cree_le, h.statut_id, h.mis_a_jour_le
+            SELECT c.id, c.client_id, c.point_recup_id, c.cree_le, h.statut_id, h.mis_a_jour_le, s.appellation
             FROM commandes c
             JOIN historique_statut_commande h ON c.id = h.commande_id
+            JOIN statut_commande s ON h.statut_id = s.id
             WHERE c.id = %s
             ORDER BY h.mis_a_jour_le DESC
         """
@@ -91,18 +83,20 @@ class Commande:
             return {"data": rows}
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
-
+   
     @staticmethod
-    def get_all():
-        """Récupère toutes les commandes."""
+    def GetAllCommandes():
+        """Récupère toutes les commandes. Retourne une liste de dictionnaires ou une erreur."""
         query = """
-            SELECT id, client_id, cree_le
+            SELECT id, client_id, point_recup_id, cree_le
             FROM commandes 
             ORDER BY cree_le DESC
         """
         results, error = fetch_query(query)
         if error:
-            return [{"error": f"Erreur lors de la récupération : {str(error)}"}]
+            return {"error": f"Erreur lors de la récupération : {str(error)}"}
+        if not results:
+            return {"error": "Aucune commande trouvée"}
         return [dict(row) for row in results]
 
     @staticmethod
@@ -131,33 +125,86 @@ class Commande:
 
     
     @staticmethod
-    def update(commande_id,statut_id):
-        """Met à jour un Commane. Retourne les données mises à jour ou None si non trouvé."""
-        if not commande_id or statut_id <= 0:
-            return {"error": "ID invalide"}
+    def UpdateCommande(commande_id, statut_id):
+        """Met à jour le statut d'une commande en ajoutant une entrée dans l'historique. Retourne les données ou une erreur."""
+        if not isinstance(commande_id, int) or commande_id <= 0:
+            return {"error": "L'ID de la commande doit être un entier positif"}
+        if not isinstance(statut_id, int) or statut_id <= 0:
+            return {"error": "L'ID du statut doit être un entier positif"}
 
-        query = """
-            insert into historique_statut_commande (commande_id,statut_id)
-            values(%s,%s) 
-            RETURNING id, commande_id, statut_id
-        """
-        result, error = fetch_one(query, (commande_id,statut_id))
-        if error:
-            return {"error": str(error)}
-        return result if result else None
+        try:
+            # Vérifier si la commande existe
+            query_commande = """
+                SELECT id FROM commandes WHERE id = %s
+            """
+            result_commande, error = fetch_one(query_commande, (commande_id,))
+            if error or not result_commande:
+                return {"error": "Commande non trouvée"}
+
+            # Vérifier si le statut existe
+            query_statut = """
+                SELECT id FROM statut_commande WHERE id = %s
+            """
+            result_statut, error = fetch_one(query_statut, (statut_id,))
+            if error or not result_statut:
+                return {"error": "Statut non trouvé"}
+
+            # Insérer dans l'historique
+            query_historique = """
+                INSERT INTO historique_statut_commande (commande_id, statut_id)
+                VALUES (%s, %s)
+                RETURNING id, commande_id, statut_id, mis_a_jour_le
+            """
+            result, error = fetch_one(query_historique, (commande_id, statut_id))
+            if error:
+                return {"error": f"Erreur lors de la mise à jour du statut : {str(error)}"}
+            if not result:
+                return {"error": "Échec de la mise à jour du statut"}
+            
+            return dict(result)
+        
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}
     
     @staticmethod
-    def delete(commande_id,statut_id):
-        """Met à jour un Commande Retourne les données mises à jour ou None si non trouvé."""
-        if not commande_id or statut_id <= 0:
-            return {"error": "ID invalide"}
+    def DeleteCommande(commande_id, statut_id):
+        """Marque une commande comme supprimée en ajoutant un statut dans l'historique. Retourne un dictionnaire avec les données ou une erreur."""
+        if not isinstance(commande_id, int) or commande_id <= 0:
+            return {"error": "L'ID de la commande doit être un entier positif"}
+        if not isinstance(statut_id, int) or statut_id <= 0:
+            return {"error": "L'ID du statut doit être un entier positif"}
 
-        query = """
-            insert into historique_statut_commande (commande_id,statut_id)
-            values(%s,%s) 
-            RETURNING id, commande_id, statut_id
-        """
-        result, error = fetch_one(query, (commande_id,statut_id))
-        if error:
-            return {"error": str(error)}
-        return result if result else None
+        try:
+            # Vérifier si la commande existe
+            query_commande = """
+                SELECT id FROM commandes WHERE id = %s
+            """
+            result_commande, error = fetch_one(query_commande, (commande_id,))
+            if error or not result_commande:
+                return {"error": "Commande non trouvée"}
+
+            # Vérifier si le statut existe
+            query_statut = """
+                SELECT id FROM statut_commande WHERE id = %s
+            """
+            result_statut, error = fetch_one(query_statut, (statut_id,))
+            if error or not result_statut:
+                return {"error": "Statut non trouvé"}
+
+            # Insérer dans l'historique pour marquer la suppression
+            query_historique = """
+                INSERT INTO historique_statut_commande (commande_id, statut_id)
+                VALUES (%s, %s)
+                RETURNING id, commande_id, statut_id, mis_a_jour_le
+            """
+            result, error = fetch_one(query_historique, (commande_id, statut_id))
+            if error:
+                return {"error": f"Erreur lors de l'ajout du statut : {str(error)}"}
+            if not result:
+                return {"error": "Échec de l'ajout du statut"}
+            
+            return dict(result)
+        
+        except Exception as e:
+            return {"error": f"Erreur inattendue : {str(e)}"}
+
