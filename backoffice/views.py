@@ -39,6 +39,8 @@ def restaurant_add(request):
             'horaire_fin': request.POST.get('horaire_fin'),
             'statut': request.POST.get('statut'),
             'image': request.POST.get('image'),
+            'adresse': request.POST.get('adresse'),
+            'geo_position': request.POST.get('geo_position'),  # ex: "47.5123 -18.8792"
         }
         Restaurant.add(data)
         return redirect('restaurants_list')
@@ -63,6 +65,8 @@ def restaurant_edit(request, restaurant_id):
             'horaire_fin': request.POST.get('horaire_fin'),
             'statut': request.POST.get('statut'),
             'image': request.POST.get('image'),
+            'adresse': request.POST.get('adresse'),
+            'geo_position': request.POST.get('geo_position'),
         }
         Restaurant.edit(restaurant_id, data)
         return redirect('restaurants_list')
@@ -175,7 +179,7 @@ def livreur_add(request):
             'contact': request.POST.get('contact'),
             'secteur': request.POST.get('secteur'),
             'statut': request.POST.get('statut'),
-            'photo': request.POST.get('photo'),
+            # 'photo': request.POST.get('photo'),  # À SUPPRIMER
         }
         Livreur.add(data)
         return redirect('livreurs_list')
@@ -198,7 +202,7 @@ def livreur_edit(request, livreur_id):
             'contact': request.POST.get('contact'),
             'secteur': request.POST.get('secteur'),
             'statut': request.POST.get('statut'),
-            'photo': request.POST.get('photo'),
+            # 'photo': request.POST.get('photo'),  # À SUPPRIMER
         }
         
         # Si c'est une requête AJAX, on renvoie les changements

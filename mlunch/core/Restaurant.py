@@ -271,8 +271,8 @@ class Restaurant:
     @staticmethod
     def add(data):
         db.execute_query(
-            "INSERT INTO restaurants (nom, horaire_debut, horaire_fin, image) VALUES (%s, %s, %s, %s) RETURNING id",
-            (data['nom'], data['horaire_debut'], data['horaire_fin'], data['image'])
+            "INSERT INTO restaurants (nom, horaire_debut, horaire_fin, adresse, image, geo_position) VALUES (%s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326)) RETURNING id",
+            (data['nom'], data['horaire_debut'], data['horaire_fin'], data['adresse'], data['image'], data['geo_position'])
         )
         restaurant = db.fetch_one("SELECT id FROM restaurants WHERE nom=%s ORDER BY id DESC LIMIT 1", (data['nom'],))
         restaurant_id = restaurant['id']
@@ -288,8 +288,8 @@ class Restaurant:
     @staticmethod
     def edit(restaurant_id, data):
         db.execute_query(
-            "UPDATE restaurants SET nom=%s, horaire_debut=%s, horaire_fin=%s, image=%s WHERE id=%s",
-            (data['nom'], data['horaire_debut'], data['horaire_fin'], data['image'], restaurant_id)
+            "UPDATE restaurants SET nom=%s, horaire_debut=%s, horaire_fin=%s, adresse=%s, image=%s, geo_position=ST_GeomFromText(%s, 4326) WHERE id=%s",
+            (data['nom'], data['horaire_debut'], data['horaire_fin'], data['adresse'], data['image'], data['geo_position'], restaurant_id)
         )
         zone = db.fetch_one("SELECT id FROM zones WHERE nom=%s", (data['secteur'],))
         if zone:

@@ -182,8 +182,8 @@ class Livreur:
     @staticmethod
     def edit(livreur_id, data):
         db.execute_query(
-            "UPDATE livreurs SET nom=%s, contact=%s, photo=%s WHERE id=%s",
-            (data['nom'], data['contact'], data['photo'], livreur_id)
+            "UPDATE livreurs SET nom=%s, contact=%s WHERE id=%s",
+            (data['nom'], data['contact'], livreur_id)
         )
         zone = db.fetch_one("SELECT id FROM zones WHERE nom=%s", (data['secteur'],))
         if zone:

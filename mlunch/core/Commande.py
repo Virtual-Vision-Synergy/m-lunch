@@ -6,7 +6,7 @@ class Commande:
     """Classe représentant une commande dans le système."""
 
     @staticmethod
-    def create(client_id, initial_statut_id):
+    def create(client_id, point_recup_id, initial_statut_id):
         """Crée une nouvelle commande avec son historique et statut initial."""
         if not isinstance(client_id, int) or client_id <= 0:
             return {"error": "ID client invalide"}
@@ -17,11 +17,11 @@ class Commande:
         try:
             # Insérer la commande
             query_commande = """
-                INSERT INTO commandes (client_id)
-                VALUES (%s)
-                RETURNING id, client_id, cree_le
+                INSERT INTO commandes (client_id, point_recup_id)
+                VALUES (%s, %s)
+                RETURNING id, client_id, point_recup_id, cree_le
             """
-            result_commande, error = fetch_one(query_commande, (client_id,))
+            result_commande, error = fetch_one(query_commande, (client_id, point_recup_id))
             if error:
                 if isinstance(error, psycopg2.errors.ForeignKeyViolation):
                     return {"error": "Client non trouvé"}
@@ -106,31 +106,6 @@ class Commande:
         return [dict(row) for row in results]
 
     @staticmethod
-    # def add_repas(commande_id: int, repas_id: int, quantite: int) -> Dict[str, Any]:
-    #     """Ajoute un repas à une commande."""
-    #     if not isinstance(commande_id, int) or commande_id <= 0:
-    #         return {"error": "ID commande invalide"}
-    #     if not isinstance(repas_id, int) or repas_id <= 0:
-    #         return {"error": "ID repas invalide"}
-    #     if not isinstance(quantite, int) or quantite <= 0:
-    #         return {"error": "Quantité invalide"}
-
-    #     query = """
-    #         INSERT INTO commande_repas (commande_id, repas_id, quantite)
-    #         VALUES (%s, %s, %s)
-    #         RETURNING id, commande_id, repas_id, quantite, ajoute_le
-    #     """
-    #     result, error = fetch_one(query, (commande_id, repas_id, quantite))
-    #     if error:
-    #         if isinstance(error, psycopg2.errors.ForeignKeyViolation):
-    #             return {"error": "Commande ou repas non trouvé"}
-    #         return {"error": f"Erreur lors de l'ajout du repas : {str(error)}"}
-    #     if not result:
-    #         return {"error": "Échec de l'ajout du repas"}
-    #     return dict(result)
-
-
-    @staticmethod
     def get_commande_en_cours(user_id):
         query = """
             SELECT id FROM commandes
@@ -156,25 +131,25 @@ class Commande:
     def vider_panier(commande_id):
         query = "DELETE FROM commande_repas WHERE commande_id = %s"
         execute_query(query, (commande_id,))
-    
+
     @staticmethod
-    def update(commande_id,statut_id):
+    def update(commande_id, statut_id):
         """Met à jour un Commane. Retourne les données mises à jour ou None si non trouvé."""
         if not commande_id or statut_id <= 0:
             return {"error": "ID invalide"}
 
         query = """
-            insert into historique_statut_commande (commande_id,statut_id)
-            values(%s,%s) 
+            INSERT INTO historique_statut_commande (commande_id, statut_id)
+            VALUES (%s, %s)
             RETURNING id, commande_id, statut_id
         """
-        result, error = fetch_one(query, (commande_id,statut_id))
+        result, error = fetch_one(query, (commande_id, statut_id))
         if error:
             return {"error": str(error)}
         return result if result else None
     
     @staticmethod
-    def delete(commande_id,statut_id):
+    def delete(commande_id, statut_id):
         """Met à jour un Commande Retourne les données mises à jour ou None si non trouvé."""
         if not commande_id or statut_id <= 0:
             return {"error": "ID invalide"}
