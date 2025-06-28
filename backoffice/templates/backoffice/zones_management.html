@@ -42,7 +42,7 @@
                 </div>
                 <div class="mb-4">
                     <label for="zone-coordinates" class="block text-sm font-medium text-gray-700">Coordonnées (JSON)</label>
-                    <textarea id="zone-coordinates" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder='[[lon1, lat1], [lon2, lat2], [lon3, lat3]]'></textarea>
+                    <textarea id="zone-coordinates" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder='[[lon1, lat1], [lon2, lat2], [lon3, lat3]]' required></textarea>
                 </div>
                 <div class="flex justify-end space-x-2">
                     <button type="button" id="cancel-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Annuler</button>
@@ -66,6 +66,19 @@
     </div>
 
     <script>
+        // Fonction pour convertir une chaîne WKT en liste de paires [lon, lat]
+        function parseWKTCoordinates(wkt) {
+            if (!wkt || !wkt.startsWith('POLYGON((')) return [];
+            // Extraire la partie des coordonnées (enlever "POLYGON((" et "))")
+            const coordsStr = wkt.replace('POLYGON((', '').replace('))', '');
+            // Diviser en paires lon,lat
+            const coords = coordsStr.split(',').map(pair => {
+                const [lon, lat] = pair.trim().split(' ').map(Number);
+                return [lon, lat];
+            });
+            return coords;
+        }
+
         // Charger les zones
         async function loadZones() {
             console.log('Tentative de chargement des zones depuis /staff/api/zones/');
@@ -141,7 +154,7 @@
             modalTitle.textContent = title;
             nomInput.value = zone ? zone.nom : '';
             descriptionInput.value = zone ? zone.description : '';
-            coordinatesInput.value = zone ? JSON.stringify(zone.coordinates || []) : '';
+            coordinatesInput.value = zone ? JSON.stringify(zone.coordinates || [], null, 2) : '[[2.3522, 48.8566], [2.3523, 48.8567], [2.3524, 48.8566], [2.3522, 48.8566]]';
             form.dataset.zoneId = zone ? zone.id : '';
             
             // Charger les entités
@@ -214,8 +227,30 @@
             const nom = document.getElementById('zone-nom').value;
             const entiteIds = Array.from(document.getElementById('zone-entites').selectedOptions).map(opt => parseInt(opt.value));
             const description = document.getElementById('zone-description').value;
-            const coordinates = JSON.parse(document.getElementById('zone-coordinates').value || '[]');
-            const zoneId = e.target.dataset.zoneId;
+            let coordinates;
+            
+            try {
+                coordinates = JSON.parse(document.getElementById('zone-coordinates').value || '[]');
+                if (!Array.isArray(coordinates) || coordinates.length < 3 || !coordinates.every(coord => Array.isArray(coord) && coord.length === 2 && coord.every(n => typeof n === 'number'))) {
+                    throw new Error('Les coordonnées doivent être une liste d\'au moins 3 paires [lon, lat]');
+                }
+            } catch (error) {
+                console.error('Erreur de validation des coordonnées:', error.message);
+                alert('Erreur: ' + error.message);
+                return;
+            }
+
+            if (!nom.trim()) {
+                console.error('Erreur: Nom de zone manquant');
+                alert('Erreur: Le nom de la zone est requis');
+                return;
+            }
+
+            if (description.length > 100) {
+                console.error('Erreur: Description trop longue');
+                alert('Erreur: La description ne doit pas dépasser 100 caractères');
+                return;
+            }
 
             const data = {
                 nom,
@@ -226,7 +261,7 @@
             };
 
             try {
-                const url = zoneId ? `/staff/api/zones/${zoneId}/update/` : '/staff/api/zones/create/';
+                const url = e.target.dataset.zoneId ? `/staff/api/zones/${e.target.dataset.zoneId}/update/` : '/staff/api/zones/create/';
                 const method = 'POST';
                 console.log(`Envoi de la requête à ${url}:`, data);
                 const response = await fetch(url, {
@@ -238,7 +273,7 @@
                 const result = await response.json();
                 if (result.error) throw new Error(result.error);
 
-                alert(zoneId ? 'Zone mise à jour avec succès' : 'Zone créée avec succès');
+                alert(e.target.dataset.zoneId ? 'Zone mise à jour avec succès' : 'Zone créée avec succès');
                 closeModal('zone-modal');
                 loadZones();
             } catch (error) {
@@ -261,7 +296,7 @@
                         id: data.zone.id,
                         nom: data.zone.nom,
                         description: data.zone.description,
-                        coordinates: data.zone.zone ? JSON.parse(data.zone.zone.replace('POLYGON((', '[').replace('))', ']').replace(/ /g, ',')) : [],
+                        coordinates: parseWKTCoordinates(data.zone.zone),
                         entites: data.entites || []
                     });
                 } catch (error) {

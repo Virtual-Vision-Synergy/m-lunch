@@ -56,6 +56,7 @@ WHERE rze.zone_id = %s
     print(f"Détails de la zone {zone_id}: {result}")  # Log dans le terminal
     return JsonResponse(result)
 
+
 @csrf_exempt
 def create_zone(request):
     """API pour créer une nouvelle zone avec ses entités."""
@@ -64,11 +65,29 @@ def create_zone(request):
     
     try:
         data = json.loads(request.body)
+        print(f"Données reçues: {data}")  # Log des données reçues
         nom = data.get('nom')
         description = data.get('description')
         coordinates = data.get('coordinates')
         initial_statut_id = data.get('statut_id', 1)  # Statut "Active" par défaut
         entite_ids = data.get('entite_ids', [])
+        
+        # Validations supplémentaires
+        if not nom or not isinstance(nom, str) or len(nom.strip()) == 0:
+            print("Erreur: Nom de zone manquant ou invalide")  # Log
+            return JsonResponse({"error": "Nom de zone manquant ou invalide"}, status=400)
+        if description is not None and (not isinstance(description, str) or len(description) > 100):
+            print("Erreur: Description invalide (max 100 caractères)")  # Log
+            return JsonResponse({"error": "Description invalide (max 100 caractères)"}, status=400)
+        if not coordinates or not isinstance(coordinates, list) or len(coordinates) < 3:
+            print("Erreur: Coordonnées invalides (minimum 3 points)")  # Log
+            return JsonResponse({"error": "Coordonnées invalides (minimum 3 points)"}, status=400)
+        if not all(isinstance(coord, list) and len(coord) == 2 and all(isinstance(n, (int, float)) for n in coord) for coord in coordinates):
+            print("Erreur: Format des coordonnées invalide, attendu [[lon, lat], ...]")  # Log
+            return JsonResponse({"error": "Format des coordonnées invalide, attendu [[lon, lat], ...]"}, status=400)
+        if not all(isinstance(id, int) for id in entite_ids):
+            print("Erreur: entite_ids doit contenir uniquement des entiers")  # Log
+            return JsonResponse({"error": "entite_ids doit contenir uniquement des entiers"}, status=400)
         
         # Créer la zone
         result = Zone.CreateZone(nom, description, coordinates, initial_statut_id)
@@ -98,9 +117,13 @@ def create_zone(request):
         result['entite_ids'] = entite_ids
         print(f"Zone créée: {result}")  # Log dans le terminal
         return JsonResponse(result, status=201)
+    except json.JSONDecodeError:
+        print("Erreur: Corps de la requête JSON invalide")  # Log
+        return JsonResponse({"error": "Corps de la requête JSON invalide"}, status=400)
     except Exception as e:
         print(f"Erreur inattendue: {str(e)}")  # Log dans le terminal
         return JsonResponse({"error": f"Erreur inattendue : {str(e)}"}, status=500)
+
 
 @csrf_exempt
 def update_zone(request, zone_id):

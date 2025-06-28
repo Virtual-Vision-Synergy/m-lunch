@@ -148,92 +148,87 @@ class Zone:
             return [dict(row) for row in results]
 
     @staticmethod
-    def UpdateZone(zone_id, statut_id=None, nom=None, description=None, coordinates=None):
-        """
-        Met à jour une zone et son historique de statut.
+    @staticmethod
+    def UpdateZone(zone_id, statut_id, nom, description, coordinates):
+        """Mettre à jour une zone existante."""
+        if not isinstance(zone_id, int) or zone_id < 1:
+            return {'error': 'ID de zone invalide'}
+        if nom and (not isinstance(nom, str) or len(nom.strip()) > 100):
+            return {'error': 'Nom de zone invalide'}
+        if description and (not isinstance(description, str) or len(description) > 100):
+            return {'error': 'Description invalide (max 100 caractères)'}
+        if coordinates and (not isinstance(coordinates, list) or len(coordinates) < 3):
+            return {'error': 'Coordonnées du polygone invalides (minimum 3 points)'}
+        if coordinates and not all(isinstance(coord, list) and len(coord) == 2 and all(isinstance(n, (int, float)) for n in coord) for coord in coordinates):
+            return {'error': 'Format des coordonnées invalide, attendu [[lon, lat], ...]'}
         
-        Args:
-            zone_id (int): ID de la zone à mettre à jour
-            statut_id (int, optional): Nouveau statut ID
-            nom (str, optional): Nouveau nom (100 caractères max)
-            description (str, optional): Nouvelle description (100 caractères max)
-            coordinates (list, optional): Liste de tuples (longitude, latitude) pour le polygone
+        # Vérifier si la zone existe
+        query_check_zone = "SELECT id FROM zones WHERE id = %s"
+        result_zone, error = fetch_one(query_check_zone, (zone_id,))
+        if error or not result_zone:
+            return {'error': f"Zone ID {zone_id} non trouvée"}
         
-        Returns:
-            dict: Dictionnaire avec les données mises à jour ou message d'erreur
+        params = []
+        updates = []
+        
+        if nom:
+            updates.append("nom = %s")
+            params.append(nom.strip())
+        if description is not None:
+            updates.append("description = %s")
+            params.append(description)
+        if coordinates:
+            try:
+                wkt = f"POLYGON(({', '.join([f'{lon} {lat}' for lon, lat in coordinates])}))"
+                print(f"Chaîne WKT générée pour mise à jour : {wkt}")  # Log pour débogage
+                # Vérifier si la chaîne WKT est valide
+                if not wkt.startswith('POLYGON((') or not wkt.endswith('))'):
+                    return {'error': 'Format WKT invalide'}
+                updates.append("zone = ST_GeomFromText(%s, 4326)")
+                params.append(wkt)
+            except Exception as e:
+                return {'error': f"Erreur lors de la génération de la chaîne WKT : {str(e)}"}
+        
+        if not updates:
+            return {'error': 'Aucune mise à jour fournie'}
+        
+        query = f"""
+            UPDATE zones
+            SET {', '.join(updates)}
+            WHERE id = %s
+            RETURNING id, nom, description, ST_AsText(zone) as zone
         """
-        # Validation des paramètres
-        if not isinstance(zone_id, int) or zone_id <= 0:
-            return {"error": "ID zone invalide"}
-        if statut_id is not None and (not isinstance(statut_id, int) or statut_id <= 0):
-            return {"error": "ID statut invalide"}
-        if nom is not None and (not isinstance(nom, str) or len(nom) > 100):
-            return {"error": "Nom invalide (100 caractères max)"}
-        if description is not None and (not isinstance(description, str) or len(description) > 100):
-            return {"error": "Description invalide (100 caractères max)"}
-        if coordinates is not None and (not isinstance(coordinates, list) or len(coordinates) < 3):
-            return {"error": "Coordonnées invalides (minimum 3 points)"}
-
-        try:
-            # Vérifier si la zone existe
-            query_check_zone = "SELECT id FROM zones WHERE id = %s"
-            result_check, error = fetch_one(query_check_zone, (zone_id,))
-            if error or not result_check:
-                return {"error": "Zone non trouvée"}
-
-            # Vérifier si le statut existe (si fourni)
-            if statut_id is not None:
-                query_check_statut = "SELECT id FROM statut_zone WHERE id = %s"
-                result_statut, error = fetch_one(query_check_statut, (statut_id,))
-                if error or not result_statut:
-                    return {"error": "Statut zone non trouvé"}
-
-            # Préparation de la géométrie
-            zone_geom = None
-            if coordinates is not None:
-                polygon_wkt = "POLYGON((" + ",".join(f"{lon} {lat}" for lon, lat in coordinates) + "))"
-                zone_geom = f"ST_GeomFromText('{polygon_wkt}', 4326)"
-
-            # Mettre à jour la zone
-            query_update = """
-                UPDATE zones
-                SET 
-                    nom = COALESCE(%s, nom),
-                    description = COALESCE(%s, description),
-                    zone = CASE WHEN %s IS NULL THEN zone ELSE %s::geography END
-                WHERE id = %s
-                RETURNING id, nom, description, ST_AsText(zone) as zone
+        params.append(zone_id)
+        result, error = fetch_one(query, tuple(params))
+        if error:
+            return {'error': f"Échec de la mise à jour : {str(error)}"}
+        
+        if statut_id:
+            query_historique = """
+                INSERT INTO historique_statut_zone (zone_id, statut_id, mis_a_jour_le)
+                VALUES (%s, %s, NOW())
+                RETURNING id, zone_id, statut_id, mis_a_jour_le
             """
-            result_zone, error = fetch_one(query_update, (
-                nom, description, 
-                zone_geom, zone_geom, 
-                zone_id
-            ))
+            historique, error = fetch_one(query_historique, (zone_id, statut_id))
             if error:
-                return {"error": f"Erreur lors de la mise à jour : {str(error)}"}
-
-            # Mettre à jour l'historique si statut changé
-            result_historique = None
-            if statut_id is not None:
-                query_historique = """
-                    INSERT INTO historique_statut_zone (zone_id, statut_id)
-                    VALUES (%s, %s)
-                    RETURNING id, zone_id, statut_id, mis_a_jour_le
-                """
-                result_historique, error = fetch_one(query_historique, (zone_id, statut_id))
-                if error:
-                    return {"error": f"Erreur historique : {str(error)}"}
-
-            # Formatage du résultat
-            response = {
-                "zone": dict(result_zone) if result_zone else None,
-                "historique": dict(result_historique) if result_historique else None
-            }
-
-            return response
-
-        except Exception as e:
-            return {"error": f"Erreur inattendue : {str(e)}"}
+                return {'error': f"Échec de l'insertion dans l'historique : {str(error)}"}
+        else:
+            historique = None
+        
+        return {
+            'zone': {
+                'id': result['id'],
+                'nom': result['nom'],
+                'description': result['description'],
+                'zone': result['zone']
+            },
+            'historique': {
+                'id': historique['id'],
+                'zone_id': historique['zone_id'],
+                'statut_id': historique['statut_id'],
+                'mis_a_jour_le': historique['mis_a_jour_le'].isoformat()
+            } if historique else None
+        }
 
     @staticmethod
     def DeleteZone(zone_id, statut_id):
