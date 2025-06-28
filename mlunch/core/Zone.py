@@ -1,6 +1,6 @@
 import psycopg2.errors
 from typing import Optional, Dict, List, Any
-from database.db import execute_query, fetch_query, fetch_one
+from database.db import fetch_one, fetch_query, execute_query
 
 class Zone:
     """Classe représentant une zone de livraison dans le système."""
@@ -142,10 +142,9 @@ class Zone:
                 FROM zones
                 ORDER BY nom
             """
-            results, error = fetch_query(query)
-            if error:
-                return [{"error": f"Erreur lors de la récupération : {str(error)}"}]
-            return [dict(row) for row in results]
+            results = fetch_query(query)
+            # Si results est déjà une liste de dicts :
+            return [dict(row) for row in results] if results else []
 
     @staticmethod
     def update(zone_id, statut_id=None, nom=None, description=None, coordinates=None):

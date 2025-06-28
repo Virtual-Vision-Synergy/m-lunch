@@ -24,6 +24,11 @@ urlpatterns = [
     path('livraisons/<int:livraison_id>/', views.livraison_detail, name='livraison_detail'),
     path('livraisons/<int:livraison_id>/edit/', views.livraison_edit, name='livraison_edit'),
     path('livraisons/<int:livraison_id>/delete/', views.livraison_delete, name='livraison_delete'),
+
+    path('zones/', views.zones_list, name='zones_list'),
+    path('zones/add/', views.zone_add, name='zone_add'),
+    path('zones/<int:zone_id>/edit/', views.zone_edit, name='zone_edit'),
+    path('zones/<int:zone_id>/delete/', views.zone_delete, name='zone_delete'),
     
     path('', views.test_create_client, name='/aa'),
 ]

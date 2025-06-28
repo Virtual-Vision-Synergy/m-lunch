@@ -444,3 +444,88 @@ def test_create_client(request):
             #messages.success(request, f"Client créé avec succès : {result['email']}")
             print(result)
         return render(request, 'backoffice/index.html')
+
+def zones_list(request):
+    zones = db.fetch_query("SELECT id, nom, description FROM zones")
+    return render(request, 'backoffice/zones/zones_list.html', {'zones': zones})
+
+def zone_add(request):
+    error = None
+    if request.method == 'POST':
+        nom = request.POST.get('nom')
+        description = request.POST.get('description')
+        zone_geom = request.POST.get('zone_geom')  # WKT format: POLYGON((...))
+        statut_id = db.fetch_one("SELECT id FROM statut_zone WHERE appellation='Active'")
+        if not statut_id:
+            db.execute_query("INSERT INTO statut_zone (appellation) VALUES ('Active')")
+            statut_id = db.fetch_one("SELECT id FROM statut_zone WHERE appellation='Active'")
+        if not (nom and zone_geom and statut_id):
+            error = "Tous les champs sont obligatoires."
+        else:
+            db.execute_query(
+                "INSERT INTO zones (nom, description, zone) VALUES (%s, %s, ST_GeomFromText(%s, 4326))",
+                (nom, description, zone_geom)
+            )
+            zone = db.fetch_one("SELECT id FROM zones WHERE nom=%s ORDER BY id DESC LIMIT 1", (nom,))
+            db.execute_query(
+                "INSERT INTO historique_statut_zone (zone_id, statut_id) VALUES (%s, %s)",
+                (zone['id'], statut_id['id'])
+            )
+            return redirect('zones_list')
+    return render(request, 'backoffice/zones/zone_form.html', {'action': 'Ajouter', 'error': error})
+
+def zone_edit(request, zone_id):
+    zone = db.fetch_one("SELECT id, nom, description, ST_AsText(zone) as zone FROM zones WHERE id=%s", (zone_id,))
+    if not zone:
+        return redirect('zones_list')
+    if request.method == 'POST':
+        nom = request.POST.get('nom')
+        description = request.POST.get('description')
+        zone_geom = request.POST.get('zone_geom')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            changements = []
+            if nom != zone['nom']:
+                changements.append({'champ': 'Nom', 'avant': zone['nom'], 'apres': nom})
+            if description != zone['description']:
+                changements.append({'champ': 'Description', 'avant': zone['description'], 'apres': description})
+            if zone_geom != zone['zone']:
+                changements.append({'champ': 'Zone', 'avant': zone['zone'], 'apres': zone_geom})
+            return JsonResponse({'changements': changements})
+        if request.POST.get('confirm') == '1':
+            db.execute_query(
+                "UPDATE zones SET nom=%s, description=%s, zone=ST_GeomFromText(%s, 4326) WHERE id=%s",
+                (nom, description, zone_geom, zone_id)
+            )
+            return redirect('zones_list')
+    return render(request, 'backoffice/zones/zone_form.html', {'action': 'Modifier', 'zone': zone})
+
+def zone_delete(request, zone_id):
+    zone = db.fetch_one("SELECT id, nom FROM zones WHERE id=%s", (zone_id,))
+    if not zone:
+        return redirect('zones_list')
+    # Verifier dependances (restaurants actifs dans la zone)
+    restaurants = db.fetch_query("""
+        SELECT r.nom FROM restaurants r
+        JOIN zones_restaurant zr ON zr.restaurant_id = r.id
+        WHERE zr.zone_id = %s
+        AND EXISTS (
+            SELECT 1 FROM historique_statut_restaurant hsr
+            JOIN statut_restaurant sr ON hsr.statut_id = sr.id
+            WHERE hsr.restaurant_id = r.id AND sr.appellation = 'Ouvert'
+        )
+    """, (zone_id,))
+    if restaurants:
+        reason = "Suppression impossible : des restaurants actifs sont associes à cette zone (" + ", ".join([r['nom'] for r in restaurants]) + ")."
+        return render(request, 'backoffice/zones/zone_delete_error.html', {'reason': reason})
+    if request.method == 'POST':
+        # Mettre le statut à "Supprimee"
+        statut_suppr = db.fetch_one("SELECT id FROM statut_zone WHERE appellation='Supprimee'")
+        if not statut_suppr:
+            db.execute_query("INSERT INTO statut_zone (appellation) VALUES ('Supprimee')")
+            statut_suppr = db.fetch_one("SELECT id FROM statut_zone WHERE appellation='Supprimee'")
+        db.execute_query(
+            "INSERT INTO historique_statut_zone (zone_id, statut_id) VALUES (%s, %s)",
+            (zone_id, statut_suppr['id'])
+        )
+        return redirect('zones_list')
+    return render(request, 'backoffice/zones/zone_delete_confirm.html', {'zone': zone})
