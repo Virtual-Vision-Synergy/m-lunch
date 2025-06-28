@@ -14,4 +14,6 @@ urlpatterns = [
     path('api/zones/<int:zone_id>/delete/', liste_zone_views.delete_zone, name='delete_zone'),
     path('api/entites/', liste_zone_views.get_entites, name='get_entites'),
     path('zones/', liste_zone_views.zones_management, name='zone_management'),
+    path('api/zones/<int:zone_id>/financials/', liste_zone_views.get_zone_financials, name='get_zone_financials'),
+     path('api/restaurants/<int:restaurant_id>/', liste_zone_views.get_restaurant_detail, name='get_restaurant_detail'),
 ]

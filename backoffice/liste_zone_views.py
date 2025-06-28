@@ -220,3 +220,206 @@ ORDER BY e.nom
     entites = [{'id': row['id'], 'nom': row['nom'], 'statut': row['statut_actuel'] or 'Inconnu'} for row in results]
     print(f"Entités récupérées: {entites}")  # Log dans le terminal
     return JsonResponse({'entites': entites})
+
+@csrf_exempt
+def get_zone_financials(request, zone_id):
+    """API pour récupérer les restaurants et les données financières d'une zone."""
+    try:
+        # Vérifier si la zone existe
+        query_check_zone = "SELECT id FROM zones WHERE id = %s"
+        result_zone, error = fetch_one(query_check_zone, (zone_id,))
+        if error or not result_zone:
+            print(f"Erreur: Zone ID {zone_id} non trouvée")  # Log
+            return JsonResponse({"error": f"Zone ID {zone_id} non trouvée"}, status=404)
+
+        # Récupérer les restaurants associés à la zone
+        query_restaurants = """
+            SELECT 
+                r.id, r.nom, r.adresse, sr.appellation as statut_actuel
+            FROM zones_restaurant zr
+            JOIN restaurants r ON zr.restaurant_id = r.id
+            LEFT JOIN (
+                SELECT DISTINCT ON (restaurant_id) restaurant_id, statut_id
+                FROM historique_statut_restaurant
+                ORDER BY restaurant_id, id DESC
+            ) latest ON r.id = latest.restaurant_id
+            LEFT JOIN statut_restaurant sr ON latest.statut_id = sr.id
+            WHERE zr.zone_id = %s
+            ORDER BY r.nom
+        """
+        restaurants, error = fetch_query(query_restaurants, (zone_id,))
+        if error:
+            print(f"Erreur lors de la récupération des restaurants: {error}")  # Log
+            return JsonResponse({"error": f"Erreur lors de la récupération des restaurants : {str(error)}"}, status=500)
+
+        # Récupérer les paramètres de filtrage temporel
+        period = request.GET.get('period', 'all')  # 'day', 'month', 'year', 'custom'
+        date = request.GET.get('date')  # Format: YYYY-MM-DD
+        month = request.GET.get('month')  # Format: YYYY-MM
+        year = request.GET.get('year')  # Format: YYYY
+        start_date = request.GET.get('start_date')  # Format: YYYY-MM-DD
+        end_date = request.GET.get('end_date')  # Format: YYYY-MM-DD
+
+        # Construire la condition temporelle
+        time_condition = ""
+        time_params = []
+        if period == 'day' and date:
+            time_condition = "AND DATE(c.cree_le) = %s"
+            time_params.append(date)
+        elif period == 'month' and month:
+            time_condition = "AND TO_CHAR(c.cree_le, 'YYYY-MM') = %s"
+            time_params.append(month)
+        elif period == 'year' and year:
+            time_condition = "AND EXTRACT(YEAR FROM c.cree_le) = %s"
+            time_params.append(year)
+        elif period == 'custom' and start_date and end_date:
+            time_condition = "AND c.cree_le BETWEEN %s AND %s"
+            time_params.extend([start_date, end_date])
+
+        # Récupérer le chiffre d'affaires par restaurant et total
+        query_financials = f"""
+            SELECT 
+                r.id, r.nom,
+                COALESCE(SUM(cr.quantite * m.prix), 0) as chiffre_affaires,
+                COALESCE(cms.valeur, 0) as commission
+            FROM zones_restaurant zr
+            JOIN restaurants r ON zr.restaurant_id = r.id
+            LEFT JOIN point_de_recuperation pr ON pr.id IN (
+                SELECT point_recup_id
+                FROM commandes
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM commande_repas
+                    WHERE commande_id = commandes.id
+                )
+            )
+            LEFT JOIN commandes c ON c.point_recup_id = pr.id
+            LEFT JOIN commande_repas cr ON cr.commande_id = c.id
+            LEFT JOIN repas m ON cr.repas_id = m.id
+            LEFT JOIN commissions cms ON cms.restaurant_id = r.id
+            WHERE zr.zone_id = %s
+            {time_condition}
+            GROUP BY r.id, r.nom, cms.valeur
+        """
+        params = [zone_id] + time_params
+        financials, error = fetch_query(query_financials, tuple(params))
+        if error:
+            print(f"Erreur lors de la récupération des données financières: {error}")  # Log
+            return JsonResponse({"error": f"Erreur lors de la récupération des données financières : {str(error)}"}, status=500)
+
+        # Calculer le chiffre d'affaires total et le bénéfice net
+        total_chiffre_affaires = 0
+        total_frais = 0
+        for f in financials:
+            ca = f['chiffre_affaires'] or 0
+            commission = f['commission'] or 0
+            total_chiffre_affaires += ca
+            total_frais += ca * (commission / 100.0)
+        
+        benefice_net = total_chiffre_affaires - total_frais
+
+        response = {
+            'zone_id': zone_id,
+            'restaurants': [dict(r) for r in restaurants],
+            'financials': {
+                'restaurants': [{
+                    'id': f['id'],
+                    'nom': f['nom'],
+                    'chiffre_affaires': float(f['chiffre_affaires'] or 0),
+                    'commission': float(f['commission'] or 0)
+                } for f in financials],
+                'total_chiffre_affaires': float(total_chiffre_affaires),
+                'total_frais': float(total_frais),
+                'benefice_net': float(benefice_net)
+            }
+        }
+        print(f"Données financières pour la zone {zone_id}: {response}")  # Log
+        return JsonResponse(response, status=200)
+    except Exception as e:
+        print(f"Erreur inattendue: {str(e)}")  # Log
+        return JsonResponse({"error": f"Erreur inattendue : {str(e)}"}, status=500)
+
+@csrf_exempt
+def get_restaurant_detail(request, restaurant_id):
+    """API pour récupérer les détails d'un restaurant."""
+    try:
+        # Vérifier si le restaurant existe
+        query_check_restaurant = """
+            SELECT id, nom, adresse, ST_AsText(geo_position) as geo_position
+            FROM restaurants
+            WHERE id = %s
+        """
+        restaurant, error = fetch_one(query_check_restaurant, (restaurant_id,))
+        if error or not restaurant:
+            print(f"Erreur: Restaurant ID {restaurant_id} non trouvé")  # Log
+            return JsonResponse({"error": f"Restaurant ID {restaurant_id} non trouvé"}, status=404)
+
+        # Récupérer le statut actuel
+        query_statut = """
+            SELECT sr.appellation as statut_actuel
+            FROM historique_statut_restaurant hsr
+            LEFT JOIN statut_restaurant sr ON hsr.statut_id = sr.id
+            WHERE hsr.restaurant_id = %s
+            ORDER BY hsr.mis_a_jour_le DESC
+            LIMIT 1
+        """
+        statut, error = fetch_one(query_statut, (restaurant_id,))
+        if error:
+            print(f"Erreur lors de la récupération du statut: {error}")  # Log
+            return JsonResponse({"error": f"Erreur lors de la récupération du statut : {str(error)}"}, status=500)
+
+        # Récupérer les repas proposés
+        query_repas = """
+            SELECT r.id, r.nom, r.description, r.prix, tr.nom as type_repas
+            FROM repas_restaurant mr
+            JOIN repas r ON mr.repas_id = r.id
+            JOIN types_repas tr ON r.type_id = tr.id
+            WHERE mr.restaurant_id = %s
+            ORDER BY r.nom
+        """
+        repas, error = fetch_query(query_repas, (restaurant_id,))
+        if error:
+            print(f"Erreur lors de la récupération des repas: {error}")  # Log
+            return JsonResponse({"error": f"Erreur lors de la récupération des repas : {str(error)}"}, status=500)
+
+        # Récupérer les horaires réguliers
+        query_horaires = """
+            SELECT le_jour, horaire_debut, horaire_fin
+            FROM horaire
+            WHERE restaurant_id = %s
+            ORDER BY le_jour
+        """
+        horaires, error = fetch_query(query_horaires, (restaurant_id,))
+        if error:
+            print(f"Erreur lors de la récupération des horaires: {error}")  # Log
+            return JsonResponse({"error": f"Erreur lors de la récupération des horaires : {str(error)}"}, status=500)
+
+        # Récupérer les horaires exceptionnels
+        query_horaires_special = """
+            SELECT date_concerne, horaire_debut, horaire_fin
+            FROM horaire_special
+            WHERE restaurant_id = %s
+            ORDER BY date_concerne
+        """
+        horaires_special, error = fetch_query(query_horaires_special, (restaurant_id,))
+        if error:
+            print(f"Erreur lors de la récupération des horaires spéciaux: {error}")  # Log
+            return JsonResponse({"error": f"Erreur lors de la récupération des horaires spéciaux : {str(error)}"}, status=500)
+
+        response = {
+            'restaurant': {
+                'id': restaurant['id'],
+                'nom': restaurant['nom'],
+                'adresse': restaurant['adresse'],
+                'geo_position': restaurant['geo_position'],
+                'statut_actuel': statut['statut_actuel'] if statut else 'Inconnu'
+            },
+            'repas': [dict(r) for r in repas],
+            'horaires': [dict(h) for h in horaires],
+            'horaires_special': [dict(h) for h in horaires_special]
+        }
+        print(f"Détails du restaurant {restaurant_id}: {response}")  # Log
+        return JsonResponse(response, status=200)
+    except Exception as e:
+        print(f"Erreur inattendue: {str(e)}")  # Log
+        return JsonResponse({"error": f"Erreur inattendue : {str(e)}"}, status=500)

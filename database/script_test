@@ -61,3 +61,4 @@ INSERT INTO historique_statut_zone (zone_id, statut_id, mis_a_jour_le) VALUES
 INSERT INTO reference_zone_entite (zone_id, entite_id) VALUES 
 (1, 1), -- Secteur ISPM lié à ISPM
 (1, 2); -- Secteur ISPM lié à Orange Ankorondrano
+
