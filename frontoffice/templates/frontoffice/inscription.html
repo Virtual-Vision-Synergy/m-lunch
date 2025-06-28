@@ -1,0 +1,52 @@
+<form method="post">
+    {% csrf_token %}
+    
+    <label for="prenom">Prénom:</label><br>
+    <input type="text" name="prenom" required><br><br>
+
+    <label for="nom">Nom:</label><br>
+    <input type="text" name="nom" required><br><br>
+
+    <label for="email">Adresse e-mail:</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label for="mot_de_passe">Mot de passe:</label><br>
+    <input type="password" name="mot_de_passe" required><br><br>
+
+    <label for="telephone">Numéro de téléphone:</label><br>
+    <input type="tel" name="telephone"><br><br>
+
+    <!-- DÉPLACER CETTE LIGNE ICI -->
+    <label for="secteur">Secteur:</label><br>
+    <input type="text" id="secteur" name="secteur" readonly placeholder="Cliquez sur la carte" required /><br><br>
+
+    <button type="submit">S'inscrire</button>
+</form>
+
+<div id="map" style="height: 400px;"></div>
+
+<!-- Le script reste pareil -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+    const map = L.map('map').setView([-18.8792, 47.5079], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.Control.geocoder().addTo(map);
+
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+
+        fetch(`/api/zone-from-coord/?lat=${lat}&lon=${lon}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('secteur').value = data.nom;
+                    alert(`Zone sélectionnée : ${data.nom}`);
+                } else {
+                    alert("Aucune zone à moins de 5 km.");
+                }
+            });
+    });
+</script>
