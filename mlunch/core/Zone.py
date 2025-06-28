@@ -6,7 +6,7 @@ class Zone:
     """Classe représentant une zone de livraison dans le système."""
 
     @staticmethod
-    def create(nom, description, coordinates, initial_statut_id):
+    def CreateZone(nom, description, coordinates, initial_statut_id):
         """Crée une nouvelle zone avec son historique et statut initial."""
         # Validation des entrées
         if not isinstance(nom, str) or len(nom) > 100 or not nom.strip():
@@ -67,7 +67,7 @@ class Zone:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_by_id(zone_id):
+    def GetZoneFromId(zone_id):
         """
         Récupère une zone par son ID avec son historique complet des statuts.
         
@@ -135,7 +135,7 @@ class Zone:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def get_all() -> List[Dict[str, Any]]:
+    def GetAllZone() -> List[Dict[str, Any]]:
             """Récupère toutes les zones."""
             query = """
                 SELECT id, nom, description, ST_AsText(zone) as zone
@@ -148,7 +148,7 @@ class Zone:
             return [dict(row) for row in results]
 
     @staticmethod
-    def update(zone_id, statut_id=None, nom=None, description=None, coordinates=None):
+    def UpdateZone(zone_id, statut_id=None, nom=None, description=None, coordinates=None):
         """
         Met à jour une zone et son historique de statut.
         
@@ -236,7 +236,7 @@ class Zone:
             return {"error": f"Erreur inattendue : {str(e)}"}
 
     @staticmethod
-    def delete(zone_id, statut_id):
+    def DeleteZone(zone_id, statut_id):
         """
         Marque une zone comme supprimée en mettant à jour son statut dans l'historique.
         

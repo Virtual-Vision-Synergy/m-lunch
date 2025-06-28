@@ -259,3 +259,4 @@ CREATE TABLE limite_commandes_journalieres (
     nombre_commandes INT NOT NULL,
     date DATE NOT NULL
 );
+
