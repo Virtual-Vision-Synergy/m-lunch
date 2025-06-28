@@ -6,14 +6,12 @@ class Livraison:
     """Classe représentant une livraison dans le système."""
 
     @staticmethod
-    def CreateLivraison(livreur_id, commande_id):
+    def CreateLivraison(livreur_id, commande_id,statut_id):
         """Crée une nouvelle livraison avec un statut initial 'Attribué' (statut_id=1). Retourne un dictionnaire avec les données ou une erreur."""
         if not isinstance(livreur_id, int) or livreur_id <= 0:
             return {"error": "L'ID du livreur doit être un entier positif"}
         if not isinstance(commande_id, int) or commande_id <= 0:
             return {"error": "L'ID de la commande doit être un entier positif"}
-
-        statut_id = 1  # Statut "Attribué"
         try:
             # Vérifier si le livreur existe
             query_check_livreur = """
