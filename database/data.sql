@@ -2,7 +2,6 @@
 
 --////////////////////////////////////DONNEE DE TEST NATAOKO Ewan--//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
--- Statuts donnee
 -- Statuts Restaurant
 INSERT INTO statut_restaurant (appellation) VALUES ('Ouvert'), ('Ferme');
 
@@ -15,21 +14,19 @@ INSERT INTO statut_livreur (appellation) VALUES ('Disponible'), ('En livraison')
 -- Statuts Livraison
 INSERT INTO statut_livraison (appellation) VALUES ('En attente'), ('En livraison'), ('Livree'), ('Annulee');
 
---Zones donnee
--- Zones (secteurs)
+-- Zones
 INSERT INTO zones (nom, description, zone) VALUES
 ('Analakely', 'Centre-ville', NULL),
 ('Isoraka', 'Quartier animé', NULL),
 ('Ivandry', 'Zone résidentielle', NULL),
 ('Ankorondrano', 'Quartier d affaires', NULL);
 
---Restaurants et associations donnnee
 -- Restaurants
-INSERT INTO restaurants (nom, horaire_debut, horaire_fin, adresse, image, geo_position) VALUES
-('Le Gourmet', '08:00', '22:00', '12 rue de la Paix', 'gourmet.png', NULL),
-('Pizza Express', '10:00', '23:00', '45 avenue des Fleurs', 'pizza.png', NULL),
-('Sakafo Malagasy', '07:30', '21:00', 'Marché Analakely', 'sakafo.png', NULL),
-('Burger House', '09:00', '22:00', 'Boulevard Joffre', 'burger.png', NULL);
+INSERT INTO restaurants (nom, adresse, description, image, geo_position) VALUES
+('Le Gourmet', '12 rue de la Paix', NULL, 'gourmet.png', NULL),
+('Pizza Express', '45 avenue des Fleurs', NULL, 'pizza.png', NULL),
+('Sakafo Malagasy', 'Marché Analakely', NULL, 'sakafo.png', NULL),
+('Burger House', 'Boulevard Joffre', NULL, 'burger.png', NULL);
 
 -- Lier restaurants à zones
 INSERT INTO zones_restaurant (restaurant_id, zone_id) VALUES
@@ -53,7 +50,6 @@ INSERT INTO historique_statut_restaurant (restaurant_id, statut_id, mis_a_jour_l
 (3, 1, NOW() - INTERVAL '8 days'),
 (4, 1, NOW() - INTERVAL '7 days');
 
---Types de repas et repas donnee
 -- Types de repas
 INSERT INTO types_repas (nom) VALUES 
 ('Pizza'), ('Malagasy'), ('Sandwich'), ('Burger'), ('Salade');
@@ -71,20 +67,18 @@ INSERT INTO repas (nom, description, image, type_id, prix) VALUES
 
 -- Repas proposés par les restaurants
 INSERT INTO repas_restaurant (restaurant_id, repas_id) VALUES
-(1, 3), (1, 4), -- Le Gourmet : Romazava, Ravitoto
-(2, 1), (2, 2), -- Pizza Express : Margherita, Reine
-(3, 3), (3, 5), -- Sakafo Malagasy : Romazava, Sandwich Poulet
-(4, 6), (4, 7), (4, 8); -- Burger House : Burger Boeuf, Burger Poulet, Salade César
+(1, 3), (1, 4),
+(2, 1), (2, 2),
+(3, 3), (3, 5),
+(4, 6), (4, 7), (4, 8);
 
---Clients donnee
 -- Clients
 INSERT INTO clients (email, mot_de_passe, contact, prenom, nom) VALUES
 ('alice@example.com', 'pass123', '0321234567', 'Alice', 'Randria'),
 ('bob@example.com', 'pass456', '0349876543', 'Bob', 'Rakoto'),
 ('carole@example.com', 'pass789', '0331122334', 'Carole', 'Rasoanaivo');
 
---Commandes et détails des commandes donnee
--- Commandes (différentes dates pour test graphique)
+-- Commandes
 INSERT INTO commandes (client_id, cree_le) VALUES
 (1, NOW() - INTERVAL '6 days'),
 (2, NOW() - INTERVAL '5 days'),
@@ -92,20 +86,32 @@ INSERT INTO commandes (client_id, cree_le) VALUES
 (1, NOW() - INTERVAL '3 days'),
 (2, NOW() - INTERVAL '2 days'),
 (3, NOW() - INTERVAL '1 days'),
-(1, NOW());
+(1, NOW()),
+(1, NOW() - INTERVAL '2 days'),
+(2, NOW() - INTERVAL '1 day'),
+(1, NOW() - INTERVAL '12 hours'),
+(2, NOW() - INTERVAL '8 hours'),
+(1, NOW() - INTERVAL '4 hours');
 
--- Commande repas (quantités variées)
+-- Commande repas
 INSERT INTO commande_repas (commande_id, repas_id, quantite, ajoute_le) VALUES
-(1, 3, 2, NOW() - INTERVAL '6 days'), -- Le Gourmet, Romazava
-(1, 4, 1, NOW() - INTERVAL '6 days'), -- Le Gourmet, Ravitoto
-(2, 1, 1, NOW() - INTERVAL '5 days'), -- Pizza Express, Margherita
-(2, 2, 2, NOW() - INTERVAL '5 days'), -- Pizza Express, Reine
-(3, 5, 3, NOW() - INTERVAL '4 days'), -- Sakafo Malagasy, Sandwich Poulet
-(4, 6, 2, NOW() - INTERVAL '3 days'), -- Burger House, Burger Boeuf
-(4, 8, 1, NOW() - INTERVAL '3 days'), -- Burger House, Salade César
-(5, 7, 2, NOW() - INTERVAL '2 days'), -- Burger House, Burger Poulet
-(6, 3, 1, NOW() - INTERVAL '1 days'), -- Sakafo Malagasy, Romazava
-(7, 2, 1, NOW()); -- Pizza Express, Reine
+(1, 3, 2, NOW() - INTERVAL '6 days'),
+(1, 4, 1, NOW() - INTERVAL '6 days'),
+(2, 1, 1, NOW() - INTERVAL '5 days'),
+(2, 2, 2, NOW() - INTERVAL '5 days'),
+(3, 5, 3, NOW() - INTERVAL '4 days'),
+(4, 6, 2, NOW() - INTERVAL '3 days'),
+(4, 8, 1, NOW() - INTERVAL '3 days'),
+(5, 7, 2, NOW() - INTERVAL '2 days'),
+(6, 3, 1, NOW() - INTERVAL '1 days'),
+(7, 2, 1, NOW()),
+(8, 1, 2, NOW() - INTERVAL '2 days'),
+(8, 2, 1, NOW() - INTERVAL '2 days'),
+(9, 3, 1, NOW() - INTERVAL '1 day'),
+(9, 4, 2, NOW() - INTERVAL '1 day'),
+(10, 5, 2, NOW() - INTERVAL '12 hours'),
+(11, 6, 1, NOW() - INTERVAL '8 hours'),
+(12, 1, 3, NOW() - INTERVAL '4 hours');
 
 -- Historique statut commande
 INSERT INTO historique_statut_commande (commande_id, statut_id, mis_a_jour_le) VALUES
@@ -117,25 +123,6 @@ INSERT INTO historique_statut_commande (commande_id, statut_id, mis_a_jour_le) V
 (6, 3, NOW()),
 (7, 3, NOW());
 
--- Commandes additionnelles pour tests de livraison
-INSERT INTO commandes (client_id, cree_le) VALUES
-(1, NOW() - INTERVAL '2 days'),
-(2, NOW() - INTERVAL '1 day'),
-(1, NOW() - INTERVAL '12 hours'),
-(2, NOW() - INTERVAL '8 hours'),
-(1, NOW() - INTERVAL '4 hours');
-
--- Détails des commandes additionnelles
-INSERT INTO commande_repas (commande_id, repas_id, quantite) VALUES
-(8, 1, 2), -- Commande 8
-(8, 2, 1),
-(9, 3, 1), -- Commande 9
-(9, 4, 2),
-(10, 5, 2), -- Commande 10
-(11, 6, 1), -- Commande 11
-(12, 1, 3); -- Commande 12
-
---Livreurs et affectations donnee
 -- Livreurs
 INSERT INTO livreurs (nom, contact) VALUES
 ('Jean Rakoto', '0321234567'),
@@ -145,10 +132,10 @@ INSERT INTO livreurs (nom, contact) VALUES
 
 -- Affectation secteur (zones_livreurs)
 INSERT INTO zones_livreurs (livreur_id, zone_id) VALUES
-(1, 1), -- Jean à Analakely
-(2, 2), -- Miora à Isoraka
-(3, 3), -- Hery à Ivandry
-(4, 1); -- Lala à Analakely
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 1);
 
 -- Historique statut livreur
 INSERT INTO historique_statut_livreur (livreur_id, statut_id, mis_a_jour_le) VALUES
@@ -157,46 +144,30 @@ INSERT INTO historique_statut_livreur (livreur_id, statut_id, mis_a_jour_le) VAL
 (3, 3, NOW() - INTERVAL '3 days'),
 (4, 1, NOW());
 
---Livraisons donnee
--- Livraisons pour commandes initiales
-INSERT INTO livraisons (livreur_id, commande_id) VALUES
-(1, 1),
-(2, 2),
-(4, 3);
-
--- Historique statut livraison initial
-INSERT INTO historique_statut_livraison (livraison_id, statut_id, mis_a_jour_le) VALUES
-(1, 3, NOW() - INTERVAL '1 days'),
-(2, 2, NOW()),
-(3, 1, NOW());
-
--- Livraisons pour commandes additionnelles
+-- Livraisons
 INSERT INTO livraisons (livreur_id, commande_id, attribue_le) VALUES
+(1, 1, NOW() - INTERVAL '6 days'),
+(2, 2, NOW() - INTERVAL '5 days'),
+(4, 3, NOW() - INTERVAL '4 days'),
 (1, 8, NOW() - INTERVAL '2 days'),
 (2, 9, NOW() - INTERVAL '1 day'),
 (3, 10, NOW() - INTERVAL '12 hours'),
 (1, 11, NOW() - INTERVAL '8 hours'),
 (2, 12, NOW() - INTERVAL '4 hours');
 
--- Historique statut livraison additionnel
+-- Historique statut livraison
 INSERT INTO historique_statut_livraison (livraison_id, statut_id, mis_a_jour_le) VALUES
--- Livraison 4: Livree
+(1, 3, NOW() - INTERVAL '1 days'),
+(2, 2, NOW()),
+(3, 1, NOW()),
 (4, 1, NOW() - INTERVAL '2 days'),
 (4, 2, NOW() - INTERVAL '1 day 23 hours'),
 (4, 3, NOW() - INTERVAL '1 day 22 hours'),
-
--- Livraison 5: En livraison
 (5, 1, NOW() - INTERVAL '1 day'),
 (5, 2, NOW() - INTERVAL '23 hours'),
-
--- Livraison 6: En attente
 (6, 1, NOW() - INTERVAL '12 hours'),
-
--- Livraison 7: Annulee
 (7, 1, NOW() - INTERVAL '8 hours'),
 (7, 4, NOW() - INTERVAL '7 hours'),
-
--- Livraison 8: En attente
 (8, 1, NOW() - INTERVAL '4 hours');
 
 --/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,8 +179,6 @@ CREATE OR REPLACE VIEW v_restaurants_list AS
 SELECT
     r.id,
     r.nom,
-    r.horaire_debut,
-    r.horaire_fin,
     r.adresse,
     r.image,
     c.valeur AS commission,
@@ -235,7 +204,6 @@ SELECT
     l.id,
     l.nom,
     l.contact,
-    l.photo,
     z.nom AS secteur,
     s.appellation AS statut
 FROM livreurs l
@@ -350,7 +318,6 @@ LEFT JOIN (
     ) hsl
     JOIN statut_livraison sl ON hsl.statut_id = sl.id
 ) sl ON sl.livraison_id = l.id
-WHERE l.id = %s
 GROUP BY l.id, lr.nom, r.nom, z.nom, sl.appellation;
 
 --restaurant-orders

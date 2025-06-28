@@ -339,7 +339,7 @@ class Restaurant:
     def financial(restaurant_id, date_from, date_to):
         """Calcule les données financières pour un restaurant."""
         restaurant = db.fetch_one("""
-            SELECT r.nom, r.image, r.adresse, r.horaire_debut, r.horaire_fin,
+            SELECT r.nom, r.image, r.adresse,
                    c.valeur as commission
             FROM restaurants r
             LEFT JOIN commissions c ON c.restaurant_id = r.id
@@ -354,18 +354,21 @@ class Restaurant:
             WHERE restaurant_id = %s
               AND jour >= %s AND jour < %s
         """
-        result = db.fetch_one(query, (restaurant_id, date_from, date_to))
-        total_brut = result['total_brut'] if result else 0
-        nb_commandes = result['nb_commandes'] if result else 0
+        params = (restaurant_id, date_from, date_to)
+        result = db.fetch_one(query, params)
+        if result is not None:
+            total_brut = result.get('total_brut', 0)
+            nb_commandes = result.get('nb_commandes', 0)
+        else:
+            total_brut = 0
+            nb_commandes = 0
 
         commission_percent = restaurant.get('commission', 0)
         commission_montant = (total_brut * commission_percent / 100) if total_brut else 0
 
         query_frais = """
-            SELECT COALESCE(SUM(montant), 0) as total_frais
-            FROM frais_restaurant
-            WHERE restaurant_id = %s
-            AND date >= %s AND date < %s
+            SELECT COALESCE(SUM(valeur), 0) as total_frais FROM commissions WHERE restaurant_id = %s
+            AND mis_a_jour_le >= %s AND mis_a_jour_le < %s
         """
         frais = db.fetch_one(query_frais, (restaurant_id, date_from, date_to))
         total_frais = frais['total_frais'] if frais else 0
