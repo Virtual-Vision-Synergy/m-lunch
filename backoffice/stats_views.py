@@ -1,9 +1,13 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum, Count, Q, F
+from django.db.models.functions import TruncDay, TruncMonth, TruncYear
+from django.utils import timezone
 import json
-from database.db import fetch_query
-from mlunch.core.Restaurant import Restaurant
-from mlunch.core.Zone import Zone
+from mlunch.core.models import (
+    Restaurant, Zone, Commande, Repas, TypeRepas, Client,
+    CommandeRepas, RestaurantRepas, ZoneRestaurant, Promotion
+)
 from django.shortcuts import render
 
 def testchart(request):
@@ -35,125 +39,143 @@ def get_stats(request):
         if base_filter == 'restaurant' and (not restaurant_id or not isinstance(restaurant_id, int)):
             return JsonResponse({"error": "ID de restaurant invalide"}, status=400)
 
+        # Vérifier que l'ID existe
+        if base_filter == 'zone':
+            if not Zone.objects.filter(id=zone_id).exists():
+                return JsonResponse({"error": "Zone non trouvée"}, status=404)
+        else:
+            if not Restaurant.objects.filter(id=restaurant_id).exists():
+                return JsonResponse({"error": "Restaurant non trouvé"}, status=404)
+
         # Déterminer le groupement temporel
-        date_trunc = {
-            'day': "date_trunc('day', c.cree_le)",
-            'month': "date_trunc('month', c.cree_le)",
-            'year': "date_trunc('year', c.cree_le)"
-        }[temporal_filter]
+        trunc_functions = {
+            'day': TruncDay,
+            'month': TruncMonth,
+            'year': TruncYear
+        }
+        trunc_func = trunc_functions[temporal_filter]
 
-        # Construire la requête SQL
+        # Base queryset des commandes avec filtrage
+        if base_filter == 'zone':
+            # Filtrer les commandes par zone via les restaurants
+            commandes_queryset = Commande.objects.filter(
+                repas_commandes__repas__restaurants_repas__restaurant__zones_restaurants__zone_id=zone_id
+            ).distinct()
+        else:  # restaurant
+            # Filtrer les commandes par restaurant
+            commandes_queryset = Commande.objects.filter(
+                repas_commandes__repas__restaurants_repas__restaurant_id=restaurant_id
+            ).distinct()
+
         if content_filter == 'revenue':
-            # Chiffre d'affaires
-            query = """
-                SELECT 
-                    %s AS period,
-                    COALESCE(SUM(cr.quantite * (r.prix * (1.0 - COALESCE(p.pourcentage_reduction, 0)/100.0))), 0) AS revenue
-                FROM commandes c
-                JOIN commande_repas cr ON c.id = cr.commande_id
-                JOIN repas r ON cr.repas_id = r.id
-                LEFT JOIN promotions p ON r.id = p.repas_id 
-                    AND p.date_concerne = DATE(c.cree_le)
-                JOIN restaurants rest ON r.id IN (
-                    SELECT repas_id FROM repas_restaurant WHERE restaurant_id = rest.id
-                )
-            """ % date_trunc
-            params = []
+            # Chiffre d'affaires réel basé sur les commandes et les prix des repas
+            stats = commandes_queryset.annotate(
+                period=trunc_func('cree_le')
+            ).values('period').annotate(
+                revenue=Sum(F('repas_commandes__quantite') * F('repas_commandes__prix_unitaire'))
+            ).order_by('period')
 
-            if base_filter == 'zone':
-                query += """
-                    JOIN zones_restaurant zr ON rest.id = zr.restaurant_id
-                    WHERE zr.zone_id = %s
-                """
-                params.append(zone_id)
-            else:  # restaurant
-                query += """
-                    WHERE rest.id = %s
-                """
-                params.append(restaurant_id)
-
-            query += """
-                GROUP BY period
-                ORDER BY period
-            """
+            results = [
+                {
+                    'period': stat['period'].strftime('%Y-%m-%d' if temporal_filter == 'day'
+                                                   else '%Y-%m' if temporal_filter == 'month'
+                                                   else '%Y'),
+                    'revenue': stat['revenue'] or 0
+                }
+                for stat in stats
+            ]
 
         else:  # orders_by_type
-            # Nombre de commandes par type de repas
-            query = """
-                SELECT 
-                    tr.nom AS type_repas,
-                    COALESCE(SUM(cr.quantite), 0) AS order_count
-                FROM commandes c
-                JOIN commande_repas cr ON c.id = cr.commande_id
-                JOIN repas r ON cr.repas_id = r.id
-                JOIN types_repas tr ON r.type_id = tr.id
-                JOIN restaurants rest ON r.id IN (
-                    SELECT repas_id FROM repas_restaurant WHERE restaurant_id = rest.id
-                )
-            """
-            params = []
-
+            # Nombre de commandes par type de repas avec filtrage approprié
             if base_filter == 'zone':
-                query += """
-                    JOIN zones_restaurant zr ON rest.id = zr.restaurant_id
-                    WHERE zr.zone_id = %s
-                """
-                params.append(zone_id)
+                type_stats = CommandeRepas.objects.filter(
+                    repas__restaurants_repas__restaurant__zones_restaurants__zone_id=zone_id
+                ).values('repas__type__nom').annotate(
+                    order_count=Sum('quantite')
+                ).order_by('-order_count')
             else:  # restaurant
-                query += """
-                    WHERE rest.id = %s
-                """
-                params.append(restaurant_id)
+                type_stats = CommandeRepas.objects.filter(
+                    repas__restaurants_repas__restaurant_id=restaurant_id
+                ).values('repas__type__nom').annotate(
+                    order_count=Sum('quantite')
+                ).order_by('-order_count')
 
-            query += """
-                GROUP BY tr.nom
-            """
+            results = [
+                {
+                    'type_repas': stat['repas__type__nom'] or "Type non défini",
+                    'order_count': stat['order_count']
+                }
+                for stat in type_stats
+            ]
 
-        # Exécuter la requête
-        results, error = fetch_query(query, params)
-        if error:
-            print(f"Erreur SQL: {error}")  # Log dans le terminal
-            return JsonResponse({"error": f"Erreur lors de la récupération des données : {str(error)}"}, status=500)
+        return JsonResponse({"data": results})
 
-        # Formater les résultats
-        if content_filter == 'revenue':
-            chart_type = 'line'
-            data = {
-                'labels': [row['period'].strftime('%Y-%m-%d' if temporal_filter == 'day' else '%Y-%m' if temporal_filter == 'month' else '%Y') for row in results],
-                'values': [float(row['revenue']) for row in results]
-            }
-        else:  # orders_by_type
-            chart_type = 'pie'
-            # Limiter à 5 tranches, regrouper les autres en "Autres"
-            if len(results) > 5:
-                sorted_results = sorted(results, key=lambda x: x['order_count'], reverse=True)
-                top_5 = sorted_results[:5]
-                other_sum = sum(row['order_count'] for row in sorted_results[5:])
-                results = top_5 + [{'type_repas': 'Autres', 'order_count': other_sum}] if other_sum > 0 else top_5
-            data = {
-                'labels': [row['type_repas'] for row in results],
-                'values': [int(row['order_count']) for row in results]
-            }
-
-        print(f"Données récupérées: {data}")  # Log dans le terminal
-        return JsonResponse({
-            'chart_type': chart_type,
-            'data': data
-        })
-
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
     except Exception as e:
-        print(f"Erreur inattendue: {str(e)}")  # Log dans le terminal
-        return JsonResponse({"error": f"Erreur inattendue : {str(e)}"}, status=500)
+        return JsonResponse({"error": f"Erreur interne: {str(e)}"}, status=500)
 
 @csrf_exempt
-
-def get_restaurants(request):
-    restaurants = Restaurant.GetAllRestaurants()
-    print(f"Restaurants récupérés: {restaurants}")  # Log dans le terminal
-    return JsonResponse({'restaurants': restaurants})
-
 def get_zones(request):
-    
-    zones = Zone.GetAllZone()
-    print(f"Zones récupérées: {zones}")  # Log dans le terminal
-    return JsonResponse({'zones': zones})
+    """API pour récupérer la liste des zones avec le nombre de restaurants."""
+    try:
+        zones = Zone.objects.annotate(
+            restaurant_count=Count('restaurants_zones')
+        ).values('id', 'nom', 'description', 'restaurant_count')
+        return JsonResponse({"zones": list(zones)})
+    except Exception as e:
+        return JsonResponse({"error": f"Erreur: {str(e)}"}, status=500)
+
+@csrf_exempt
+def get_restaurants(request):
+    """API pour récupérer la liste des restaurants avec informations supplémentaires."""
+    try:
+        restaurants = Restaurant.objects.annotate(
+            zone_count=Count('zones_restaurants'),
+            repas_count=Count('repas_restaurants')
+        ).values('id', 'nom', 'adresse', 'zone_count', 'repas_count')
+        return JsonResponse({"restaurants": list(restaurants)})
+    except Exception as e:
+        return JsonResponse({"error": f"Erreur: {str(e)}"}, status=500)
+
+@csrf_exempt
+def get_dashboard_summary(request):
+    """API pour récupérer un résumé complet pour le dashboard."""
+    try:
+        # Statistiques générales
+        total_clients = Client.objects.count()
+        total_commandes = Commande.objects.count()
+        total_restaurants = Restaurant.objects.count()
+        total_zones = Zone.objects.count()
+        total_repas = Repas.objects.count()
+
+        # Commandes récentes (dernières 7 jours)
+        from datetime import timedelta
+        recent_date = timezone.now() - timedelta(days=7)
+        recent_commandes = Commande.objects.filter(cree_le__gte=recent_date).count()
+
+        # Chiffre d'affaires total (si des commandes existent)
+        total_revenue = CommandeRepas.objects.aggregate(
+            total=Sum(F('quantite') * F('prix_unitaire'))
+        )['total'] or 0
+
+        # Top 5 des repas les plus commandés
+        top_repas = CommandeRepas.objects.values('repas__nom').annotate(
+            total_quantite=Sum('quantite')
+        ).order_by('-total_quantite')[:5]
+
+        summary = {
+            'total_clients': total_clients,
+            'total_commandes': total_commandes,
+            'total_restaurants': total_restaurants,
+            'total_zones': total_zones,
+            'total_repas': total_repas,
+            'recent_commandes': recent_commandes,
+            'total_revenue': total_revenue,
+            'growth_rate': round((recent_commandes / max(total_commandes, 1)) * 100, 2),
+            'top_repas': list(top_repas)
+        }
+
+        return JsonResponse({"summary": summary})
+    except Exception as e:
+        return JsonResponse({"error": f"Erreur: {str(e)}"}, status=500)
