@@ -28,3 +28,36 @@ INSERT INTO statut_livraison (appellation) VALUES
     ('Livré'),
     ('Annulé'),
     ('Échec de livraison');
+-- Statuts pour zones
+INSERT INTO statut_zone (id, appellation) VALUES 
+(1, 'Active'),
+(3, 'Supprimée');
+
+-- Statuts pour entités
+INSERT INTO statut_entite (id, appellation) VALUES 
+(1, 'Active'),
+(2, 'Supprimée');
+
+-- Entités
+INSERT INTO entites (id, nom) VALUES 
+(1, 'ISPM'),
+(2, 'Orange Ankorondrano'),
+(3, 'Université dAntananarivo');
+
+-- Historique des statuts pour entités
+INSERT INTO historique_statut_entite (entite_id, statut_id, mis_a_jour_le) VALUES 
+(1, 1, '2025-06-01 10:00:00'),
+(2, 1, '2025-06-01 10:00:00'),
+(3, 1, '2025-06-01 10:00:00');
+
+-- Zone de test
+INSERT INTO zones (id, nom, description, zone) VALUES 
+(1, 'Secteur ISPM', 'Zone autour de lISPM', ST_GeomFromText('POLYGON((2.3522 48.8566, 2.3523 48.8567, 2.3524 48.8566, 2.3522 48.8566))', 4326));
+
+INSERT INTO historique_statut_zone (zone_id, statut_id, mis_a_jour_le) VALUES 
+(1, 1, '2025-06-01 10:00:00');
+
+-- Associations zone-entité
+INSERT INTO reference_zone_entite (zone_id, entite_id) VALUES 
+(1, 1), -- Secteur ISPM lié à ISPM
+(1, 2); -- Secteur ISPM lié à Orange Ankorondrano

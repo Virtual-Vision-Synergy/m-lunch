@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des zones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Favicon pour éviter l'erreur 404 -->
+    <link rel="icon" href="data:,">
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6">Gestion des Zones</h1>
+        
+        <!-- Liste des zones -->
+        <div id="zones-list" class="mb-6">
+            <!-- Rempli dynamiquement par JavaScript -->
+        </div>
+
+        <!-- Bouton pour ajouter une zone -->
+        <button id="add-zone-btn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">Ajouter une zone</button>
+    </div>
+
+    <!-- Modale pour ajouter/modifier une zone -->
+    <div id="zone-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 id="modal-title" class="text-xl font-semibold mb-4">Ajouter une zone</h2>
+            <form id="zone-form">
+                <div class="mb-4">
+                    <label for="zone-nom" class="block text-sm font-medium text-gray-700">Nom du secteur</label>
+                    <input type="text" id="zone-nom" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="zone-entites" class="block text-sm font-medium text-gray-700">Entités de référence</label>
+                    <select id="zone-entites" multiple class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" size="5">
+                        <!-- Rempli dynamiquement -->
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="zone-description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="zone-description" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="4"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="zone-coordinates" class="block text-sm font-medium text-gray-700">Coordonnées (JSON)</label>
+                    <textarea id="zone-coordinates" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder='[[lon1, lat1], [lon2, lat2], [lon3, lat3]]'></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="cancel-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Annuler</button>
+                    <button type="submit" id="save-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale pour les détails d'une zone -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-semibold mb-4">Détails de la zone</h2>
+            <div id="detail-content" class="mb-4">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <div class="flex justify-end">
+                <button id="close-detail-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Charger les zones
+        async function loadZones() {
+            console.log('Tentative de chargement des zones depuis /staff/api/zones/');
+            try {
+                const response = await fetch('/staff/api/zones/');
+                console.log('Réponse reçue pour /staff/api/zones/:', response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                const zonesList = document.getElementById('zones-list');
+                zonesList.innerHTML = '';
+                data.zones.forEach(zone => {
+                    const zoneDiv = document.createElement('div');
+                    zoneDiv.className = 'border-b py-4 flex justify-between items-center';
+                    zoneDiv.innerHTML = `
+                        <div>
+                            <p><strong>📍 Secteur :</strong> ${zone.nom}</p>
+                            <p><strong>📌 Entités :</strong> ${
+                                zone.entites && zone.entites.length > 0 
+                                    ? zone.entites.map(e => `${e.nom} (${e.statut || 'Inconnu'})`).join(', ')
+                                    : 'Aucune'
+                            }</p>
+                            <p><strong>📝 Description :</strong> ${zone.description || 'Aucune'}</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button class="edit-btn bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600" data-id="${zone.id}">Modifier</button>
+                            <button class="delete-btn bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" data-id="${zone.id}">Supprimer</button>
+                            <button class="detail-btn bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" data-id="${zone.id}">Détails</button>
+                        </div>
+                    `;
+                    zonesList.appendChild(zoneDiv);
+                });
+                console.log('Zones chargées:', data.zones);
+            } catch (error) {
+                console.error('Erreur lors du chargement des zones:', error.message);
+                alert('Erreur lors du chargement des zones: ' + error.message);
+            }
+        }
+
+        // Charger les entités
+        async function loadEntites(selectElement) {
+            console.log('Tentative de chargement des entités depuis /staff/api/entites/');
+            try {
+                const response = await fetch('/staff/api/entites/');
+                console.log('Réponse reçue pour /staff/api/entites/:', response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                selectElement.innerHTML = '';
+                data.entites.forEach(entite => {
+                    const option = document.createElement('option');
+                    option.value = entite.id;
+                    option.textContent = `${entite.nom} (${entite.statut})`;
+                    selectElement.appendChild(option);
+                });
+                console.log('Entités chargées:', data.entites);
+            } catch (error) {
+                console.error('Erreur lors du chargement des entités:', error.message);
+                alert('Erreur lors du chargement des entités: ' + error.message);
+            }
+        }
+
+        // Afficher la modale pour ajouter/modifier
+        function showModal(title, zone = null) {
+            const modal = document.getElementById('zone-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const form = document.getElementById('zone-form');
+            const nomInput = document.getElementById('zone-nom');
+            const entitesSelect = document.getElementById('zone-entites');
+            const descriptionInput = document.getElementById('zone-description');
+            const coordinatesInput = document.getElementById('zone-coordinates');
+            
+            modalTitle.textContent = title;
+            nomInput.value = zone ? zone.nom : '';
+            descriptionInput.value = zone ? zone.description : '';
+            coordinatesInput.value = zone ? JSON.stringify(zone.coordinates || []) : '';
+            form.dataset.zoneId = zone ? zone.id : '';
+            
+            // Charger les entités
+            loadEntites(entitesSelect).then(() => {
+                if (zone && zone.entites) {
+                    Array.from(entitesSelect.options).forEach(option => {
+                        option.selected = zone.entites.some(e => e.id == option.value);
+                    });
+                }
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        // Afficher la modale des détails
+        async function showDetailModal(zoneId) {
+            console.log(`Tentative de chargement des détails de la zone ${zoneId} depuis /staff/api/zones/${zoneId}/`);
+            try {
+                const response = await fetch(`/staff/api/zones/${zoneId}/`);
+                console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/:`, response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                const detailContent = document.getElementById('detail-content');
+                detailContent.innerHTML = `
+                    <p><strong>📍 Secteur :</strong> ${data.zone.nom}</p>
+                    <p><strong>📌 Entités :</strong> ${
+                        data.entites && data.entites.length > 0 
+                            ? data.entites.map(e => `${e.nom} (${e.statut_actuel || 'Inconnu'})`).join(', ')
+                            : 'Aucune'
+                    }</p>
+                    <p><strong>📝 Description :</strong> ${data.zone.description || 'Aucune'}</p>
+                    <p><strong>🗺️ Coordonnées :</strong> ${data.zone.zone}</p>
+                    <p><strong>📊 Statut actuel :</strong> ${data.zone.statut_actuel || 'Inconnu'}</p>
+                    <h3 class="text-lg font-semibold mt-4">Historique des statuts</h3>
+                    <ul class="list-disc pl-5">
+                        ${data.statuts.map(statut => `<li>${statut.statut_nom} (Mis à jour le ${new Date(statut.mis_a_jour_le).toLocaleString('fr-FR')})</li>`).join('')}
+                    </ul>
+                `;
+                
+                document.getElementById('detail-modal').classList.remove('hidden');
+                console.log('Détails affichés:', data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des détails:', error.message);
+                alert('Erreur lors du chargement des détails: ' + error.message);
+            }
+        }
+
+        // Fermer les modales
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Événements
+        document.getElementById('add-zone-btn').addEventListener('click', () => {
+            showModal('Ajouter une zone');
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            closeModal('zone-modal');
+        });
+
+        document.getElementById('close-detail-btn').addEventListener('click', () => {
+            closeModal('detail-modal');
+        });
+
+        document.getElementById('zone-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nom = document.getElementById('zone-nom').value;
+            const entiteIds = Array.from(document.getElementById('zone-entites').selectedOptions).map(opt => parseInt(opt.value));
+            const description = document.getElementById('zone-description').value;
+            const coordinates = JSON.parse(document.getElementById('zone-coordinates').value || '[]');
+            const zoneId = e.target.dataset.zoneId;
+
+            const data = {
+                nom,
+                entite_ids: entiteIds,
+                description,
+                coordinates,
+                statut_id: 1 // Statut "Active" par défaut
+            };
+
+            try {
+                const url = zoneId ? `/staff/api/zones/${zoneId}/update/` : '/staff/api/zones/create/';
+                const method = 'POST';
+                console.log(`Envoi de la requête à ${url}:`, data);
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                console.log(`Réponse reçue pour ${url}:`, response.status, response.statusText);
+                const result = await response.json();
+                if (result.error) throw new Error(result.error);
+
+                alert(zoneId ? 'Zone mise à jour avec succès' : 'Zone créée avec succès');
+                closeModal('zone-modal');
+                loadZones();
+            } catch (error) {
+                console.error('Erreur lors de l\'enregistrement:', error.message);
+                alert('Erreur lors de l\'enregistrement: ' + error.message);
+            }
+        });
+
+        document.getElementById('zones-list').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit-btn')) {
+                const zoneId = e.target.dataset.id;
+                console.log(`Tentative de chargement des détails pour modification de la zone ${zoneId}`);
+                try {
+                    const response = await fetch(`/staff/api/zones/${zoneId}/`);
+                    console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/:`, response.status, response.statusText);
+                    if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    showModal('Modifier la zone', {
+                        id: data.zone.id,
+                        nom: data.zone.nom,
+                        description: data.zone.description,
+                        coordinates: data.zone.zone ? JSON.parse(data.zone.zone.replace('POLYGON((', '[').replace('))', ']').replace(/ /g, ',')) : [],
+                        entites: data.entites || []
+                    });
+                } catch (error) {
+                    console.error('Erreur lors du chargement pour modification:', error.message);
+                    alert('Erreur lors du chargement pour modification: ' + error.message);
+                }
+            } else if (e.target.classList.contains('delete-btn')) {
+                if (confirm('Voulez-vous vraiment supprimer cette zone ?')) {
+                    const zoneId = e.target.dataset.id;
+                    console.log(`Tentative de suppression de la zone ${zoneId}`);
+                    try {
+                        const response = await fetch(`/staff/api/zones/${zoneId}/delete/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/delete/:`, response.status, response.statusText);
+                        const result = await response.json();
+                        if (result.error) throw new Error(result.error);
+                        alert('Zone supprimée avec succès');
+                        loadZones();
+                    } catch (error) {
+                        console.error('Erreur lors de la suppression:', error.message);
+                        alert('Erreur lors de la suppression: ' + error.message);
+                    }
+                }
+            } else if (e.target.classList.contains('detail-btn')) {
+                const zoneId = e.target.dataset.id;
+                showDetailModal(zoneId);
+            }
+        });
+
+        // Charger les zones initiales
+        loadZones();
+    </script>
+</body>
+</html>

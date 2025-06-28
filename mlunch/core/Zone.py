@@ -280,3 +280,51 @@ class Zone:
 
         except Exception as e:
             return {"error": f"Erreur inattendue : {str(e)}"}
+        
+    @staticmethod
+    def get_zones_with_entities() -> List[Dict[str, Any]]:
+        """
+        Récupère toutes les zones avec leurs entités associées et statuts actuels.
+        """
+        try:
+            # Récupérer toutes les zones via la fonction existante
+            zones = Zone.get_all()
+            if isinstance(zones, list) and zones and 'error' in zones[0]:
+                return [{"error": zones[0]['error']}]
+
+            # Pour chaque zone, récupérer les entités associées
+            results = []
+            for zone in zones:
+                query_entites = """
+                    SELECT 
+                        e.id, e.nom, se.appellation as statut_actuel
+                    FROM reference_zone_entite rze
+                    JOIN entites e ON rze.entite_id = e.id
+                    LEFT JOIN (
+                        SELECT DISTINCT ON (entite_id) entite_id, statut_id
+                        FROM historique_statut_entite
+                        ORDER BY entite_id, id DESC
+                    ) latest ON e.id = latest.entite_id
+                    LEFT JOIN statut_entite se ON latest.statut_id = se.id
+                    WHERE rze.zone_id = %s
+                """
+                entites, error = fetch_query(query_entites, (zone['id'],))
+                if error:
+                    return [{"error": f"Erreur lors de la récupération des entités : {str(error)}"}]
+                
+                formatted_zone = {
+                    "id": zone["id"],
+                    "nom": zone["nom"],
+                    "description": zone["description"],
+                    "zone": zone["zone"],
+                    "entites": [
+                        {"id": e["id"], "nom": e["nom"], "statut": e["statut_actuel"] or "Inconnu"}
+                        for e in entites
+                    ]
+                }
+                results.append(formatted_zone)
+
+            return results
+
+        except Exception as e:
+            return [{"error": f"Erreur inattendue : {str(e)}"}]
