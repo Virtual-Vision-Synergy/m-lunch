@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commandes du restaurant {{ restaurant.nom }}</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .filter-form { margin-bottom: 20px; }
+        .restaurant-info { margin-bottom: 20px; }
+        .restaurant-info img { max-width: 200px; }
+        .details-btn { cursor: pointer; color: blue; text-decoration: underline; }
+        .details-row { display: none; }
+        .filter-group { margin-right: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>{{ restaurant.nom }}</h2>
+        <img src="{{ restaurant.image|default:'/static/images/default.jpg' }}" alt="{{ restaurant.nom }}">
+        <p><strong>Secteur(s) :</strong> {{ restaurant.secteurs|default:'Non spécifié' }}</p>
+    </div>
+    <div>
+        <h3>Horaires du restaurant</h3>
+        <h4>Horaires réguliers</h4>
+        <ul>
+            {% for hour in horaires.regular_hours %}
+                <li>
+                    Jour {{ hour.day }} : 
+                    {% if hour.start_time and hour.end_time %}
+                        {{ hour.start_time }} - {{ hour.end_time }}
+                    {% else %}
+                        Fermé
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li>Aucun horaire régulier défini.</li>
+            {% endfor %}
+        </ul>
+        <h4>Horaires exceptionnels</h4>
+        <ul>
+            {% for hour in horaires.special_hours %}
+                <li>
+                    {{ hour.date }} : 
+                    {% if hour.start_time and hour.end_time %}
+                        {{ hour.start_time }} - {{ hour.end_time }}
+                    {% else %}
+                        Fermé
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li>Aucun horaire exceptionnel défini.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <h3>Liste des commandes</h3>
+    <form class="filter-form">
+        <div class="filter-group">
+            <label for="date-filter">Filtrer par date :</label>
+            <select id="date-filter" onchange="filterOrders()">
+                <option value="all">Toutes les dates</option>
+                <option value="day">Aujourd'hui</option>
+                <option value="month">Ce mois</option>
+                <option value="year">Cette année</option>
+                <option value="custom">Période personnalisée</option>
+            </select>
+            <div id="custom-date" style="display: none; margin-top: 10px;">
+                <label for="start-date">Début :</label>
+                <input type="date" id="start-date" onchange="filterOrders()">
+                <label for="end-date">Fin :</label>
+                <input type="date" id="end-date" onchange="filterOrders()">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label for="status-filter">Filtrer par statut :</label>
+            <select id="status-filter" onchange="filterOrders()">
+                <option value="">Tous les statuts</option>
+                {% for status in statuses %}
+                    <option value="{{ status|escapejs }}">{{ status }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="client-filter">Filtrer par client :</label>
+            <input type="text" id="client-filter" placeholder="Nom, prénom ou email" oninput="filterOrders()">
+        </div>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>🆔 Numéro</th>
+                <th>📅 Date & heure</th>
+                <th>👤 Nom du client</th>
+                <th>🍽️ Détail des plats</th>
+                <th>💲 Total</th>
+                <th>📦 Statut</th>
+                <th>💳 Mode de paiement</th>
+            </tr>
+        </thead>
+        <tbody id="orders-table-body">
+            <!-- Table body will be populated by JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        // Données initiales des commandes
+        const orders = [
+            {% for order in orders %}
+                {
+                    numero: "{{ order.numero|escapejs }}",
+                    date_heure: "{{ order.date_heure|date:'Y-m-d H:i' }}",
+                    date: "{{ order.date_heure|date:'Y-m-d' }}",
+                    client_name: "{{ order.client_name|lower|escapejs }}",
+                    client_email: "{{ order.client_email|lower|escapejs }}",
+                    nombre_repas: {{ order.nombre_repas|default:0 }},
+                    repas_details: "{{ order.repas_details|escapejs }}",
+                    prix_total: {{ order.prix_total|floatformat:"2"|default:"0.00" }},
+                    statut: "{{ order.statut|escapejs }}",
+                    mode_paiement: "{{ order.mode_paiement|default:'Non spécifié'|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+            {% empty %}
+                {}
+            {% endfor %}
+        ];
+
+        function toggleDetails(rowId) {
+            const row = document.getElementById(rowId);
+            row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
+        }
+
+        function filterOrders() {
+            const dateFilter = document.getElementById('date-filter').value;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const clientFilter = document.getElementById('client-filter').value.toLowerCase();
+            const tbody = document.getElementById('orders-table-body');
+
+            // Show/hide custom date fields
+            document.getElementById('custom-date').style.display = dateFilter === 'custom' ? 'block' : 'none';
+
+            // Filter orders
+            const filteredOrders = orders.filter(order => {
+                // Skip empty object if orders list is empty
+                if (Object.keys(order).length === 0) return false;
+
+                // Date filter
+                let dateMatch = true;
+                const orderDate = new Date(order.date);
+                const today = new Date('2025-06-28'); // Fixed date for consistency
+                today.setHours(0, 0, 0, 0);
+
+                if (dateFilter === 'day') {
+                    dateMatch = orderDate.toDateString() === today.toDateString();
+                } else if (dateFilter === 'month') {
+                    dateMatch = orderDate.getMonth() === today.getMonth() && orderDate.getFullYear() === today.getFullYear();
+                } else if (dateFilter === 'year') {
+                    dateMatch = orderDate.getFullYear() === today.getFullYear();
+                } else if (dateFilter === 'custom' && startDate && endDate) {
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    end.setHours(23, 59, 59, 999);
+                    dateMatch = orderDate >= start && orderDate <= end;
+                }
+
+                // Status filter
+                const statusMatch = !statusFilter || order.statut === statusFilter;
+
+                // Client filter
+                const clientMatch = !clientFilter || 
+                    order.client_name.includes(clientFilter) || 
+                    order.client_email.includes(clientFilter);
+
+                return dateMatch && statusMatch && clientMatch;
+            });
+
+            // Clear table body
+            tbody.innerHTML = '';
+
+            // Populate table
+            if (filteredOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">Aucune commande pour ce restaurant.</td></tr>';
+            } else {
+                filteredOrders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-numero', order.numero);
+                    row.setAttribute('data-date', order.date);
+                    row.setAttribute('data-status', order.statut);
+                    row.setAttribute('data-client-name', order.client_name);
+                    row.setAttribute('data-client-email', order.client_email);
+                    row.innerHTML = `
+                        <td>${order.numero}</td>
+                        <td>${order.date_heure}</td>
+                        <td>${order.client_name}</td>
+                        <td>
+                            ${order.nombre_repas} plat(s)
+                            ${order.nombre_repas > 0 ? `<span class="details-btn" onclick="toggleDetails('details-${order.numero}')">+ détails</span>` : ''}
+                        </td>
+                        <td>${order.prix_total} Ariary</td>
+                        <td>${order.statut}</td>
+                        <td>${order.mode_paiement}</td>
+                    `;
+                    tbody.appendChild(row);
+
+                    if (order.nombre_repas > 0) {
+                        const detailsRow = document.createElement('tr');
+                        detailsRow.id = `details-${order.numero}`;
+                        detailsRow.className = 'details-row';
+                        detailsRow.style.display = 'none';
+                        detailsRow.innerHTML = `<td colspan="7">${order.repas_details}</td>`;
+                        tbody.appendChild(row);
+                    }
+                });
+            }
+        }
+
+        window.onload = filterOrders;
+    </script>
+</body>
+</html>

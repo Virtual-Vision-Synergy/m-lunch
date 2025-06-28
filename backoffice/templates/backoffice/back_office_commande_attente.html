@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commandes en attente</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .filter-form { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Commandes en attente</h2>
+    <form class="filter-form" method="GET">
+        <label for="zone">Filtrer par zone :</label>
+        <select name="zone" id="zone">
+            <option value="">Toutes les zones</option>
+            {% for zone in zones %}
+                <option value="{{ zone.id }}" {% if selected_zone == zone.id|stringformat:"s" %}selected{% endif %}>{{ zone.nom }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="restaurant">Filtrer par restaurant :</label>
+        <select name="restaurant" id="restaurant">
+            <option value="">Tous les restaurants</option>
+            {% for restaurant in restaurants %}
+                <option value="{{ restaurant.id }}" {% if selected_restaurant == restaurant.id|stringformat:"s" %}selected{% endif %}>{{ restaurant.nom }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Filtrer</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Numéro</th>
+                <th>Nom du client</th>
+                <th>Secteur</th>
+                <th>Date et heure</th>
+                <th>Nombre de repas</th>
+                <th>Prix total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order.numero }}</td>
+                    <td>{{ order.client_name }}</td>
+                    <td>{{ order.secteur }}</td>
+                    <td>{{ order.date_heure|date:"Y-m-d H:i" }}</td>
+                    <td>{{ order.nombre_repas }}</td>
+                    <td>{{ order.prix_total|floatformat:2 }} Ariary</td>
+                    <td><a href="">attribuer une commande</a></td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">Aucune commande en attente.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

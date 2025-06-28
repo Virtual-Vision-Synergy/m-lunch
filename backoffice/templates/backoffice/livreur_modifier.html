@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Livreur</title>
+    <style>
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 100px; }
+        input, select { padding: 5px; }
+        .error { color: red; }
+        #confirmation-popup { display: none; position: fixed; top: 20%; left: 20%; width: 60%; background: white; border: 1px solid #000; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h2>Modifier Livreur</h2>
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <form id="livreur-form" method="post" onsubmit="return validateForm()">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="nom">Nom :</label>
+            <input type="text" id="nom" name="nom" value="{{ nom }}" required>
+        </div>
+        <div class="form-group">
+            <label for="contact">Contact :</label>
+            <input type="text" id="contact" name="contact" value="{{ contact }}" required>
+        </div>
+        <div class="form-group">
+            <label for="position">Position (lat,lon) :</label>
+            <input type="text" id="position" name="position" placeholder="{{ position }}">
+            <small>Format : latitude,longitude (ex: -18.8792,47.5079)</small>
+        </div>
+        <div class="form-group">
+            <label for="zones">Zone :</label>
+            <select id="zones" name="zones">
+                {% for zone in zones %}
+                    <option value="{{ zone.id }}" {% if zone.id == current_zones %}selected{% endif %}>
+                        {{ zone.nom }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="statut">Statut :</label>
+            <select id="statut" name="statut">
+                {% for status in statuses %}
+                    <option value="{{ status.appellation }}" {% if status.appellation == current_statut %}selected{% endif %}>
+                        {{ status.appellation }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="button" onclick="showConfirmation()">Modifier</button>
+    </form>
+
+    <div id="confirmation-popup">
+        <h3>Confirmer les modifications</h3>
+        <table>
+            <tr><th>Champ</th><th>Ancienne Valeur</th><th>Nouvelle Valeur</th></tr>
+            <tr><td>Nom</td><td id="old-nom">{{ nom }}</td><td id="new-nom"></td></tr>
+            <tr><td>Contact</td><td id="old-contact">{{ contact }}</td><td id="new-contact"></td></tr>
+            <tr><td>Position</td><td id="old-position">{{ position|default:"Aucune" }}</td><td id="new-position"></td></tr>
+            <tr><td>Zone</td><td id="old-zones">
+                {% for zone in zones %}{% if zone.id == current_zones %}{{ zone.nom }}{% else %}Aucune{% endif %}{% endfor %}
+            </td><td id="new-zones"></td></tr>
+            <tr><td>Statut</td><td id="old-statut">{{ current_statut }}</td><td id="new-statut"></td></tr>
+        </table>
+        <button onclick="submitForm()">Confirmer</button>
+        <button type="button" onclick="document.getElementById('confirmation-popup').style.display='none'">Annuler</button>
+    </div>
+
+    <script>
+        function showConfirmation() {
+            const form = document.getElementById('livreur-form');
+            const position = form.position.value;
+            if (position && !/^-?\d+\.?\d*,-?\d+\.?\d*$/.test(position)) {
+                alert("Position invalide. Utilisez le format 'latitude,longitude' (ex: -18.8792,47.5079).");
+                return;
+            }
+            document.getElementById('new-nom').textContent = form.nom.value;
+            document.getElementById('new-contact').textContent = form.contact.value;
+            document.getElementById('new-position').textContent = position || 'Aucune';
+            const zone = form.zones.options[form.zones.selectedIndex]?.text || 'Aucune';
+            document.getElementById('new-zones').textContent = zone;
+            document.getElementById('new-statut').textContent = form.statut.value;
+            document.getElementById('confirmation-popup').style.display = 'block';
+        }
+
+        function submitForm() {
+            document.getElementById('livreur-form').submit();
+        }
+    </script>
+</body>
+</html>
