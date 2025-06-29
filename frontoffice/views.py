@@ -1,8 +1,6 @@
 from django.shortcuts import render, redirect
-from database.db import fetch_query
 from django.http import JsonResponse
 
-from django.contrib import messages
 import json
 from django.views.decorators.csrf import csrf_exempt
 from mlunch.core.services import ClientService, ZoneService
