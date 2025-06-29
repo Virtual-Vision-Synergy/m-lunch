@@ -37,12 +37,6 @@ class ClientService:
                 "date_inscri": client.date_inscri
             }}
         except Exception as e:
-            if 'unique' in str(e).lower():
-                try:
-                    existing = Client.objects.get(email=email)
-                    return {"error": f"Email déjà utilisé par : {existing.prenom or ''} {existing.nom or ''} ({existing.email})"}
-                except Exception:
-                    return {"error": "Email déjà utilisé par un autre client"}
             return {"error": f"Erreur lors de la création du client : {str(e)}"}
 
     @staticmethod
