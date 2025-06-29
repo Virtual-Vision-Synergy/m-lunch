@@ -1,37 +1,43 @@
-
 # M-LUNCH
 
-Une application web de gestion de livraison de repas 
+Une application web de gestion de livraison de repas
 
-## Technologies
+## Installation et démarrage rapide
 
-- **Langage :** Python  
-- **Framework :** Django  
-- **Base de données :** PostgreSQL avec PostGIS  
-- **Librairies supplémentaires :** GDAL (gestion géospatiale)
-À noter qu’il est nécessaire d’installer **GDAL** .  
-Vous pouvez le faire en téléchargeant l’installateur **OSGeo4W** depuis le lien suivant :  
-https://trac.osgeo.org/osgeo4w/wiki/OSGeo4W_fr
+1. **Créer un environnement virtuel Python**
 
-Sur cette page, cliquez sur **Installateur OSGeo4W** pour lancer le téléchargement.
-Etape d'installation de GDAL : 
-osgeo4w-setup.exe > Advanced install > Install from internet > Just me > local package directory (a laisser par defaut) > Direct connection > https://download.osgeo.org > rechercher GDAL  et sur All changer default en install > suivant
+Sous Windows :
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+Sous Linux/Mac :
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
----
-
-## Prérequis
-
-- asgiref==3.8.1
-- Django==5.2.3
-- dotenv==0.9.9
-- psycopg2-binary==2.9.10
-- python-dotenv==1.1.0
-- sqlparse==0.5.3
-- tzdata==2025.2
-
-
-Pour installer les prérequis, run :
+2. **Installer les dépendances**
 
 ```bash
 pip install -r requirements.txt
+```
 
+3. **Appliquer les migrations (base de données)**
+
+```bash
+python manage.py makemigrations mlunch.core
+python manage.py migrate
+```
+
+4. **Lancer le serveur de développement**
+
+```bash
+python manage.py runserver
+```
+
+## Notes supplémentaires
+- Assurez-vous d'avoir Python 3.8 ou supérieur installé.
+- Les migrations concernent principalement l'app `mlunch.core`.
+- Pour initialiser la base avec des données, vous pouvez utiliser les scripts SQL dans le dossier `database/` si besoin.
+- Pour toute erreur liée à l'environnement, vérifiez que l'environnement virtuel est bien activé.
