@@ -1,139 +1,155 @@
--- Données statiques
-INSERT INTO statut_zone (appellation) VALUES
-    ('Actif'),
-    ('Inactif');
+-- Status tables data
+INSERT INTO core_statutcommande (id, nom) VALUES 
+(1, 'En attente'), (2, 'Confirmée'), (3, 'Préparation'), (4, 'Prête'), (5, 'Annulée');
 
-INSERT INTO statut_entite (appellation) VALUES
-    ('Actif'),
-    ('Inactif');
+INSERT INTO core_statutlivraison (id, nom) VALUES 
+(1, 'Attribuée'), (2, 'En cours'), (3, 'Livrée'), (4, 'Annulée');
 
-INSERT INTO statut_commande (appellation) VALUES
-    ('En attente'),
-    ('En cours'),
-    ('Effectue');
+INSERT INTO core_statutlivreur (id, nom) VALUES 
+(1, 'Disponible'), (2, 'En livraison'), (3, 'Indisponible');
 
-INSERT INTO statut_livreur (appellation) VALUES
-    ('Disponible'),
-    ('En livraison'),
-    ('Inactif');
+INSERT INTO core_statutrestaurant (id, nom) VALUES 
+(1, 'Ouvert'), (2, 'Fermé'), (3, 'En pause');
 
-INSERT INTO statut_livraison (appellation) VALUES
-    ('Annulee'),
-    ('en cours de livraison'),
-    ('livree');
+INSERT INTO core_statutzone (id, nom) VALUES 
+(1, 'Active'), (2, 'Inactive'), (3, 'Temporairement désactivée');
 
-INSERT INTO statut_restaurant (appellation) VALUES
-    ('Actif'),
-    ('Inactif');
+-- Meal types
+INSERT INTO core_typerepas (id, nom) VALUES 
+(1, 'Plat principal'), (2, 'Entrée'), (3, 'Dessert'), (4, 'Boisson'), (5, 'Spécialité malgache');
 
-INSERT INTO types_repas (nom) VALUES
-    ('Entree'),
-    ('Plat'),
-    ('Dessert'),
-    ('Boisson');
+-- Zones (with PostGIS data for Antananarivo districts)
+INSERT INTO core_zone (id, nom, description, zone) VALUES
+(1, 'Analakely', 'Centre-ville', 'POLYGON((47.5259 -18.9141, 47.5352 -18.9141, 47.5352 -18.9070, 47.5259 -18.9070, 47.5259 -18.9141))'),
+(2, 'Andravoahangy', 'Zone commerciale', 'POLYGON((47.5330 -18.8950, 47.5430 -18.8950, 47.5430 -18.8880, 47.5330 -18.8880, 47.5330 -18.8950))'),
+(3, 'Ankorondrano', 'Zone d''affaires', 'POLYGON((47.5210 -18.8830, 47.5310 -18.8830, 47.5310 -18.8750, 47.5210 -18.8750, 47.5210 -18.8830))'),
+(4, 'Ivandry', 'Zone résidentielle', 'POLYGON((47.5390 -18.8730, 47.5480 -18.8730, 47.5480 -18.8650, 47.5390 -18.8650, 47.5390 -18.8730))'),
+(5, 'Ankadimbahoaka', 'Zone commerciale', 'POLYGON((47.5180 -18.9300, 47.5280 -18.9300, 47.5280 -18.9220, 47.5180 -18.9220, 47.5180 -18.9300))');
 
--- Données de test
-INSERT INTO clients (email, mot_de_passe, contact, prenom, nom) VALUES
-('alice@example.com', 'hashed_password1', '0341234567', 'Alice', 'Rasoanaivo'),
-('bob@example.com', 'hashed_password2', '0349876543', 'Bob', 'Rakoto');
+-- Restaurants
+INSERT INTO core_restaurant (id, nom, adresse, image, geo_position) VALUES
+(1, 'Le Carnivore', 'Avenue de l''Indépendance, Analakely', 'carnivore.jpg', 'POINT(47.5310 -18.9120)'),
+(2, 'Sakamanga', 'Rue Pasteur Raseta, Andravoahangy', 'sakamanga.jpg', 'POINT(47.5380 -18.8920)'),
+(3, 'La Varangue', 'Rue Rainitovo, Ankorondrano', 'varangue.jpg', 'POINT(47.5260 -18.8800)'),
+(4, 'Café de la Gare', 'Avenue de Madagascar, Soarano', 'cafe_gare.jpg', 'POINT(47.5320 -18.9060)'),
+(5, 'Pizza Paradiso', 'Rue Ratsimilaho, Ivandry', 'pizza_paradiso.jpg', 'POINT(47.5420 -18.8700)');
 
-INSERT INTO livreurs (nom, contact, position) VALUES
-('Tiana Randria', '0321234567', ST_GeogFromText('SRID=4326;POINT(47.5 -18.9)')),
-('Nomena Rala', '0327654321', ST_GeogFromText('SRID=4326;POINT(47.6 -18.88)'));
+-- Zone-Restaurant associations
+INSERT INTO core_zonerestaurant (zone_id, restaurant_id) VALUES
+(1, 1), (1, 4), (2, 2), (3, 3), (4, 5), (5, 2);
 
-INSERT INTO restaurants (nom, adresse, image, geo_position) VALUES
-('Le Gourmet', 'Rue 12, Antananarivo', 'gourmet.png', ST_GeogFromText('SRID=4326;POINT(47.51 -18.91)')),
-('Snack Tana', 'Boulevard Tsimisy', 'snack.png', ST_GeogFromText('SRID=4326;POINT(47.52 -18.92)'));
+-- Restaurant status history
+INSERT INTO core_historiquestatutrestaurant (restaurant_id, statut_id, mis_a_jour_le) VALUES
+(1, 1, '2025-06-29 10:00:00'),
+(2, 1, '2025-06-29 09:30:00'),
+(3, 1, '2025-06-29 11:00:00'),
+(4, 2, '2025-06-29 22:00:00'),
+(5, 1, '2025-06-29 08:45:00');
 
-INSERT INTO repas (nom, description, image, type_id, prix) VALUES
-('Salade verte', 'Une salade fraîche avec tomates', 'salade.png', 1, 3500),
-('Poulet grillé', 'Poulet mariné et grillé', 'poulet.png', 2, 8000),
-('Tarte au citron', 'Dessert citronné', 'tarte.png', 3, 4500),
-('Jus de mangue', 'Boisson naturelle', 'jus.png', 4, 2500);
+-- Meals
+INSERT INTO core_repas (id, nom, prix, description, image, est_dispo, type_id) VALUES
+(1, 'Ravitoto sy Hena-kisoa', 12000, 'Plat traditionnel malgache à base de feuilles de manioc et de porc', 'ravitoto.jpg', true, 5),
+(2, 'Romazava', 10000, 'Bouillon de viande de zébu aux brèdes', 'romazava.jpg', true, 5),
+(3, 'Burger Gasy', 15000, 'Burger avec steak de zébu', 'burger_gasy.jpg', true, 1),
+(4, 'Mofo Gasy', 4000, 'Gâteau traditionnel malgache', 'mofo_gasy.jpg', true, 3),
+(5, 'Pizza Fruits de Mer', 22000, 'Pizza aux fruits de mer frais', 'pizza_mer.jpg', true, 1),
+(6, 'THB', 5000, 'Bière locale Three Horses Beer', 'thb.jpg', true, 4),
+(7, 'Salade Malagasy', 8000, 'Salade fraîche aux légumes locaux', 'salade_malagasy.jpg', true, 2);
 
-INSERT INTO repas_restaurant (restaurant_id, repas_id) VALUES
-(1, 1), (1, 2), (1, 4), (2, 3), (2, 4);
+-- Restaurant-Meal associations
+INSERT INTO core_restaurantrepas (restaurant_id, repas_id, disponible) VALUES
+(1, 1, true), (1, 2, true), (1, 6, true),
+(2, 1, true), (2, 2, true), (2, 4, true), (2, 6, true),
+(3, 3, true), (3, 5, true), (3, 7, true), (3, 6, true),
+(4, 3, true), (4, 4, true), (4, 6, true),
+(5, 5, true), (5, 7, true), (5, 6, true);
 
-INSERT INTO zones (nom, description, zone) VALUES
-('Centre Ville', 'Zone centrale de Tana', ST_GeogFromText('SRID=4326;POLYGON((47.5 -18.9, 47.52 -18.9, 47.52 -18.88, 47.5 -18.88, 47.5 -18.9))')),
-('Andavamamba', 'Zone Est', ST_GeogFromText('SRID=4326;POLYGON((47.53 -18.91, 47.55 -18.91, 47.55 -18.89, 47.53 -18.89, 47.53 -18.91))'));
+-- Pickup points
+INSERT INTO core_pointrecup (id, nom, adresse) VALUES
+(1, 'Analakely Centre', 'Avenue de l''Indépendance, Analakely'),
+(2, 'Andravoahangy Marché', 'Rue Ratsimilaho, Andravoahangy'),
+(3, 'Station Jovenna', 'Boulevard de l''Europe, Ankorondrano'),
+(4, 'Shoprite', 'Route des Hydrocarbures, Ankorondrano'),
+(5, 'Ivandry Centre', 'Rue du Dr Raharinosy, Ivandry');
 
-INSERT INTO point_de_recuperation (nom, geo_position) VALUES
-('Station Analakely', ST_GeogFromText('SRID=4326;POINT(47.505 -18.89)')),
-('Marché Isotry', ST_GeogFromText('SRID=4326;POINT(47.54 -18.91)'));
+-- Clients
+INSERT INTO core_client (id, email, mot_de_passe, contact, prenom, nom, date_inscri) VALUES
+(1, 'rakoto@example.com', 'pbkdf2_sha256$390000$XnzqLtCx7GDUctg3ui4h8A$3s2ncf+3+A43lnTn9lFaX7eMU89B9YMzOMUQhZxk5QI=', '+261341234567', 'Jean', 'Rakoto', '2025-06-01 14:23:45'),
+(2, 'rasoa@example.com', 'pbkdf2_sha256$390000$ihQyPQarFczumo5S1HNmKR$4D4suFGC9JlI74DwXS+BMfYE5o+tuUqm5c7t9y7LvNM=', '+261331234568', 'Marie', 'Rasoa', '2025-06-05 09:12:36'),
+(3, 'rajaona@example.com', 'pbkdf2_sha256$390000$QQbnXP9HCOm6m9qiV7MzCU$hWXqp4EVuGO2lDw66MUZMLmXRhbj/jyHld11mZMw2wM=', '+261321234569', 'Pierre', 'Rajaona', '2025-06-10 16:45:23'),
+(4, 'aina@example.com', 'pbkdf2_sha256$390000$GhXpDvQCyNaxr7D4WHUtos$JDJJv1KByhP1yV9gXEep45POQZI2BGfvqs0yvXLi4qw=', '+261331234570', 'Aina', 'Rabesoa', '2025-06-12 11:34:12'),
+(5, 'faly@example.com', 'pbkdf2_sha256$390000$Ax8vy2CAZlbzhBEp4JA9gC$WpueB3uKs7ZwhWwBsLQuSlIIp2pJjbYJKzSdHIM9TaA=', '+261341234571', 'Faly', 'Andriamanana', '2025-06-15 08:23:56');
 
-INSERT INTO commandes (client_id, point_recup_id) VALUES
-(1, 1),
-(2, 2);
+-- Zone-Client associations
+INSERT INTO core_zoneclient (client_id, zone_id) VALUES
+(1, 1), (1, 3), (2, 2), (3, 4), (4, 5), (5, 1);
 
-INSERT INTO commande_repas (commande_id, repas_id, quantite) VALUES
-(1, 2, 1),
-(1, 4, 2),
-(2, 3, 1);
+-- Deliverers
+INSERT INTO core_livreur (id, nom, contact, position, date_inscri) VALUES
+(1, 'Rabe', '+261331234572', 'POINT(47.5300 -18.9100)', '2025-05-15 09:45:12'),
+(2, 'Nirina', '+261341234573', 'POINT(47.5350 -18.8920)', '2025-05-20 14:23:45'),
+(3, 'Mamy', '+261321234574', 'POINT(47.5250 -18.8810)', '2025-05-25 10:34:56'),
+(4, 'Solo', '+261331234575', 'POINT(47.5420 -18.8710)', '2025-05-28 08:12:23');
 
-INSERT INTO disponibilite_repas (repas_id, est_dispo) VALUES
-(1, TRUE),
-(2, TRUE),
-(3, FALSE),
-(4, TRUE);
+-- Deliverer status history
+INSERT INTO core_historiquestatutlivreur (livreur_id, statut_id, mis_a_jour_le) VALUES
+(1, 1, '2025-06-29 08:00:00'),
+(2, 2, '2025-06-29 12:15:00'),
+(3, 1, '2025-06-29 09:30:00'),
+(4, 3, '2025-06-29 16:45:00');
 
-INSERT INTO promotions (repas_id, pourcentage_reduction, date_concerne) VALUES
-(2, 15, CURRENT_DATE),
-(4, 10, CURRENT_DATE + INTERVAL '1 day');
+-- Orders
+INSERT INTO core_commande (id, client_id, point_recup_id, cree_le) VALUES
+(1, 1, 1, '2025-06-29 12:30:45'),
+(2, 2, 2, '2025-06-29 13:15:23'),
+(3, 3, 3, '2025-06-29 14:45:12'),
+(4, 4, 4, '2025-06-29 15:20:56'),
+(5, 5, 1, '2025-06-29 16:10:34');
 
-INSERT INTO livraisons (livreur_id, commande_id) VALUES
-(1, 1),
-(2, 2);
+-- Order statuses
+INSERT INTO core_historiquestatutcommande (commande_id, statut_id, mis_a_jour_le) VALUES
+(1, 2, '2025-06-29 12:35:45'),
+(2, 3, '2025-06-29 13:20:23'),
+(3, 1, '2025-06-29 14:45:12'),
+(4, 4, '2025-06-29 15:40:56'),
+(5, 2, '2025-06-29 16:15:34');
 
-INSERT INTO zones_restaurant (restaurant_id, zone_id) VALUES
-(1, 1),
-(2, 2);
+-- Order details
+INSERT INTO core_commanderepas (commande_id, repas_id, quantite, prix_unitaire) VALUES
+(1, 1, 2, 12000),
+(1, 6, 2, 5000),
+(2, 2, 1, 10000),
+(2, 4, 2, 4000),
+(3, 3, 2, 15000),
+(3, 6, 3, 5000),
+(4, 5, 1, 22000),
+(4, 7, 1, 8000),
+(5, 1, 1, 12000),
+(5, 2, 1, 10000),
+(5, 6, 2, 5000);
 
-INSERT INTO zones_clients (client_id, zone_id) VALUES
-(1, 1),
-(2, 2);
+-- Deliveries
+INSERT INTO core_livraison (id, commande_id, livreur_id, attribue_le) VALUES
+(1, 1, 1, '2025-06-29 12:40:00'),
+(2, 2, 2, '2025-06-29 13:25:00'),
+(3, 4, 3, '2025-06-29 15:45:00');
 
-INSERT INTO zones_livreurs (livreur_id, zone_id) VALUES
-(1, 1),
-(2, 2);
+-- Delivery statuses
+INSERT INTO core_historiquestatutlivraison (livraison_id, statut_id, mis_a_jour_le) VALUES
+(1, 2, '2025-06-29 12:55:00'),
+(2, 2, '2025-06-29 13:40:00'),
+(3, 3, '2025-06-29 16:20:00');
 
-INSERT INTO entites (nom) VALUES
-('Entité A'),
-('Entité B');
+-- Promotions
+INSERT INTO core_promotion (id, repas_id, pourcentage_reduction, date_debut, date_fin) VALUES
+(1, 1, 15, '2025-06-25', '2025-07-05'),
+(2, 3, 10, '2025-06-28', '2025-07-10'),
+(3, 5, 20, '2025-07-01', '2025-07-15');
 
-INSERT INTO historique_statut_zone (zone_id, statut_id) VALUES
-(1, 1),
-(2, 2);
-
-INSERT INTO historique_statut_entite (entite_id, statut_id) VALUES
-(1, 1),
-(2, 2);
-
-INSERT INTO reference_zone_entite (zone_id, entite_id) VALUES
-(1, 1),
-(2, 2);
-
-INSERT INTO historique_statut_commande (commande_id, statut_id) VALUES
-(1, 1),
-(1, 2),
-(2, 3);
-
-INSERT INTO historique_statut_livreur (livreur_id, statut_id) VALUES
-(1, 1),
-(2, 2);
-
-INSERT INTO historique_statut_livraison (livraison_id, statut_id) VALUES
-(1, 2),
-(2, 3);
-
-INSERT INTO historique_statut_restaurant (restaurant_id, statut_id) VALUES
-(1, 1),
-(2, 2);
-
-INSERT INTO historique_zones_recuperation (zone_id, point_recup_id) VALUES
-(1, 1),
-(2, 2);
-
-INSERT INTO limite_commandes_journalieres (nombre_commandes, date) VALUES
-(1, CURRENT_DATE),
-(3, CURRENT_DATE + INTERVAL '1 day');
+-- Zone status history
+INSERT INTO core_historiquestatutzone (zone_id, statut_id, mis_a_jour_le) VALUES
+(1, 1, '2025-06-01 08:00:00'),
+(2, 1, '2025-06-01 08:00:00'),
+(3, 1, '2025-06-01 08:00:00'),
+(4, 1, '2025-06-01 08:00:00'),
+(5, 1, '2025-06-01 08:00:00');
