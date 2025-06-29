@@ -18,6 +18,12 @@ class StatutCommande(models.Model):
     def __str__(self):
         return self.nom
 
+class ZoneClient(models.Model):
+    client = models.ForeignKey('Client', on_delete=models.CASCADE)
+    zone = models.ForeignKey('Zone', on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('client', 'zone')
+
 class PointRecup(models.Model):
     nom = models.CharField(max_length=100)
     adresse = models.CharField(max_length=255)

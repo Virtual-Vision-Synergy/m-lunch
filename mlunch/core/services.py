@@ -1,5 +1,7 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import validate_email
+from shapely import wkt
+from shapely.geometry import Point
 
 from .models import (
     Client, Commande, StatutCommande, HistoriqueStatutCommande, PointRecup,
@@ -307,6 +309,29 @@ class ZoneService:
                 }
         except Exception as e:
             return {"error": f"Erreur lors de la création de la zone : {str(e)}"}
+
+    @staticmethod
+    def get_zone_by_coord(lat, lon, max_distance_m=5000):
+        """
+        Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).
+        """
+        point = Point(float(lon), float(lat))
+        closest_zone = None
+        closest_dist = None
+        for zone in Zone.objects.all():
+            try:
+                poly = wkt.loads(zone.zone)
+                if poly.contains(point):
+                    return {'id': zone.id, 'nom': zone.nom}
+                dist = poly.distance(point) * 111320  # deg -> m (approx)
+                if closest_dist is None or dist < closest_dist:
+                    closest_zone = zone
+                    closest_dist = dist
+            except Exception:
+                continue
+        if closest_zone and closest_dist < max_distance_m:
+            return {'id': closest_zone.id, 'nom': closest_zone.nom}
+        return None
 
 
 class LivraisonService:

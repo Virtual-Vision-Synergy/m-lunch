@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from mlunch.core.Inscription import Inscription
 from mlunch.core.RechercheResto import RechercheResto
 from database.db import fetch_query
 from django.http import JsonResponse
@@ -9,69 +8,81 @@ import json
 from mlunch.core.Panier import Panier
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-import json
+from mlunch.core.services import ClientService, ZoneService
+from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de liaison
+from shapely import wkt
 
 def index(request):
     return render(request, 'frontoffice/index.html')
 
 def inscription_page(request):
-    if request.method == 'POST':
-        nom = request.POST.get('nom')
-        prenom = request.POST.get('prenom')
-        email = request.POST.get('email')
-        mot_de_passe = request.POST.get('mot_de_passe')
-        telephone = request.POST.get('telephone')
-        secteur_nom = request.POST.get('secteur')
+    try:
+        if request.method == 'POST':
+            nom = request.POST.get('nom')
+            prenom = request.POST.get('prenom')
+            email = request.POST.get('email')
+            mot_de_passe = request.POST.get('mot_de_passe')
+            telephone = request.POST.get('telephone')
+            secteur_nom = request.POST.get('secteur')
 
-        # Vérifier que le secteur est fourni
-        if not secteur_nom:
-            return render(request, 'frontoffice/inscription.html', {
-                'erreur': "Veuillez sélectionner un secteur en cliquant sur la carte.",
-                'zones': fetch_query("SELECT id, nom, ST_AsGeoJSON(zone) as geojson FROM zones")
-            })
+            # Vérifier que le secteur est fourni
+            if not secteur_nom:
+                raise ValueError("Veuillez sélectionner un secteur en cliquant sur la carte.")
 
-        # 1. Insérer client
-        success = Inscription.inscrire(nom, prenom, email, mot_de_passe, telephone)
-        if not success:
-            return render(request, 'frontoffice/inscription.html', {
-                'erreur': "Inscription échouée. Email peut-être déjà utilisé.",
-                'zones': fetch_query("SELECT id, nom, ST_AsGeoJSON(zone) as geojson FROM zones")
-            })
+            # 1. Insérer client via ORM
+            result = ClientService.create_client(email, mot_de_passe, contact=telephone, prenom=prenom, nom=nom)
+            if 'error' in result:
+                raise Exception(result['error'])
+            client_id = result['client']['id']
 
-        # 2. Récupérer l'ID du client
-        client_id = Inscription.getClientId(email)
-        if not client_id:
-            return render(request, 'frontoffice/inscription.html', {
-                'erreur': "Erreur lors de la récupération de l'ID client.",
-                'zones': fetch_query("SELECT id, nom, ST_AsGeoJSON(zone) as geojson FROM zones")
-            })
+            # 2. Vérifier que la zone existe et récupérer son instance
+            try:
+                zone = Zone.objects.get(nom=secteur_nom)
+            except Zone.DoesNotExist:
+                raise Exception(f"Secteur '{secteur_nom}' introuvable.")
 
-        # 3. Vérifier que la zone existe et récupérer son ID
-        zone_id = Inscription.getZoneId(secteur_nom)
-        if not zone_id:
-            return render(request, 'frontoffice/inscription.html', {
-                'erreur': f"Secteur '{secteur_nom}' introuvable.",
-                'zones': fetch_query("SELECT id, nom, ST_AsGeoJSON(zone) as geojson FROM zones")
-            })
+            # 3. Lier client/zone via ZoneClient
+            try:
+                client = Client.objects.get(id=client_id)
+                ZoneClient.objects.create(client=client, zone=zone)
+            except Exception as e:
+                raise Exception(f"Erreur lors de l'insertion dans zones_clients: {e}")
 
-        # Affichage debug dans le terminal
-        print(f"client_id = {client_id}")
-        print(f"zone_id = {zone_id}")
-        
-        # 4. Lier client/zone dans zones_clients
-        insertZone = Inscription.insertZoneClient(client_id, zone_id)
-        if not insertZone:
-            return render(request, 'frontoffice/inscription.html', {
-                'erreur': "Erreur lors de l'insertion dans zones_clients.",
-                'zones': fetch_query("SELECT id, nom, ST_AsGeoJSON(zone) as geojson FROM zones")
-            })
+            # Si tout s'est bien passé, rediriger vers la page d'accueil
+            return redirect('frontoffice_index')
 
-        # Si tout s'est bien passé, rediriger vers la page d'accueil
-        return redirect('frontoffice_index')
-
-    # GET: afficher carte et zones
-    zones = fetch_query("SELECT id, nom, ST_AsGeoJSON(zone) as geojson FROM zones")
-    return render(request, 'frontoffice/inscription.html', {'zones': zones})
+        # GET: afficher carte et zones
+        zones = Zone.objects.all()
+        zones_features = []
+        for z in zones:
+            try:
+                geom = wkt.loads(z.zone)
+                zones_features.append({
+                    'type': 'Feature',
+                    'geometry': json.loads(geom.to_geojson()),
+                    'properties': {'id': z.id, 'nom': z.nom}
+                })
+            except Exception:
+                continue
+        return render(request, 'frontoffice/inscription.html', {'zones': zones_features})
+    except Exception as e:
+        # En cas d'exception, afficher le message d'erreur et les zones
+        zones = Zone.objects.all()
+        zones_features = []
+        for z in zones:
+            try:
+                geom = wkt.loads(z.zone)
+                zones_features.append({
+                    'type': 'Feature',
+                    'geometry': json.loads(geom.to_geojson()),
+                    'properties': {'id': z.id, 'nom': z.nom}
+                })
+            except Exception:
+                continue
+        return render(request, 'frontoffice/inscription.html', {
+            'erreur': str(e),
+            'zones': zones_features
+        })
 
 def api_zone_from_coord(request):
     try:
@@ -80,7 +91,7 @@ def api_zone_from_coord(request):
     except (TypeError, ValueError):
         return JsonResponse({'success': False, 'error': 'Coordonnées invalides'})
 
-    zone = Inscription.getZone(lat, lon)
+    zone = ZoneService.get_zone_by_coord(lat, lon)
     if zone:
         return JsonResponse({'success': True, 'nom': zone['nom'], 'zone_id': zone['id']})
     else:

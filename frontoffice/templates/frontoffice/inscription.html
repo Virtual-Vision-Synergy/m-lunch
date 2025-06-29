@@ -1,52 +1,92 @@
-<form method="post">
-    {% csrf_token %}
-    
-    <label for="prenom">Prénom:</label><br>
-    <input type="text" name="prenom" required><br><br>
+<style>
+.container-inscription {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.container-inscription form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.container-inscription label {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+#map-container {
+    margin-top: 24px;
+    text-align: center;
+}
+#map {
+    width: 100%;
+    height: 400px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+</style>
 
-    <label for="nom">Nom:</label><br>
-    <input type="text" name="nom" required><br><br>
+<div class="container-inscription">
+    <form method="post">
+        {% csrf_token %}
+        <label for="prenom">Prénom:</label>
+        <input type="text" name="prenom" required>
 
-    <label for="email">Adresse e-mail:</label><br>
-    <input type="email" name="email" required><br><br>
+        <label for="nom">Nom:</label>
+        <input type="text" name="nom" required>
 
-    <label for="mot_de_passe">Mot de passe:</label><br>
-    <input type="password" name="mot_de_passe" required><br><br>
+        <label for="email">Adresse e-mail:</label>
+        <input type="email" name="email" required>
 
-    <label for="telephone">Numéro de téléphone:</label><br>
-    <input type="tel" name="telephone"><br><br>
+        <label for="mot_de_passe">Mot de passe:</label>
+        <input type="password" name="mot_de_passe" required>
 
-    <!-- DÉPLACER CETTE LIGNE ICI -->
-    <label for="secteur">Secteur:</label><br>
-    <input type="text" id="secteur" name="secteur" readonly placeholder="Cliquez sur la carte" required /><br><br>
+        <label for="telephone">Numéro de téléphone:</label>
+        <input type="tel" name="telephone">
 
-    <button type="submit">S'inscrire</button>
-</form>
+        <label for="secteur">Secteur:</label>
+        <input type="text" id="secteur" name="secteur" readonly placeholder="Cliquez sur la carte" required />
 
-<div id="map" style="height: 400px;"></div>
+        <button type="submit">S'inscrire</button>
+    </form>
+    <div id="map-container">
+        <h4>Sélectionnez votre secteur sur la carte</h4>
+        <div id="map"></div>
+    </div>
+</div>
 
-<!-- Le script reste pareil -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-    const map = L.map('map').setView([-18.8792, 47.5079], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    L.Control.geocoder().addTo(map);
+    document.addEventListener('DOMContentLoaded', function() {
+        const map = L.map('map').setView([-18.8792, 47.5079], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        L.Control.geocoder().addTo(map);
 
-    map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lon = e.latlng.lng;
-
-        fetch(`/api/zone-from-coord/?lat=${lat}&lon=${lon}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('secteur').value = data.nom;
-                    alert(`Zone sélectionnée : ${data.nom}`);
-                } else {
-                    alert("Aucune zone à moins de 5 km.");
-                }
-            });
+        let marker;
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lon = e.latlng.lng;
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lon]).addTo(map);
+            fetch(`/api/zone-from-coord/?lat=${lat}&lon=${lon}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('secteur').value = data.nom;
+                        alert(`Zone sélectionnée : ${data.nom}`);
+                    } else {
+                        document.getElementById('secteur').value = '';
+                        alert("Aucune zone à moins de 5 km.");
+                    }
+                });
+        });
     });
 </script>

@@ -1,14 +1,10 @@
-from django.shortcuts import render
 from django.contrib import messages
-from mlunch.core.services import (
-    ClientService, CommandeService, LivraisonService,
-    LivreurService, RepasService, RestaurantService, ZoneService
-)
-from mlunch.core.models import Client, Commande, Livraison, Livreur, Repas, Restaurant, Zone
+from django.shortcuts import render
 
-from django.http import JsonResponse
-from django.db import connection
-from datetime import datetime, timedelta
+from mlunch.core.services import (
+    ClientService, CommandeService, RestaurantService
+)
+
 
 def test_create_client(request):
     """Test de création d'un client avec les nouveaux services Django."""

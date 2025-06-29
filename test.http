@@ -1,0 +1,5 @@
+
+POST http://localhost:8000/inscription/
+Content-Type: application/x-www-form-urlencoded
+
+nom=Dupont&prenom=Jean&email=jean.dupont@example.com&mot_de_passe=MotDePasse123&telephone=0123456789&secteur=NomDuSecteur
