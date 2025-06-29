@@ -38,6 +38,7 @@ class Restaurant(models.Model):
     adresse = models.TextField()
     image = models.TextField(blank=True, null=True)  # chemin ou URL
     geo_position = models.PointField(geography=True, srid=4326)
+    description = models.TextField(blank=True, null=True)  # New description field
 
     class Meta:
         db_table = 'restaurants'
@@ -48,7 +49,7 @@ class Restaurant(models.Model):
 
 class ZoneRestaurant(models.Model):
     id = models.AutoField(primary_key=True)
-    restaurant = models.ForeignKey('Restaurant', on_delete=models.DO_NOTHING)  # Define Restaurant model
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.DO_NOTHING)  # Define Restaurant_model
     zone = models.ForeignKey(Zone, on_delete=models.DO_NOTHING)
 
     class Meta:
@@ -153,3 +154,15 @@ class HistoriqueStatutCommande(models.Model):
     class Meta:
         db_table = 'historique_statut_commande'
         managed = False
+
+class PointDeRecuperation(models.Model):
+    id = models.AutoField(primary_key=True)
+    nom = models.CharField(max_length=150)
+    geo_position = models.PointField(geography=True, srid=4326)
+
+    class Meta:
+        db_table = 'point_de_recuperation'
+        managed = False
+
+    def __str__(self):
+        return self.nom

@@ -114,3 +114,9 @@ INSERT INTO historique_statut_commande (commande_id, statut_id, mis_a_jour_le) V
 (3, 1, NOW() - INTERVAL '2 days'),
 (3, 2, NOW() - INTERVAL '36 hours'),
 (3, 3, NOW() - INTERVAL '18 hours');
+INSERT INTO point_de_recuperation (nom, geo_position)
+VALUES
+  ('Point A', ST_SetSRID(ST_MakePoint(47.5162, -18.8792), 4326)),  -- Antananarivo approx
+  ('Point B', ST_SetSRID(ST_MakePoint(47.5321, -18.9137), 4326)),
+  ('Point C', ST_SetSRID(ST_MakePoint(47.5450, -18.8900), 4326)),
+  ('Point D', ST_SetSRID(ST_MakePoint(47.5650, -18.8950), 4326));

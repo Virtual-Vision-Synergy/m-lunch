@@ -1,10 +1,12 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas, DisponibiliteRepas, Commande, HistoriqueStatutCommande, CommandeRepas
+from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas, DisponibiliteRepas, Commande, HistoriqueStatutCommande, CommandeRepas, PointDeRecuperation
 import random
 from django.contrib.auth.hashers import check_password
 from django.utils.timezone import now
 from django.db.models import Max, Sum, F
+from django.http import HttpResponseRedirect
+from functools import wraps
 
 def connexion_view(request):
     error_message = None
@@ -17,7 +19,7 @@ def connexion_view(request):
             client = Client.objects.get(email=email)
             if check_password(password, client.mot_de_passe):
                 request.session['client_id'] = client.id  # simple session login
-                return redirect('frontoffice_accueil')  # change to your home URL name
+                return redirect('frontoffice_restaurant')  # change to your home URL name
             else:
                 error_message = "Mot de passe incorrect."
         except Client.DoesNotExist:
@@ -26,7 +28,16 @@ def connexion_view(request):
     return render(request, 'frontoffice/connexion.html', {
         'error_message': error_message
     })
+    
+def authentification_requise(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.session.get('client_id'):
+            return HttpResponseRedirect('/connexion/')  # Change to your login URL if different
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
+@authentification_requise    
 def restaurants_geojson(request):
     client_id = request.session.get('client_id')
     if not client_id:
@@ -143,9 +154,74 @@ def detail_commande(request, commande_id):
         'total': total
     })
 
+def points_de_recuperation(request):
+    points = PointDeRecuperation.objects.all()
+
+    features = []
+    for point in points:
+        if not point.geo_position:
+            continue
+
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [point.geo_position.x, point.geo_position.y],
+            },
+            "properties": {
+                "id": point.id,
+                "nom": point.nom,
+            }
+        })
+
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+def all_restaurants(request):
+    restaurants = Restaurant.objects.all()
+
+    features = []
+    for r in restaurants:
+        if not r.geo_position:
+            continue
+
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [r.geo_position.x, r.geo_position.y],
+            },
+            "properties": {
+                "id": r.id,
+                "nom": r.nom,
+                "note": "N/A",
+                "image_url": r.image,
+                "adresse": r.adresse,
+                "description": r.description if r.description else "Aucune description disponible",
+            }
+        })
+
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+def restaurant_view(request):
+    return render(request, 'frontoffice/restaurant.html')
 
 def accueil_view(request):
     return render(request, 'frontoffice/accueil.html')
+
+def logout_view(request):
+    # Clear Django session
+    request.session.flush()  # Deletes session data and cookie
+    # OR alternative:
+    # del request.session['client_id']  # Remove only specific key
+    
+    return redirect('frontoffice_connexion')  # Redirect to login
+
 def index(request):
     return render(request, 'frontoffice/index.html')
 
