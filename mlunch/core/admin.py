@@ -15,11 +15,11 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(StatutCommande)
 class StatutCommandeAdmin(admin.ModelAdmin):
-    list_display = ('nom',)
+    list_display = ('appellation',)
 
 @admin.register(PointRecup)
 class PointRecupAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'adresse')
+    list_display = ('nom', 'geo_position')
 
 @admin.register(Commande)
 class CommandeAdmin(admin.ModelAdmin):
@@ -34,8 +34,8 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 @admin.register(Repas)
 class RepasAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'type', 'prix', 'est_dispo')
-    list_filter = ('type', 'est_dispo')
+    list_display = ('nom', 'type', 'prix')
+    list_filter = ('type',)
     search_fields = ('nom',)
 
 @admin.register(Livreur)

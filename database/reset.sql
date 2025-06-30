@@ -1,34 +1,40 @@
--- Disable triggers temporarily to avoid foreign key constraint issues
+-- 1. Désactiver les triggers (désactive les contraintes FK)
 SET session_replication_role = 'replica';
 
--- Delete data from all tables in the correct order (child tables first)
-TRUNCATE TABLE core_historiquestatutzone CASCADE;
-TRUNCATE TABLE core_historiquestatutrestaurant CASCADE;
-TRUNCATE TABLE core_historiquestatutlivreur CASCADE;
-TRUNCATE TABLE core_historiquestatutlivraison CASCADE;
-TRUNCATE TABLE core_historiquestatutcommande CASCADE;
-TRUNCATE TABLE core_promotion CASCADE;
-TRUNCATE TABLE core_commanderepas CASCADE;
-TRUNCATE TABLE core_livraison CASCADE;
-TRUNCATE TABLE core_commande CASCADE;
-TRUNCATE TABLE core_zoneclient CASCADE;
-TRUNCATE TABLE core_zonerestaurant CASCADE;
-TRUNCATE TABLE core_restaurantrepas CASCADE;
-TRUNCATE TABLE core_repas CASCADE;
-TRUNCATE TABLE core_typerepas CASCADE;
-TRUNCATE TABLE core_livreur CASCADE;
-TRUNCATE TABLE core_client CASCADE;
-TRUNCATE TABLE core_pointrecup CASCADE;
-TRUNCATE TABLE core_restaurant CASCADE;
-TRUNCATE TABLE core_zone CASCADE;
-TRUNCATE TABLE core_statutcommande CASCADE;
-TRUNCATE TABLE core_statutlivraison CASCADE;
-TRUNCATE TABLE core_statutlivreur CASCADE;
-TRUNCATE TABLE core_statutrestaurant CASCADE;
-TRUNCATE TABLE core_statutzone CASCADE;
+-- 2. Vider toutes les tables dépendantes en respectant l'ordre (enfants → parents)
+TRUNCATE TABLE
+    core_historiquestatutzone,
+    core_historiquestatutrestaurant,
+    core_historiquestatutlivreur,
+    core_historiquestatutlivraison,
+    core_historiquestatutcommande,
+    core_promotion,
+    core_commanderepas,
+    core_livraison,
+    core_commande,
+    core_zoneclient,
+    core_zonerestaurant,
+    core_restaurantrepas,
+    core_repas,
+    core_typerepas,
+    core_livreur,
+    core_client,
+    core_pointrecup,
+    core_restaurant,
+    core_zone,
+    core_statutcommande,
+    core_statutlivraison,
+    core_statutlivreur,
+    core_statutrestaurant,
+    core_statutzone
+RESTART IDENTITY CASCADE;
 
--- Reset sequences (auto-increment counters) manually for each table
+-- 3. Réinitialiser manuellement les séquences (utile si RESTART IDENTITY ne suffit pas)
+
+-- Exemple : reset de la séquence de core_client
 SELECT setval(pg_get_serial_sequence('core_client', 'id'), COALESCE(MAX(id), 1), false) FROM core_client;
+
+-- (répété pour chaque table ayant une colonne ID auto-incrémentée)
 SELECT setval(pg_get_serial_sequence('core_livreur', 'id'), COALESCE(MAX(id), 1), false) FROM core_livreur;
 SELECT setval(pg_get_serial_sequence('core_commande', 'id'), COALESCE(MAX(id), 1), false) FROM core_commande;
 SELECT setval(pg_get_serial_sequence('core_livraison', 'id'), COALESCE(MAX(id), 1), false) FROM core_livraison;
@@ -53,5 +59,5 @@ SELECT setval(pg_get_serial_sequence('core_zonerestaurant', 'id'), COALESCE(MAX(
 SELECT setval(pg_get_serial_sequence('core_restaurantrepas', 'id'), COALESCE(MAX(id), 1), false) FROM core_restaurantrepas;
 SELECT setval(pg_get_serial_sequence('core_typerepas', 'id'), COALESCE(MAX(id), 1), false) FROM core_typerepas;
 
--- Re-enable triggers
+-- 4. Réactiver les contraintes (FK, triggers, etc.)
 SET session_replication_role = 'origin';

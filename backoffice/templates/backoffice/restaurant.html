@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Restaurant</title>
+</head>
+<body>
+    <header>
+        <ul>
+            <li><a href="acceuil/">Logo</a></li>
+            <li><a href="#">Statistiques</a></li>
+            <li><a href="#">Restaurant</a></li>
+            <li><a href="#">Secteur</a></li>
+            <li><a href="#">Livraison</a></li>
+            <li><a href="#">Commande</a></li>
+        </ul>
+    </header>
+    <h1>Liste des restaurants</h1>
+
+    {% for data in restaurants_data %}
+      <div style="border:1px solid #ccc; margin:15px; padding:10px;">
+        <h2>{{ data.restaurant.nom }}</h2>
+
+        {% if data.restaurant.image %}
+          <img src="{{ data.restaurant.image }}" alt="Image de {{ data.restaurant.nom }}" style="max-width: 200px;">
+        {% else %}
+          <p><em>Aucune image disponible.</em></p>
+        {% endif %}
+
+        <p><strong>Adresse :</strong> {{ data.restaurant.adresse|default:"Non spécifiée" }}</p>
+        <p><strong>Description :</strong> {{ data.restaurant.description|default:"Aucune description." }}</p>
+
+        {% if data.horaires %}
+          {% for h in data.horaires %}
+            <p><strong>Horaires aujourd’hui :</strong> {{ h.horaire_debut }} - {{ h.horaire_fin }}</p>
+          {% endfor %}
+        {% else %}
+          <p>Pas d'horaire enregistré.</p>
+        {% endif %}
+
+        <p><strong>Statut :</strong> {{ data.statut|default:"Non défini" }}</p>
+
+        <p><strong>Commission :</strong>
+          {% if data.commission %}
+            {{ data.commission }}%
+          {% else %}
+            Non défini%
+          {% endif %}
+        </p>
+
+        <p><strong>Zones :</strong>
+          {% if data.zones %}
+            {{ data.zones|join:", " }}
+          {% else %}
+            Aucune zone.
+          {% endif %}
+        </p>
+
+        <p>
+          <a href="#">Modifier</a> |
+          <a href="#">Détail commande</a> |
+          <a href="#">Détail financier</a>
+        </p>
+      </div>
+    {% empty %}
+      <p>Aucun restaurant trouvé.</p>
+    {% endfor %}
+
+    <hr>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="#">Ajouter un restaurant</a>
+    </div>
+
+</body>
+</html>
