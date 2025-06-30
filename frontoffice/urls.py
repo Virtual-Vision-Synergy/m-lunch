@@ -12,4 +12,9 @@ urlpatterns = [
     path('api/points_de_recuperation/', views.points_de_recuperation, name='points_de_recuperation'),
     path('api/all_restaurants/', views.all_restaurants, name='all_restaurants'),
     path('deconnexion/', views.logout_view, name='frontoffice_logout'),
+
+    path('',views.index,name='frontoffice_index'),
+    path('inscription/',views.inscription_page,name='inscription_page'),
+    path('api/zone-from-coord/', views.api_zone_from_coord, name='api_zone_from_coord'),
+
 ]
