@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accueil M'Lunch</title>
+  <link rel="stylesheet" href="../../static/css/accueil.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"
+  />
+</head>
+<body>
+  <!-- Quart d'ellipse -->
+  <div class="ellipse-deco">
+    <div class="ellipse-orange"></div>
+    <div class="ellipse-blanche"></div>
+  </div>
+
+<!-- HEADER -->  
+<header class="site-header">
+  <div class="overlap-wrapper">
+    <div class="overlap-2">
+      <div class="group-8">
+        <div class="overlap-group-3">
+          <img class="rectangle-4" src="../../static/img/icones/logo.png" alt="Logo" />
+          <div class="group-11">
+            <a href="#" class="text-wrapper-10">Accueil</a>
+            <a href="map.html" class="text-wrapper-11">Livraison</a>
+            <a href="restaurant.html" class="text-wrapper-12">Restaurant</a>
+            <a href="#about" class="text-wrapper-12">A propos</a>
+          </div>
+          <div class="icons-right">
+            <a href="login.html" class="icon-button"><img src="../../static/img/icones/user.svg" alt="Profil" /></a>
+            <a href="panier.html" class="icon-button"><img src="../../static/img/icones/panier.svg" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="../../static/img/icones/menu.svg" alt="Menu" /></button>
+
+            <nav id="hamburger-menu" class="hamburger-menu">
+              <ul>
+                <li class="has-submenu">
+                  <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                  <ul class="submenu">
+                    <li><a href="en_cours.html">En Cours</a></li>
+                    <li><a href="historique.html">Historique</a></li>
+                  </ul>
+                </li>
+                <li><a href="panier.html">Panier</a></li>
+                <li><a href="#about">A propos</a></li>
+                <li><a href="login.html">Connexion</a></li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+  <!-- ACCUEIL -->
+  <main class="contenu-principal">
+    <div class="texte-gauche">
+      <h1>Bienvenue chez <span>M'Lunch</span> Un délicieux repas vous attend !</h1>
+      <p>Rapide, simple, délicieux.</p>
+    <a href="login.html" class="btn-commencer" style="display: inline-flex; align-items: center; text-decoration: none;">
+      <span>Commencer</span>
+      <img src="../../static/img/icones/fleche.svg" alt="Aide" style="margin-left: 6px; vertical-align: middle;" />
+    </a>
+    </div>
+    <div class="image-droite">
+      <img src="../../static/img/Humans/bi.png" alt="Repas délicieux" />
+    </div>
+  </main>
+
+  <!-- CAROUSEL INFINI -->
+  <section class="carousel-infini">
+    <div class="slider">
+      <div class="slide-track">
+        <div class="slide"><img src="../../static/img/img1.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img2.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img3.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img4.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img5.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img6.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img1.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img2.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img3.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img4.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img5.jpg" alt="" /></div>
+        <div class="slide"><img src="../../static/img/img6.jpg" alt="" /></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONES DE LIVRAISON -->
+  <section class="zones-livraison">
+    <div class="container">
+      <div class="content">
+        <h2>Nos zones de livraison :</h2>
+        <select class="pickup-point-select">
+          <option disabled selected>Point de récupération</option>
+          <option>Université</option>
+          <option>Bureau</option>
+          <option>Domicile</option>
+        </select>
+        <p class="livraison-texte">Faites-vous livrer votre envie du moment en un rien de temps.</p>
+      </div>
+      <div class="illustration">
+        <img class="rectangle" src="../../static/img/g.png" alt="Carte de livraison" />
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION RESTAURANTS PARTENAIRES - CORRIGÉ -->
+  <section class="restaurants-section">
+    <div class="restaurants-container">
+      <h1 class="restaurants-main-title">Nos restaurants partenaires</h1>
+      
+      <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+          <!-- Slides -->
+          <div class="swiper-slide">
+            <div class="restaurant-item">
+              <img src="../../static/img/resto/1.jpg" alt="Bonjuk & Bibimbap" class="restaurant-image" />
+              <h2 class="restaurant-name">Bonjuk & Bibimbap</h2>
+              <p class="restaurant-description">
+                Un café coréen chaleureux connu pour ses ramens et barbecues au feu de bois.
+              </p>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="restaurant-item">
+              <img src="../../static/img/resto/2.jpg" alt="Spirits Away" class="restaurant-image" />
+              <h2 class="restaurant-name">Spirits Away</h2>
+              <p class="restaurant-description">
+                Bistrot manga aux saveurs japonaises et italiennes. Ramen "Naruto" très apprécié.
+              </p>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="restaurant-item">
+              <img src="../../static/img/resto/3.jpg" alt="Le Mango" class="restaurant-image" />
+              <h2 class="restaurant-name">Le Mango</h2>
+              <p class="restaurant-description">
+                Brunchs "instagrammables" dans une ambiance cosy avec tiramisu latted.
+              </p>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="restaurant-item">
+              <img src="../../static/img/resto/4.jpg" alt="Pizza Palace" class="restaurant-image" />
+              <h2 class="restaurant-name">Pizza Palace</h2>
+              <p class="restaurant-description">
+                Pizza au feu de bois, pâte artisanale et garnitures locales fraîches.
+              </p>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="restaurant-item">
+              <img src="../../static/img/resto/5.jpg" alt="Sushi Zen" class="restaurant-image" />
+              <h2 class="restaurant-name">Sushi Zen</h2>
+              <p class="restaurant-description">
+                Sushis et plats nippons raffinés avec présentation soignée dans un cadre zen.
+              </p>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="restaurant-item">
+              <img src="../../static/img/resto/6.jpg" alt="Burger House" class="restaurant-image" />
+              <h2 class="restaurant-name">Burger House</h2>
+              <p class="restaurant-description">
+                Burgers authentiques, ambiance cosy et carte de vins de qualité.
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- Swiper pagination -->
+        <div class="swiper-pagination"></div>
+        <!-- Swiper navigation buttons -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+      </div>
+    </div>
+  </section>
+
+<!-- SECTION À PROPOS -->
+  <section class="about-section" id="about">
+    <h2 class="about-title">À propos de M'Lunch</h2>
+    <p class="about-description">
+      M'Lunch est une plateforme de livraison de repas qui met en relation les restaurants locaux avec des clients affamés. Nous nous engageons à offrir une expérience rapide, savoureuse et pratique pour tous.
+    </p>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="newsletter-section">
+    <div class="newsletter-container">
+      <form class="newsletter-form">
+        <input type="email" class="newsletter-input" placeholder="Votre adresse email" required />
+        <button type="submit" class="newsletter-button">S'abonner</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer-wrapper">
+    <div class="footer">
+      <div class="brand-section">
+        <div class="logo-container">
+          <img class="logo-img" src="../../static/img/icones/logo.png" alt="Logo M'Lunch" />
+          <!-- <h3 class="brand-name">M'Lunch</h3> -->
+          <span>M'Lunch</span>
+        </div>
+        <p class="brand-description">
+          Une livraison de repas rapide et délicieuse, pour tous vos moments gourmands.
+        </p>
+        <p class="copyright">© 2025 M'Lunch – Tous droits réservés.</p>
+      </div>
+
+      <div class="support-section">
+        <h4 class="section-title">Support</h4>
+        <div class="support-links">
+          <a href="#">Aide</a>
+          <a href="#">Contact</a>
+          <a href="#">Conditions d'utilisation</a>
+          <a href="#">Confidentialité</a>
+        </div>
+      </div>
+
+      <div class="social-section">
+        <div class="social-header">
+          <h4 class="section-title">Réseaux sociaux:</h4>
+          <div class="social-icons">
+            <a href="#" class="social-icon" title="Facebook"><img src="../../static/img/icones/fb.svg" alt="Facebook" /></a>
+            <a href="#" class="social-icon" title="Instagram"><img src="../../static/img/icones/inst.svg" alt="Instagram" /></a>
+            <!-- <a href="#" class="social-icon" title="Twitter"><img src="img/icones/twitter.png" alt="Twitter" /></a> -->
+          </div>
+        </div>
+        <div class="contact-info">
+          <div class="contact-item">
+            <img class="contact-icon" src="../../static/img/icones/mail.svg" alt="Mail" />
+            <span>contact@mlunch.com</span>
+          </div>
+          <div class="contact-item">
+            <img class="contact-icon" src="../../static/img/icones/phone.svg" alt="Téléphone" />
+            <span>+261 34 00 000 00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+ <!-- JS Swiper -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const swiper = new Swiper('.mySwiper', {
+        loop: true,
+        slidesPerView: 3,
+        spaceBetween: 30,
+        centeredSlides: true,
+        autoplay: {
+          delay: 3000,
+          disableOnInteraction: false,
+        },
+        pagination: {
+          el: '.swiper-pagination',
+          clickable: true,
+        },
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+          320: {
+            slidesPerView: 1,
+            spaceBetween: 20
+          },
+          768: {
+            slidesPerView: 2,
+            spaceBetween: 30
+          },
+          1024: {
+            slidesPerView: 3,
+            spaceBetween: 40
+          }
+        }
+      });
+    });
+  </script>
+  <script>
+    // Hamburger menu toggle
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuToggle = document.getElementById('menu-toggle');
+      const hamburgerMenu = document.getElementById('hamburger-menu');
+      const submenuParents = document.querySelectorAll('.has-submenu');
+
+      // Ouvre/ferme le menu hamburger
+      menuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hamburgerMenu.classList.toggle('active');
+      });
+
+      // Ferme le menu si on clique ailleurs
+      document.addEventListener('click', function(e) {
+        if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
+          hamburgerMenu.classList.remove('active');
+        }
+      });
+
+      // Gestion des sous-menus
+      submenuParents.forEach(function(parent) {
+        parent.addEventListener('click', function(e) {
+          e.stopPropagation();
+          parent.classList.toggle('open');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - M’Lunch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../static/css/login.css">
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"
+  />
+
+</head>
+<body>
+  <div class="main-container login-flex-container">
+    <img class="illustration" src="../../static/img/Humans/log.png" alt="illustration">
+    <div class="login-container">
+      <div class="login-title">Welcome to</div>
+      <div class="login-subtitle">M’Lunch</div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <div class="input-wrapper">
+          <img src="../../static/img/icones/mail.svg" alt="email icon">
+          <input type="email" id="email" placeholder="example@gmail.com" />
+        </div> 
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="input-wrapper">
+          <img src="../../static/img/icones/cle.svg" alt="password icon">
+          <input type="password" id="password" placeholder="***********" /> 
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label><input type="checkbox" /> Se souvenir de moi</label>
+        <a href="#">Mot de passe oublié ?</a>
+      </div>
+
+      <button class="btn-login" onclick="window.location.href='map.html'">Connexion</button>
+      <!-- <button class="btn-login" disabled onclick="window.location.href='map.html'">Connexion</button> -->
+
+      <div class="register-link">
+        Vous n’avez pas de compte ? <a href="inscription.html" id="open-delivery-popup">S'inscrire</a>
+      </div>
+    </div>
+  </div>
+
+<div id="delivery-popup" class="popup-overlay">
+  <div class="popup-content">
+    <button class="close-popup">&times;</button>
+    <div class="popup-header">
+      <h2>Conditions de livraison</h2>
+    </div>
+    <div class="delivery-conditions-content">
+      <p><strong>Zone de livraison limitée</strong></p>
+      <p>M’Lunch ne livre pas dans toutes les zones. Nous avons des points de livraison prédéfinis. Vous devez choisir l’un de ces points lors de votre inscription.</p>
+      <p>Les commandes ne seront acceptées que si votre adresse correspond à l’un de nos points de livraison.</p>
+      <label class="checkbox-container">
+        <input type="checkbox" id="verify-zones-checkbox" />
+        <span class="checkmark"></span>
+        Veuillez vérifier les zones couvertes avant de continuer.
+      </label>
+    </div>
+    <button class="btn-delivery-continue" disabled onclick="window.location.href='inscription.html'">Continuer l'inscription</button>
+  </div>
+</div>
+
+<script>
+  // JavaScript pour gérer l'ouverture et la fermeture du popup
+  const openDeliveryPopupButton = document.getElementById('open-delivery-popup');
+  const deliveryPopup = document.getElementById('delivery-popup');
+  const closePopupButton = document.querySelector('.close-popup');
+  const verifyZonesCheckbox = document.getElementById('verify-zones-checkbox');
+  const continueDeliveryButton = document.querySelector('.btn-delivery-continue');
+
+  openDeliveryPopupButton.addEventListener('click', function(event) {
+    event.preventDefault(); // Empêche le comportement par défaut du lien
+    deliveryPopup.classList.add('active');
+  });
+
+  closePopupButton.addEventListener('click', function() {
+    deliveryPopup.classList.remove('active');
+  });
+
+  // Fermer le popup si l'utilisateur clique en dehors du contenu du popup
+  deliveryPopup.addEventListener('click', function(event) {
+    if (event.target === deliveryPopup) {
+      deliveryPopup.classList.remove('active');
+    }
+  });
+
+  // Activer le bouton "Continuer l'inscription" si la checkbox est cochée
+  verifyZonesCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+      continueDeliveryButton.disabled = false;
+    } else {
+      continueDeliveryButton.disabled = true;
+    }
+  });
+</script>
+
+</body>
+</html>
