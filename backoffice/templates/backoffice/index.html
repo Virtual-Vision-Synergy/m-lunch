@@ -10,11 +10,49 @@
         <ul>
             <li><a href="">Logo</a></li>
             <li><a href="#">Statistiques</a></li>
-            <li><a href="restaurant/">Restaurant</a></li>
+            <li><a href="{% url 'backoffice_restaurant' %}">Restaurant</a></li>
             <li><a href="#">Secteur</a></li>
             <li><a href="#">Livraison</a></li>
             <li><a href="#">Commande</a></li>
         </ul>
     </header>
+    <section>
+        <h2>Liste des commandes</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Secteur</th>
+                    <th>Restaurant</th>
+                    <th>Date/Heure</th>
+                    <th>Nombre de repas</th>
+                    <th>Prix total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for commande in commandes_en_attente %}
+                <tr>
+                    <td>{{ commande.client }}</td>
+                    <td>{{ commande.secteur }}</td>
+                    <td>{{ commande.restaurant }}</td>
+                    <td>{{ commande.date_heure_commande }}</td>
+                    <td>{{ commande.nombre_repas }}</td>
+                    <td>{{ commande.prix_total }}</td>
+                    <td>
+                        <form method="post" action="#">
+                            {% csrf_token %}
+                            <button type="submit">Attribuer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">Aucune commande trouvée.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
 </body>
 </html>

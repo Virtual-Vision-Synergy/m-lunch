@@ -1,3 +1,4 @@
+import pdb
 from django.utils.timezone import now
 from datetime import datetime
 from django.db import transaction
@@ -9,6 +10,7 @@ from ..models import (
 class RestaurantService:
     @staticmethod
     def create_restaurant(nom, initial_statut_id, adresse=None, image=None, geo_position=None):
+        # pdb.set_trace()
         from django.db import transaction
         if not nom or len(nom) > 150:
             return {"error": "Le nom doit être une chaîne non vide de 150 caractères maximum"}
@@ -46,6 +48,7 @@ class RestaurantService:
 
     @staticmethod
     def update_restaurant(restaurant_id, data):
+        # pdb.set_trace()
         """
         Met à jour un restaurant avec les champs :
         - description
@@ -113,6 +116,7 @@ class RestaurantService:
 
     @staticmethod
     def delete_restaurant(restaurant_id):
+        # pdb.set_trace()
         try:
             with transaction.atomic():
                 restaurant = Restaurant.objects.get(id=restaurant_id)
@@ -159,6 +163,7 @@ class RestaurantService:
 
     @staticmethod
     def list_restaurants_actifs():
+        # pdb.set_trace()
         """Liste tous les restaurants actifs (dernier statut = actif)."""
         try:
             actifs = []
@@ -179,6 +184,7 @@ class RestaurantService:
 
     @staticmethod
     def list_repas_by_restaurant(restaurant_id):
+        # pdb.set_trace()
         """
         Liste tous les repas proposés par un restaurant donné.
         """
@@ -197,6 +203,7 @@ class RestaurantService:
 
     @staticmethod
     def list_restaurants_by_zone(zone_id):
+        # pdb.set_trace()
         """
         Liste tous les restaurants desservant une zone donnée.
         """
@@ -215,6 +222,7 @@ class RestaurantService:
 
     @staticmethod
     def list_restaurants_by_horaire(jour=None):
+        # pdb.set_trace()
         """
         Liste tous les restaurants ouverts aujourd'hui (ou pour un jour donné).
         jour: int (0=lundi, 6=dimanche). Si None, utilise le jour courant.
@@ -235,3 +243,109 @@ class RestaurantService:
             } for r in restaurants]
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des restaurants par horaire : {str(e)}"}
+
+    @staticmethod
+    def list_restaurants_all():
+        # pdb.set_trace()
+        """
+        Retourne la liste de tous les restaurants (sans filtrage de statut).
+        """
+        try:
+            restaurants = Restaurant.objects.all()
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "adresse": r.adresse,
+                "description": r.description,
+                "image": r.image,
+                "geo_position": r.geo_position
+            } for r in restaurants]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération de tous les restaurants : {str(e)}"}
+
+    @staticmethod
+    def get_restaurant_details(restaurant_id):
+        # pdb.set_trace()
+        """
+        Retourne les détails d'un restaurant :
+        - image, nom, secteur (zones), commission (valeur la plus récente), horaire (liste), statut (dernier)
+        """
+        try:
+            r = Restaurant.objects.get(id=restaurant_id)
+            # Image et nom
+            image = r.image
+            nom = r.nom
+            # Secteurs (zones)
+            secteurs = list(r.zonerestaurant_set.select_related('zone').values_list('zone__nom', flat=True))
+            # Commission la plus récente
+            commission_obj = r.commission_set.order_by('-mis_a_jour_le').first()
+            commission = commission_obj.valeur if commission_obj else None
+            # Horaires
+            horaires = list(r.horaire.all().values('le_jour', 'horaire_debut', 'horaire_fin'))
+            # Statut (dernier historique)
+            historique = r.historiques.order_by('-mis_a_jour_le').first()
+            statut = historique.statut.appellation if historique and historique.statut else None
+
+            return {
+                "id": r.id,
+                "nom": nom,
+                "image": image,
+                "secteurs": secteurs,
+                "commission": commission,
+                "horaire": horaires,
+                "statut": statut
+            }
+        except Restaurant.DoesNotExist:
+            return {"error": "Restaurant non trouvé"}
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des détails du restaurant : {str(e)}"}
+
+    @staticmethod
+    def list_restaurants_all_details():
+        # pdb.set_trace()
+        """
+        Retourne la liste de tous les restaurants avec détails :
+        image, nom, secteur, commission, horaire, statut
+        """
+        try:
+            restaurants = Restaurant.objects.all()
+            return [RestaurantService.get_restaurant_details(r.id) for r in restaurants]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération de tous les restaurants : {str(e)}"}
+
+    @staticmethod
+    def list_restaurant_filtrer(idzone=None, idstatut=None):
+        # pdb.set_trace()
+        """
+        Retourne la liste détaillée des restaurants filtrés par secteur (zone, id) et/ou statut (id).
+        Les filtres peuvent être combinés.
+        - idzone : id de la zone
+        - idstatut : id du statut
+        """
+        try:
+            qs = Restaurant.objects.all()
+            # Filtre zone par id
+            if idzone:
+                qs = qs.filter(zonerestaurant__zone__id=idzone)
+            qs = qs.distinct()
+            # Filtre statut (dernier historique) par id
+            if idstatut:
+                ids_statut = []
+                for r in qs:
+                    dernier_statut = r.historiques.order_by('-mis_a_jour_le').first()
+                    if dernier_statut and dernier_statut.statut_id == int(idstatut):
+                        ids_statut.append(r.id)
+                qs = qs.filter(id__in=ids_statut)
+            return [RestaurantService.get_restaurant_details(r.id) for r in qs]
+        except Exception as e:
+            return {"error": f"Erreur lors du filtrage des restaurants : {str(e)}"}
+
+    @staticmethod
+    def get_all_statuts():
+        """
+        Retourne la liste de tous les statuts de restaurant disponibles.
+        """
+        try:
+            return list(StatutRestaurant.objects.values('id', 'appellation'))
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des statuts : {str(e)}"}

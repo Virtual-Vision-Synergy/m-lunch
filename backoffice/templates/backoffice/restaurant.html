@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des Restaurants</title>
+</head>
+<body>
+    <h1>Bienvenue Admin</h1>
+
+    <header>
+        <ul>
+            <li><a href="">Logo</a></li>
+            <li><a href="#">Statistiques</a></li>
+            <li><a href="{% url 'backoffice_restaurant' %}">Restaurant</a></li>
+            <li><a href="#">Secteur</a></li>
+            <li><a href="#">Livraison</a></li>
+            <li><a href="#">Commande</a></li>
+        </ul>
+    </header>
+
+    <section>
+        <h2>Filtrer les Restaurants</h2>
+
+        <form method="get" action="" id="filtre-form">
+            <label for="zone">Zone :</label>
+            <select name="zone" id="zone" onchange="document.getElementById('filtre-form').submit();">
+                <option value="">-- Toutes les zones --</option>
+                {% for zone in zones %}
+                    <option value="{{ zone.id }}" {% if zone.id == selected_zone %}selected{% endif %}>{{ zone.nom }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="statut">Statut :</label>
+            <select name="statut" id="statut" onchange="document.getElementById('filtre-form').submit();">
+                <option value="">-- Tous les statuts --</option>
+                {% for s in statuts %}
+                    <option value="{{ s.id }}" {% if s.id == selected_statut %}selected{% endif %}>{{ s.appellation }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </section>
+
+    <section>
+        <h2>Liste des Restaurants</h2>
+
+        {% for restaurant in restaurants %}
+        <div>
+            <h3>{{ restaurant.nom }}</h3>
+
+            {% if restaurant.image %}
+                <img src="{{ restaurant.image.url }}" alt="Image du restaurant {{ restaurant.nom }}">
+            {% endif %}
+
+            <p><strong>Secteurs desservis :</strong> {{ restaurant.secteurs|join:", " }}</p>
+            <p><strong>Commission actuelle :</strong> {{ restaurant.commission }} %</p>
+            <p><strong>Statut :</strong> {{ restaurant.statut }}</p>
+
+            <p><strong>Horaires :</strong></p>
+            <ul>
+                {% for horaire in restaurant.horaire %}
+                    <li>{{ horaire.le_jour }} : {{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}</li>
+                {% endfor %}
+            </ul>
+
+            <!-- Boutons d'action -->
+            <form action="#" method="get" style="display:inline;">
+                <button type="submit">Modifier</button>
+            </form>
+
+            <form action="#" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit">Supprimer</button>
+            </form>
+
+            <form action="#" method="get" style="display:inline;">
+                <button type="submit">Info commande</button>
+            </form>
+
+            <form action="#" method="get" style="display:inline;">
+                <button type="submit">Détail financier</button>
+            </form>
+
+            <hr>
+        </div>
+        {% endfor %}
+
+    </section>
+</body>
+</html>
+</body>
+</html>

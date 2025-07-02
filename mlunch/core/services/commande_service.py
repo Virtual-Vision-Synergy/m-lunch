@@ -1,11 +1,16 @@
 from django.utils.timezone import now
 from django.db import transaction
-from ..models import Commande, StatutCommande, HistoriqueStatutCommande, Repas, CommandeRepas, PointRecup, Client
+import pdb
+
+from mlunch.core.models import (
+    Commande, StatutCommande, HistoriqueStatutCommande, Repas, CommandeRepas,
+    PointRecup, Client, RestaurantRepas, Restaurant
+)
 
 class CommandeService:
     @staticmethod
     def create_commande(client_id, point_recup_id, initial_statut_id):
-        from django.db import transaction
+        # pdb.set_trace()
         try:
             with transaction.atomic():
                 commande = Commande.objects.create(
@@ -38,6 +43,7 @@ class CommandeService:
 
     @staticmethod
     def add_repas_to_commande(commande_id, repas_id, quantite):
+        # pdb.set_trace()
         try:
             with transaction.atomic():
                 if quantite <= 0:
@@ -68,6 +74,7 @@ class CommandeService:
 
     @staticmethod
     def changer_statut_commande(commande_id, statut_id):
+        # pdb.set_trace()
         try:
             if not Commande.objects.filter(id=commande_id).exists():
                 return {"error": "Commande non trouvée"}
@@ -90,26 +97,35 @@ class CommandeService:
 
     @staticmethod
     def get_commande_details(commande_id):
+        # pdb.set_trace()
         try:
             commande = Commande.objects.select_related('client', 'point_recup').get(id=commande_id)
-            repas = CommandeRepas.objects.filter(commande=commande).select_related('repas')
-            historiques = HistoriqueStatutCommande.objects.filter(commande=commande).select_related('statut')
-
+            client = commande.client
+            # Récupérer la zone (secteur) du client
+            zone_client = getattr(client, 'zoneclient_set', None)
+            secteur = None
+            if zone_client and zone_client.exists():
+                secteur = zone_client.first().zone.nom
+            # Récupérer les repas de la commande
+            repas_commandes = CommandeRepas.objects.filter(commande=commande).select_related('repas')
+            # Récupérer le restaurant via la table RestaurantRepas
+            restaurant_nom = None
+            for rc in repas_commandes:
+                restaurant_repas = RestaurantRepas.objects.filter(repas=rc.repas).select_related('restaurant').first()
+                if restaurant_repas:
+                    restaurant_nom = restaurant_repas.restaurant.nom
+                    break
+            # Nombre de repas
+            nombre_repas = sum(rc.quantite for rc in repas_commandes)
+            # Prix total via la fonction utilitaire
+            prix_total = CommandeService.get_total_commande(commande_id)
             return {
-                "id": commande.id,
-                "client": f"{commande.client.prenom} {commande.client.nom}",
-                "point_recup": commande.point_recup.nom,
-                "cree_le": commande.cree_le,
-                "repas": [{
-                    "id": r.repas.id,
-                    "nom": r.repas.nom,
-                    "quantite": r.quantite,
-                    "ajoute_le": r.ajoute_le
-                } for r in repas],
-                "statuts": [{
-                    "statut": h.statut.appellation,
-                    "mis_a_jour_le": h.mis_a_jour_le
-                } for h in historiques.order_by('-mis_a_jour_le')]
+                "client": f"{client.prenom} {client.nom}",
+                "secteur": secteur,
+                "restaurant": restaurant_nom,
+                "date_heure_commande": commande.cree_le,
+                "nombre_repas": nombre_repas,
+                "prix_total": prix_total
             }
         except Commande.DoesNotExist:
             return {"error": "Commande non trouvée"}
@@ -118,6 +134,7 @@ class CommandeService:
 
     @staticmethod
     def list_commandes_by_client(client_id):
+        # pdb.set_trace()
         """Liste toutes les commandes d'un client."""
         try:
             commandes = Commande.objects.filter(client_id=client_id)
@@ -131,6 +148,7 @@ class CommandeService:
 
     @staticmethod
     def list_commandes_by_statut(statut_id):
+        # pdb.set_trace()
         """Liste toutes les commandes ayant un statut donné (dernier statut)."""
         try:
             commandes_ids = HistoriqueStatutCommande.objects.filter(
@@ -145,3 +163,71 @@ class CommandeService:
             } for c in commandes]
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des commandes par statut : {str(e)}"}
+
+    @staticmethod
+    def get_commandes_en_attente():
+        # pdb.set_trace()
+        """
+        Retourne la liste détaillée des commandes ayant le statut 'En attente'
+        Utilise list_commandes_by_statut et get_commande_details.
+        """
+        try:
+            statut = StatutCommande.objects.filter(appellation__iexact="En attente").first()
+            if not statut:
+                return {"error": "Statut 'En attente' non trouvé"}
+            commandes = CommandeService.list_commandes_by_statut(statut.id)
+            # Si une erreur est retournée par list_commandes_by_statut
+            if isinstance(commandes, dict) and "error" in commandes:
+                return commandes
+            # Retourne les détails pour chaque commande
+            return [CommandeService.get_commande_details(c["id"]) for c in commandes]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes en attente : {str(e)}"}
+
+    @staticmethod
+    def get_total_commande(commande_id):
+        # pdb.set_trace()
+        """
+        Retourne la somme totale pour une commande (somme des quantités * prix des repas).
+        """
+        try:
+            repas_commandes = CommandeRepas.objects.filter(commande_id=commande_id).select_related('repas')
+            total = sum(rc.quantite * rc.repas.prix for rc in repas_commandes)
+            return total
+        except Exception as e:
+            return {"error": f"Erreur lors du calcul du total de la commande : {str(e)}"}
+
+    @staticmethod
+    def get_repas(commande_id):
+        # pdb.set_trace()
+        """
+        Retourne la liste des repas (nom et quantité) pour une commande donnée.
+        """
+        try:
+            repas_commandes = CommandeRepas.objects.filter(commande_id=commande_id).select_related('repas')
+            return [
+                {
+                    "nom": rc.repas.nom,
+                    "quantite": rc.quantite
+                }
+                for rc in repas_commandes
+            ]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des repas : {str(e)}"}
+
+
+# Pour utiliser le debugger (pdb) dans get_commande_details :
+# 1. Appelez la méthode CommandeService.get_commande_details(commande_id) depuis un shell Python/Django ou un script.
+# 2. L'exécution s'arrêtera à la ligne 'pdb.set_trace()'.
+# 3. Vous pouvez alors inspecter les variables, exécuter des commandes, etc.
+#    Exemples de commandes utiles dans pdb :
+#      - n (next) : exécute la ligne suivante
+#      - c (continue) : continue jusqu'au prochain breakpoint ou la fin
+#      - p variable : affiche la valeur de 'variable'
+#      - l : affiche le code autour du point d'arrêt
+#      - q : quitte le debugger
+
+# Exemple d'utilisation dans un shell Django :
+# >>> from mlunch.core.services.commande_service import CommandeService
+# >>> CommandeService.get_commande_details(1)
+# (le debugger s'active ici, suivez les instructions ci-dessus)

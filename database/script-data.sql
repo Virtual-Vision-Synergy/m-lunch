@@ -263,6 +263,14 @@ INSERT INTO core_repas (nom, prix, description, image, type_id) VALUES
 ('THB', 5000, 'Bière locale Three Horses Beer', 'thb.jpg', 4),
 ('Salade Malagasy', 8000, 'Salade fraîche aux légumes locaux', 'salade_malagasy.jpg', 2);
 
+-- Ajout de nouveaux repas
+INSERT INTO core_repas (nom, prix, description, image, type_id) VALUES
+('Poulet coco', 13000, 'Poulet mijoté au lait de coco', 'poulet_coco.jpg', 1),
+('Brochettes de zébu', 9000, 'Brochettes grillées de viande de zébu', 'brochette_zebu.jpg', 1),
+('Sambos', 3000, 'Beignets farcis à la viande ou légumes', 'sambos.jpg', 2),
+('Koba', 3500, 'Gâteau traditionnel à base de riz et cacahuètes', 'koba.jpg', 3),
+('Jus de litchi', 4000, 'Jus frais de litchi', 'jus_litchi.jpg', 4);
+
 -- Restaurant-Meal
 INSERT INTO core_restaurantrepas (restaurant_id, repas_id) VALUES
 (1, 1), (1, 2), (1, 6),
@@ -270,6 +278,15 @@ INSERT INTO core_restaurantrepas (restaurant_id, repas_id) VALUES
 (3, 3), (3, 5), (3, 7), (3, 6),
 (4, 3), (4, 4), (4, 6),
 (5, 5), (5, 7), (5, 6);
+
+-- Restaurant-Meal (ajout des nouveaux repas aux restaurants)
+INSERT INTO core_restaurantrepas (restaurant_id, repas_id) VALUES
+-- Poulet coco (id=8), Brochettes de zébu (id=9) pour Le Carnivore (id=1)
+(1, 8), (1, 9),
+-- Sambos (id=10), Koba (id=11) pour Sakamanga (id=2)
+(2, 10), (2, 11),
+-- Jus de litchi (id=12) pour tous les restaurants
+(1, 12), (2, 12), (3, 12), (4, 12), (5, 12);
 
 -- Pickup points (sans adresse)
 INSERT INTO core_pointrecup (nom) VALUES
@@ -312,6 +329,21 @@ INSERT INTO core_commande (client_id, point_recup_id, cree_le) VALUES
 (3, 3, '2025-06-29 14:45:12'),
 (4, 4, '2025-06-29 15:20:56'),
 (5, 1, '2025-06-29 16:10:34');
+
+-- Commandes en attente
+INSERT INTO core_commande (client_id, point_recup_id, cree_le) VALUES
+(2, 3, '2025-06-29 17:00:00'),
+(3, 4, '2025-06-29 17:10:00');
+
+-- Historique commandes pour les commandes en attente (statut_id = 1 correspond à 'En attente')
+INSERT INTO core_historiquestatutcommande (commande_id, statut_id, mis_a_jour_le) VALUES
+(6, 1, '2025-06-29 17:00:10'),
+(7, 1, '2025-06-29 17:10:10');
+
+-- Détails des commandes en attente
+INSERT INTO core_commanderepas (commande_id, repas_id, quantite) VALUES
+(6, 1, 1), (6, 2, 2),
+(7, 3, 1), (7, 5, 1);
 
 -- Historique commandes
 INSERT INTO core_historiquestatutcommande (commande_id, statut_id, mis_a_jour_le) VALUES
@@ -370,3 +402,29 @@ INSERT INTO core_horaire (restaurant_id, le_jour, horaire_debut, horaire_fin, mi
 -- Pizza Paradiso
 (5, 0, '11:00', '23:00', now()), (5, 1, '11:00', '23:00', now()), (5, 2, '11:00', '23:00', now()),
 (5, 3, '11:00', '23:00', now()), (5, 4, '11:00', '23:00', now()), (5, 5, '11:00', '23:00', now());
+
+-- Test requette getRepasByIdCommande
+SELECT
+    r.id AS id_repas,
+    r.nom AS nom_repas,
+    r.description,
+    r.image,
+    r.prix,
+    t.nom AS type_repas,
+    cr.quantite,
+    cr.ajoute_le
+FROM core_commanderepas cr
+JOIN core_repas r ON cr.repas_id = r.id
+JOIN core_typerepas t ON r.type_id = t.id
+WHERE cr.commande_id = 4;
+-- Test requette get_restaurant(repas_id)
+SELECT
+    r.id AS id_restaurant,
+    r.nom,
+    r.adresse,
+    r.description,
+    r.image,
+    r.geo_position
+FROM core_restaurantrepas rr
+JOIN core_restaurant r ON rr.restaurant_id = r.id
+WHERE rr.repas_id = 1;

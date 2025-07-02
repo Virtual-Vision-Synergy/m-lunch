@@ -1,3 +1,4 @@
+import pdb
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import validate_email
 from shapely import wkt
@@ -22,6 +23,7 @@ from ..models import (
 class RepasService:
     @staticmethod
     def create_repas(nom, type_id, prix, description=None, image=None, est_dispo=True):
+        pdb.set_trace()
         if not nom or len(nom) > 100:
             return {"error": "Le nom doit être une chaîne non vide de 100 caractères maximum"}
         if not isinstance(prix, int) or prix <= 0:
@@ -49,6 +51,7 @@ class RepasService:
 
     @staticmethod
     def list_repas_disponibles():
+        pdb.set_trace()
         """Liste tous les repas disponibles."""
         try:
             repas = Repas.objects.filter(est_dispo=True)
@@ -65,6 +68,7 @@ class RepasService:
 
     @staticmethod
     def list_repas_by_type(type_id):
+        pdb.set_trace()
         """Liste les repas par type."""
         try:
             repas = Repas.objects.filter(type_id=type_id)
