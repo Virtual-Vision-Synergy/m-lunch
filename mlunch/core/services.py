@@ -320,7 +320,7 @@ class RestaurantService:
 
         types = list(TypeRepas.objects.values("id", "nom"))
         return {
-            "restaurant_id": restaurant.id,
+            "restaurant": restaurant,
             "repas": repas_list,
             "note": 5,
             "types": types,

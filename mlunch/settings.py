@@ -84,6 +84,7 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'mlunch',
         'USER': 'postgres',
+        'PASSWORD': 'mitia',
         'HOST': 'localhost',
         'PORT': '5432',
     }

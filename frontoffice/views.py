@@ -51,7 +51,7 @@ def restaurants_geojson(request):
     return JsonResponse(data)
 
 def restaurant_detail(request, restaurant_id):
-    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    #restaurant = get_object_or_404(Restaurant, id=restaurant_id)
 
     # Get selected type if filtered
     selected_type = request.GET.get('type')
@@ -63,7 +63,7 @@ def restaurant_detail(request, restaurant_id):
         })
 
     return render(request, 'frontoffice/restaurant_detail.html', {
-        'restaurant': restaurant,
+        'restaurant': data['restaurant'],
         'repas': data['repas'],
         'note': data['note'],
         'types': data['types'],
