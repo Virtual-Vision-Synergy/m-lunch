@@ -4,7 +4,7 @@ from shapely import wkt
 from shapely.geometry import Point
 from django.db import transaction
 from django.utils.timezone import now
-
+from datetime import datetime
 
 from .models import (
     Client, StatutCommande, Zone, ZoneClient, PointRecup,
@@ -132,6 +132,32 @@ class ClientService:
         except Exception as e:
             return {"error": f"Erreur : {str(e)}"}
 
+    @staticmethod
+    def list_commandes(client_id):
+        """Liste toutes les commandes d'un client."""
+        try:
+            commandes = Commande.objects.filter(client_id=client_id)
+            return [{
+                "id": c.id,
+                "point_recup": c.point_recup.nom,
+                "cree_le": c.cree_le
+            } for c in commandes]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes : {str(e)}"}
+
+    @staticmethod
+    def get_zones(client_id):
+        """Liste les zones associées à un client."""
+        try:
+            zones = ZoneClient.objects.filter(client_id=client_id).select_related('zone')
+            return [{
+                "id": z.zone.id,
+                "nom": z.zone.nom,
+                "description": z.zone.description
+            } for z in zones]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des zones : {str(e)}"}
+
 
 class CommandeService:
     @staticmethod
@@ -166,6 +192,116 @@ class CommandeService:
                 }
         except Exception as e:
             return {"error": f"Erreur lors de la création de la commande : {str(e)}"}
+
+    @staticmethod
+    def add_repas_to_commande(commande_id, repas_id, quantite):
+        try:
+            with transaction.atomic():
+                if quantite <= 0:
+                    return {"error": "Quantité invalide"}
+
+                if not Commande.objects.filter(id=commande_id).exists():
+                    return {"error": "Commande non trouvée"}
+
+                if not Repas.objects.filter(id=repas_id).exists():
+                    return {"error": "Repas non trouvé"}
+
+                obj, created = CommandeRepas.objects.update_or_create(
+                    commande_id=commande_id,
+                    repas_id=repas_id,
+                    defaults={"quantite": quantite, "ajoute_le": now()}
+                )
+
+                return {
+                    "id": obj.id,
+                    "commande_id": obj.commande_id,
+                    "repas_id": obj.repas_id,
+                    "quantite": obj.quantite,
+                    "ajoute_le": obj.ajoute_le,
+                    "created": created
+                }
+        except Exception as e:
+            return {"error": f"Erreur lors de l'ajout du repas à la commande : {str(e)}"}
+
+    @staticmethod
+    def changer_statut_commande(commande_id, statut_id):
+        try:
+            if not Commande.objects.filter(id=commande_id).exists():
+                return {"error": "Commande non trouvée"}
+
+            if not StatutCommande.objects.filter(id=statut_id).exists():
+                return {"error": "Statut de commande non trouvé"}
+
+            historique = HistoriqueStatutCommande.objects.create(
+                commande_id=commande_id,
+                statut_id=statut_id
+            )
+            return {
+                "id": historique.id,
+                "commande_id": historique.commande_id,
+                "statut_id": historique.statut_id,
+                "mis_a_jour_le": historique.mis_a_jour_le
+            }
+        except Exception as e:
+            return {"error": f"Erreur lors du changement de statut : {str(e)}"}
+
+    @staticmethod
+    def get_commande_details(commande_id):
+        try:
+            commande = Commande.objects.select_related('client', 'point_recup').get(id=commande_id)
+            repas = CommandeRepas.objects.filter(commande=commande).select_related('repas')
+            historiques = HistoriqueStatutCommande.objects.filter(commande=commande).select_related('statut')
+
+            return {
+                "id": commande.id,
+                "client": f"{commande.client.prenom} {commande.client.nom}",
+                "point_recup": commande.point_recup.nom,
+                "cree_le": commande.cree_le,
+                "repas": [{
+                    "id": r.repas.id,
+                    "nom": r.repas.nom,
+                    "quantite": r.quantite,
+                    "ajoute_le": r.ajoute_le
+                } for r in repas],
+                "statuts": [{
+                    "statut": h.statut.appellation,
+                    "mis_a_jour_le": h.mis_a_jour_le
+                } for h in historiques.order_by('-mis_a_jour_le')]
+            }
+        except Commande.DoesNotExist:
+            return {"error": "Commande non trouvée"}
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des détails : {str(e)}"}
+
+    @staticmethod
+    def list_commandes_by_client(client_id):
+        """Liste toutes les commandes d'un client."""
+        try:
+            commandes = Commande.objects.filter(client_id=client_id)
+            return [{
+                "id": c.id,
+                "point_recup": c.point_recup.nom,
+                "cree_le": c.cree_le
+            } for c in commandes]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes : {str(e)}"}
+
+    @staticmethod
+    def list_commandes_by_statut(statut_id):
+        """Liste toutes les commandes ayant un statut donné (dernier statut)."""
+        try:
+            commandes_ids = HistoriqueStatutCommande.objects.filter(
+                statut_id=statut_id
+            ).order_by('commande_id', '-mis_a_jour_le').distinct('commande_id').values_list('commande_id', flat=True)
+            commandes = Commande.objects.filter(id__in=commandes_ids)
+            return [{
+                "id": c.id,
+                "client": f"{c.client.prenom} {c.client.nom}",
+                "point_recup": c.point_recup.nom,
+                "cree_le": c.cree_le
+            } for c in commandes]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes par statut : {str(e)}"}
 
 
 class RestaurantService:
@@ -318,6 +454,86 @@ class RestaurantService:
         except Exception as e:
             return f"Erreur : {str(e)}"
 
+    @staticmethod
+    def list_restaurants_actifs():
+        """Liste tous les restaurants actifs (dernier statut = actif)."""
+        try:
+            actifs = []
+            for r in Restaurant.objects.all():
+                dernier_statut = r.historiques.order_by('-mis_a_jour_le').first()
+                if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
+                    actifs.append({
+                        "id": r.id,
+                        "nom": r.nom,
+                        "adresse": r.adresse,
+                        "description": r.description,
+                        "image": r.image,
+                        "geo_position": r.geo_position
+                    })
+            return actifs
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des restaurants actifs : {str(e)}"}
+
+    @staticmethod
+    def list_repas_by_restaurant(restaurant_id):
+        """
+        Liste tous les repas proposés par un restaurant donné.
+        """
+        try:
+            repas = Repas.objects.filter(restaurants_repas__restaurant_id=restaurant_id).distinct()
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "prix": r.prix,
+                "type": r.type.nom,
+                "description": r.description,
+                "image": r.image
+            } for r in repas]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des repas du restaurant : {str(e)}"}
+
+    @staticmethod
+    def list_restaurants_by_zone(zone_id):
+        """
+        Liste tous les restaurants desservant une zone donnée.
+        """
+        try:
+            restaurants = Restaurant.objects.filter(zonerestaurant__zone_id=zone_id).distinct()
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "adresse": r.adresse,
+                "description": r.description,
+                "image": r.image,
+                "geo_position": r.geo_position
+            } for r in restaurants]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des restaurants par zone : {str(e)}"}
+
+    @staticmethod
+    def list_restaurants_by_horaire(jour=None):
+        """
+        Liste tous les restaurants ouverts aujourd'hui (ou pour un jour donné).
+        jour: int (0=lundi, 6=dimanche). Si None, utilise le jour courant.
+        """
+        try:
+            if jour is None:
+                jour = datetime.now().weekday()
+            horaires = Horaire.objects.filter(le_jour=jour)
+            restaurant_ids = horaires.values_list('restaurant_id', flat=True).distinct()
+            restaurants = Restaurant.objects.filter(id__in=restaurant_ids)
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "adresse": r.adresse,
+                "description": r.description,
+                "image": r.image,
+                "geo_position": r.geo_position
+            } for r in restaurants]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des restaurants par horaire : {str(e)}"}
+
+
 class RepasService:
     @staticmethod
     def create_repas(nom, type_id, prix, description=None, image=None, est_dispo=True):
@@ -345,6 +561,37 @@ class RepasService:
             }
         except Exception as e:
             return {"error": f"Erreur lors de la création du repas : {str(e)}"}
+
+    @staticmethod
+    def list_repas_disponibles():
+        """Liste tous les repas disponibles."""
+        try:
+            repas = Repas.objects.filter(est_dispo=True)
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "prix": r.prix,
+                "type": r.type.nom,
+                "description": r.description,
+                "image": r.image
+            } for r in repas]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des repas disponibles : {str(e)}"}
+
+    @staticmethod
+    def list_repas_by_type(type_id):
+        """Liste les repas par type."""
+        try:
+            repas = Repas.objects.filter(type_id=type_id)
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "prix": r.prix,
+                "description": r.description,
+                "image": r.image
+            } for r in repas]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des repas par type : {str(e)}"}
 
 
 class LivreurService:
@@ -383,6 +630,25 @@ class LivreurService:
                 }
         except Exception as e:
             return {"error": f"Erreur lors de la création du livreur : {str(e)}"}
+
+    @staticmethod
+    def list_livreurs_actifs():
+        """Liste tous les livreurs actifs (dernier statut = actif)."""
+        try:
+            actifs = []
+            for l in Livreur.objects.all():
+                dernier_statut = l.historiques.order_by('-mis_a_jour_le').first()
+                if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
+                    actifs.append({
+                        "id": l.id,
+                        "nom": l.nom,
+                        "contact": l.contact,
+                        "position": l.position,
+                        "date_inscri": l.date_inscri
+                    })
+            return actifs
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des livreurs actifs : {str(e)}"}
 
 
 class ZoneService:
@@ -451,53 +717,21 @@ class ZoneService:
             return {'id': closest_zone.id, 'nom': closest_zone.nom}
         return None
 
-
-class LivraisonService:
     @staticmethod
-    def create_livraison(livreur_id, commande_id, initial_statut_id=1):
-        from django.db import transaction
-        if not isinstance(livreur_id, int) or livreur_id <= 0:
-            return {"error": "L'ID du livreur doit être un entier positif"}
-        if not isinstance(commande_id, int) or commande_id <= 0:
-            return {"error": "L'ID de la commande doit être un entier positif"}
-
+    def list_zones_actives():
+        """Liste toutes les zones actives (dernier statut = actif)."""
         try:
-            with transaction.atomic():
-                # Vérifier si le livreur existe
-                if not Livreur.objects.filter(id=livreur_id).exists():
-                    return {"error": "Livreur non trouvé"}
-
-                # Vérifier si la commande existe
-                if not Commande.objects.filter(id=commande_id).exists():
-                    return {"error": "Commande non trouvée"}
-
-                # Vérifier si le statut existe
-                if not StatutLivraison.objects.filter(id=initial_statut_id).exists():
-                    return {"error": "Statut livraison non trouvé"}
-
-                livraison = Livraison.objects.create(
-                    livreur_id=livreur_id,
-                    commande_id=commande_id
-                )
-
-                historique = HistoriqueStatutLivraison.objects.create(
-                    livraison=livraison,
-                    statut_id=initial_statut_id
-                )
-
-                return {
-                    "livraison": {
-                        "id": livraison.id,
-                        "livreur_id": livraison.livreur_id,
-                        "commande_id": livraison.commande_id,
-                        "attribue_le": livraison.attribue_le
-                    },
-                    "historique": {
-                        "id": historique.id,
-                        "livraison_id": historique.livraison_id,
-                        "statut_id": historique.statut_id,
-                        "mis_a_jour_le": historique.mis_a_jour_le
-                    }
-                }
+            actifs = []
+            for z in Zone.objects.all():
+                dernier_statut = z.historiques.order_by('-mis_a_jour_le').first()
+                if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
+                    actifs.append({
+                        "id": z.id,
+                        "nom": z.nom,
+                        "description": z.description,
+                        "zone": z.zone
+                    })
+            return actifs
         except Exception as e:
-            return {"error": f"Erreur lors de la création de la livraison : {str(e)}"}
+            return {"error": f"Erreur lors de la récupération des zones actives : {str(e)}"}
+
