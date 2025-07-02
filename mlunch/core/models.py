@@ -31,6 +31,12 @@ class ZoneClient(models.Model):
     class Meta:
         unique_together = ('client', 'zone')
 
+class ZoneLivreur(models.Model):
+    zone = models.ForeignKey('Zone', on_delete=models.CASCADE)
+    livreur = models.ForeignKey('Livreur', on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('zone', 'livreur')
+
 class PointRecup(models.Model):
     nom = models.CharField(max_length=150)
     geo_position = models.CharField(max_length=100, blank=True, null=True, default="0,0")

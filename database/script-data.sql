@@ -1,3 +1,210 @@
+-- Création des tables
+
+CREATE TABLE core_client (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(254) UNIQUE NOT NULL,
+    mot_de_passe VARCHAR(128) NOT NULL,
+    contact VARCHAR(50),
+    prenom VARCHAR(100),
+    nom VARCHAR(100),
+    date_inscri TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_statutcommande (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE core_zone (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) UNIQUE NOT NULL,
+    description VARCHAR(100),
+    zone VARCHAR(500)
+);
+
+CREATE TABLE core_livreur (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) UNIQUE NOT NULL,
+    contact TEXT,
+    position VARCHAR(100),
+    date_inscri TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_zoneclient (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER NOT NULL REFERENCES core_client(id) ON DELETE CASCADE,
+    zone_id INTEGER NOT NULL REFERENCES core_zone(id) ON DELETE CASCADE,
+    UNIQUE (client_id, zone_id)
+);
+
+CREATE TABLE core_zonelivreur (
+    id SERIAL PRIMARY KEY,
+    zone_id INTEGER NOT NULL REFERENCES core_zone(id) ON DELETE CASCADE,
+    livreur_id INTEGER NOT NULL REFERENCES core_livreur(id) ON DELETE CASCADE,
+    UNIQUE (zone_id, livreur_id)
+);
+
+CREATE TABLE core_pointrecup (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(150) NOT NULL,
+    geo_position VARCHAR(100) DEFAULT '0,0'
+);
+
+CREATE TABLE core_commande (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER NOT NULL REFERENCES core_client(id) ON DELETE CASCADE,
+    point_recup_id INTEGER NOT NULL REFERENCES core_pointrecup(id) ON DELETE CASCADE,
+    cree_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_historiquestatutcommande (
+    id SERIAL PRIMARY KEY,
+    commande_id INTEGER NOT NULL REFERENCES core_commande(id) ON DELETE CASCADE,
+    statut_id INTEGER NOT NULL REFERENCES core_statutcommande(id) ON DELETE CASCADE,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_statutrestaurant (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE core_restaurant (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(150) UNIQUE NOT NULL,
+    adresse TEXT,
+    description TEXT,
+    image TEXT,
+    geo_position VARCHAR(100) DEFAULT '0,0'
+);
+
+CREATE TABLE core_historiquestatutrestaurant (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES core_restaurant(id) ON DELETE CASCADE,
+    statut_id INTEGER NOT NULL REFERENCES core_statutrestaurant(id) ON DELETE CASCADE,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_typerepas (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE core_repas (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    description TEXT,
+    image TEXT,
+    type_id INTEGER NOT NULL REFERENCES core_typerepas(id) ON DELETE CASCADE,
+    prix INTEGER NOT NULL
+);
+
+CREATE TABLE core_statutlivreur (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE core_historiquestatutlivreur (
+    id SERIAL PRIMARY KEY,
+    livreur_id INTEGER NOT NULL REFERENCES core_livreur(id) ON DELETE CASCADE,
+    statut_id INTEGER NOT NULL REFERENCES core_statutlivreur(id) ON DELETE CASCADE,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_statutzone (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE core_historiquestatutzone (
+    id SERIAL PRIMARY KEY,
+    zone_id INTEGER NOT NULL REFERENCES core_zone(id) ON DELETE CASCADE,
+    statut_id INTEGER NOT NULL REFERENCES core_statutzone(id) ON DELETE CASCADE,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_statutlivraison (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR(100)
+);
+
+CREATE TABLE core_livraison (
+    id SERIAL PRIMARY KEY,
+    livreur_id INTEGER NOT NULL REFERENCES core_livreur(id) ON DELETE CASCADE,
+    commande_id INTEGER NOT NULL REFERENCES core_commande(id) ON DELETE CASCADE,
+    attribue_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_historiquestatutlivraison (
+    id SERIAL PRIMARY KEY,
+    livraison_id INTEGER NOT NULL REFERENCES core_livraison(id) ON DELETE CASCADE,
+    statut_id INTEGER NOT NULL REFERENCES core_statutlivraison(id) ON DELETE CASCADE,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_commanderepas (
+    id SERIAL PRIMARY KEY,
+    commande_id INTEGER NOT NULL REFERENCES core_commande(id) ON DELETE CASCADE,
+    repas_id INTEGER NOT NULL REFERENCES core_repas(id) ON DELETE CASCADE,
+    quantite INTEGER NOT NULL,
+    ajoute_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (commande_id, repas_id)
+);
+
+CREATE TABLE core_restaurantrepas (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES core_restaurant(id) ON DELETE CASCADE,
+    repas_id INTEGER NOT NULL REFERENCES core_repas(id) ON DELETE CASCADE,
+    UNIQUE (restaurant_id, repas_id)
+);
+
+CREATE TABLE core_zonerestaurant (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES core_restaurant(id) ON DELETE CASCADE,
+    zone_id INTEGER NOT NULL REFERENCES core_zone(id) ON DELETE CASCADE,
+    UNIQUE (restaurant_id, zone_id)
+);
+
+CREATE TABLE core_commission (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES core_restaurant(id) ON DELETE CASCADE,
+    valeur INTEGER NOT NULL,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_horaire (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES core_restaurant(id) ON DELETE CASCADE,
+    le_jour INTEGER NOT NULL,
+    horaire_debut TIME NOT NULL,
+    horaire_fin TIME NOT NULL,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_horairespecial (
+    id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL REFERENCES core_restaurant(id) ON DELETE CASCADE,
+    date_concerne DATE NOT NULL,
+    horaire_debut TIME NOT NULL,
+    horaire_fin TIME NOT NULL,
+    mis_a_jour_le TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE core_promotion (
+    id SERIAL PRIMARY KEY,
+    repas_id INTEGER NOT NULL REFERENCES core_repas(id) ON DELETE CASCADE,
+    pourcentage_reduction INTEGER NOT NULL,
+    date_concerne DATE NOT NULL
+);
+
+CREATE TABLE core_limitecommandesjournalieres (
+    id SERIAL PRIMARY KEY,
+    nombre_commandes INTEGER NOT NULL,
+    date DATE NOT NULL
+);
+
+-- Insertion des données
+
 -- Status tables data
 INSERT INTO core_statutcommande (appellation) VALUES
 ('En attente'), ('En cours'), ('Livree');
