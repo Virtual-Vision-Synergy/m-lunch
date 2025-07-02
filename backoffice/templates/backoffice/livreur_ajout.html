@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un Livreur</title>
+    <style>
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 100px; }
+        input, select { padding: 5px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h2>Créer un Nouveau Livreur</h2>
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="nom">Nom :</label>
+            <input type="text" id="nom" name="nom" required>
+        </div>
+        <div class="form-group">
+            <label for="contact">Contact :</label>
+            <input type="text" id="contact" name="contact" required>
+        </div>
+        <div class="form-group">
+            <label for="position">Position (lat,lon) :</label>
+            <input type="text" id="position" name="position" placeholder="ex: -18.8792,47.5079">
+            <small>Format : latitude,longitude (ex: -18.8792,47.5079)</small>
+        </div>
+        <div class="form-group">
+            <label for="zones">Zone :</label>
+            <select id="zones" name="zones">
+                {% for zone in zones %}
+                    <option value="{{ zone.id }}">{{ zone.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="statut">Statut :</label>
+            <input type="hidden" id="statut" name="statut" value="{{ statuses.0.appellation }}">
+            <span>{{ statuses.0.appellation }}</span>
+        </div>
+        <button type="submit">Créer</button>
+    </form>
+</body>
+</html>

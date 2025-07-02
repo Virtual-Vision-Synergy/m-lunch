@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails du Livreur</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .filter-group { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Détails du Livreur: {{ nom }}</h2>
+    <p><strong>Contact:</strong> {{ contact }}</p>
+    <p><strong>Position:</strong> {{ position }}</p>
+
+    <h3>Historique des Livraisons</h3>
+    <div class="filter-group">
+        <label for="date-filter">Filtrer par date:</label>
+        <select id="date-filter" onchange="filterDeliveries()">
+            <option value="all">Toutes</option>
+            <option value="day">Aujourd'hui</option>
+            <option value="month">Ce mois</option>
+        </select>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Numéro</th>
+                <th>Date & Heure</th>
+                <th>Client</th>
+                <th>Nombre de Repas</th>
+                <th>Prix Total</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody id="deliveries-table-body">
+            <!-- Populated by JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        const deliveries = [
+            {% for delivery in deliveries %}
+                {
+                    numero: "{{ delivery.numero|escapejs }}",
+                    date_heure: "{{ delivery.date_heure|date:'Y-m-d H:i' }}",
+                    date: "{{ delivery.date_heure|date:'Y-m-d' }}",
+                    client_name: "{{ delivery.client_name|escapejs }}",
+                    nombre_repas: {{ delivery.nombre_repas|default:0 }},
+                    prix_total: {{ delivery.prix_total|floatformat:"2"|default:"0.00" }},
+                    statut: "{{ delivery.statut|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+            {% empty %}
+                {}
+            {% endfor %}
+        ];
+
+        function filterDeliveries() {
+            const dateFilter = document.getElementById('date-filter').value;
+            const tbody = document.getElementById('deliveries-table-body');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const filteredDeliveries = deliveries.filter(delivery => {
+                if (Object.keys(delivery).length === 0) return false;
+                const deliveryDate = new Date(delivery.date);
+                if (dateFilter === 'day') {
+                    return deliveryDate.toDateString() === today.toDateString();
+                } else if (dateFilter === 'month') {
+                    return deliveryDate.getMonth() === today.getMonth() && deliveryDate.getFullYear() === today.getFullYear();
+                }
+                return true;
+            });
+
+            tbody.innerHTML = '';
+            if (filteredDeliveries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">Aucune livraison trouvée.</td></tr>';
+            } else {
+                filteredDeliveries.forEach(delivery => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${delivery.numero}</td>
+                        <td>${delivery.date_heure}</td>
+                        <td>${delivery.client_name}</td>
+                        <td>${delivery.nombre_repas}</td>
+                        <td>${delivery.prix_total} Ariary</td>
+                        <td>${delivery.statut}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        window.onload = filterDeliveries;
+    </script>
+</body>
+</html>
