@@ -81,7 +81,15 @@ class Repas(models.Model):
     est_dispo = models.BooleanField(default=True)
     def __str__(self):
         return self.nom
+    
+class DisponibiliteRepas(models.Model):
+    repas = models.ForeignKey('Repas', on_delete=models.CASCADE, related_name='disponibilites')
+    est_dispo = models.BooleanField(default=True)
+    mis_a_jour_le = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"{self.repas} - {'Disponible' if self.est_dispo else 'Indisponible'} ({self.mis_a_jour_le})"
+    
 class StatutLivreur(models.Model):
     nom = models.CharField(max_length=50)
     def __str__(self):

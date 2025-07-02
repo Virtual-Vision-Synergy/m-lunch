@@ -2,12 +2,16 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import validate_email
 from shapely import wkt
 from shapely.geometry import Point
+from django.utils.timezone import now
+from django.db.models import Sum
 
+from django.http import JsonResponse
 from .models import (
-    Client, Commande, StatutCommande, HistoriqueStatutCommande, PointRecup,
+    Client, Commande, CommandeRepas, StatutCommande, HistoriqueStatutCommande, PointRecup,
     Restaurant, HistoriqueStatutRestaurant, Repas, Livreur, StatutLivreur,
     HistoriqueStatutLivreur, Zone, StatutZone, HistoriqueStatutZone, StatutRestaurant,
-    Livraison, StatutLivraison, HistoriqueStatutLivraison
+    Livraison, StatutLivraison, HistoriqueStatutLivraison, ZoneRestaurant, ZoneClient, RestaurantRepas, TypeRepas,
+    DisponibiliteRepas
 )
 
 
@@ -123,6 +127,7 @@ class ClientService:
         except Exception as e:
             return {"error": f"Erreur : {str(e)}"}
 
+    
 
 class CommandeService:
     @staticmethod
@@ -158,7 +163,57 @@ class CommandeService:
         except Exception as e:
             return {"error": f"Erreur lors de la création de la commande : {str(e)}"}
 
+    @staticmethod
+    def get_commandes_by_client(client_id):
+        commandes = (
+            Commande.objects
+            .filter(client_id=client_id)
+            .order_by('-cree_le')
+        )
 
+        commandes_data = []
+        for c in commandes:
+            repas = CommandeRepas.objects.filter(commande=c)
+            total_articles = repas.aggregate(Sum('quantite'))['quantite__sum'] or 0
+            total_prix = sum([r.repas.prix * r.quantite for r in repas])
+            statut = (
+                HistoriqueStatutCommande.objects
+                .filter(commande=c)
+                .order_by('-mis_a_jour_le')
+                .first()
+            )
+            commandes_data.append({
+                'commande': c,
+                'articles': total_articles,
+                'total': total_prix,
+                'statut': statut.statut.appellation if statut else "Inconnu"
+            })
+
+        return commandes_data
+    
+    @staticmethod
+    def get_commande_detail(commande_id):
+        try:
+            commande = Commande.objects.get(id=commande_id)
+            repas = CommandeRepas.objects.filter(commande=commande)
+            statut = (
+                HistoriqueStatutCommande.objects
+                .filter(commande=commande)
+                .order_by('-mis_a_jour_le')
+                .first()
+            )
+            total = sum([r.repas.prix * r.quantite for r in repas])
+            return {
+                'commande': commande,
+                'repas': list(repas),
+                'statut': statut.statut.appellation if statut else "Inconnu",
+                'total': total
+            }
+        except Commande.DoesNotExist:
+            return {"error": "Commande non trouvée"}
+        except Exception as e:
+            return {"error": f"Erreur : {str(e)}"}
+        
 class RestaurantService:
     @staticmethod
     def create_restaurant(nom, initial_statut_id, adresse=None, image=None, geo_position=None):
@@ -196,7 +251,109 @@ class RestaurantService:
                 }
         except Exception as e:
             return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}
+    @staticmethod
+    def get_restaurants_by_client_zones(client_id):
 
+        zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
+        zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
+
+        features = []
+        for zr in zone_restaurants:
+            r = zr.restaurant
+            if not r.geo_position:
+                continue
+            try:
+                # geo_position is a GEOSGeometry (Point)
+                coords = [r.geo_position.x, r.geo_position.y]
+            except Exception:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": coords,
+                },
+                "properties": {
+                    "id": r.id,
+                    "nom": r.nom,
+                    "note": "N/A",
+                    "image_url": r.image,
+                }
+            })
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+        
+    @staticmethod
+    def get_repas_for_restaurant(restaurant_id, selected_type=None):
+
+        try:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+        except Restaurant.DoesNotExist:
+            return {"error": "Restaurant non trouvé"}
+
+        repas_qs = RestaurantRepas.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
+        if selected_type:
+            repas_qs = repas_qs.filter(repas__type__id=selected_type)
+
+        repas_list = []
+        current_time = now()
+        for rr in repas_qs:
+            r = rr.repas
+            is_dispo = DisponibiliteRepas.objects.filter(
+                repas=r,
+                debut__lte=current_time,
+                fin__gte=current_time
+            ).exists()
+            repas_list.append({
+                "id": r.id,
+                "nom": r.nom,
+                "type_id": r.type_id,
+                "prix": r.prix,
+                "description": r.description,
+                "image": r.image,
+                "est_dispo": is_dispo
+            })
+
+        types = list(TypeRepas.objects.values("id", "nom"))
+        return {
+            "restaurant_id": restaurant.id,
+            "repas": repas_list,
+            "note": 5,
+            "types": types,
+            "selected_type": int(selected_type) if selected_type else None
+        }
+    @staticmethod
+    def get_all_restaurants_geojson():
+        restaurants = Restaurant.objects.all()
+        features = []
+        for r in restaurants:
+            if not r.geo_position:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [r.geo_position.x, r.geo_position.y],
+                },
+                "properties": {
+                    "id": r.id,
+                    "nom": r.nom,
+                    "note": "N/A",
+                    "image_url": r.image,
+                    "adresse": r.adresse,
+                    "description": r.description if hasattr(r, 'description') and r.description else "Aucune description disponible",
+                }
+            })
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
 
 class RepasService:
     @staticmethod
@@ -336,6 +493,7 @@ class LivraisonService:
     @staticmethod
     def create_livraison(livreur_id, commande_id, initial_statut_id=1):
         from django.db import transaction
+
         if not isinstance(livreur_id, int) or livreur_id <= 0:
             return {"error": "L'ID du livreur doit être un entier positif"}
         if not isinstance(commande_id, int) or commande_id <= 0:
@@ -381,3 +539,27 @@ class LivraisonService:
                 }
         except Exception as e:
             return {"error": f"Erreur lors de la création de la livraison : {str(e)}"}
+
+class PointRecupService:
+    @staticmethod
+    def get_all_points_recup_geojson():
+        points = PointRecup.objects.all()
+        features = []
+        for point in points:
+            if not point.geo_position:
+                continue
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [point.geo_position.x, point.geo_position.y],
+                },
+                "properties": {
+                    "id": point.id,
+                    "nom": point.nom,
+                }
+            })
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }

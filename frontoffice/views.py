@@ -1,6 +1,5 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Client, ZoneClient, ZoneRestaurant, Restaurant, RepasRestaurant, TypeRepas, DisponibiliteRepas, Commande, HistoriqueStatutCommande, CommandeRepas, PointDeRecuperation
 import random
 import json
 from django.contrib.auth.hashers import check_password
@@ -9,7 +8,7 @@ from django.db.models import Max, Sum, F
 from django.http import HttpResponseRedirect
 from functools import wraps
 from django.views.decorators.csrf import csrf_exempt
-from mlunch.core.services import ClientService, ZoneService
+from mlunch.core.services import ClientService, ZoneService, RestaurantService,CommandeService, PointRecupService
 from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de liaison
 from shapely import wkt
 
@@ -48,33 +47,8 @@ def restaurants_geojson(request):
     if not client_id:
         return JsonResponse({'error': 'Non connecté'}, status=401)
 
-    zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
-    zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
-
-    features = []
-    for zr in zone_restaurants:
-        r = zr.restaurant
-        if not r.geo_position:
-            continue
-
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [r.geo_position.x, r.geo_position.y],
-            },
-            "properties": {
-                "id": r.id,
-                "nom": r.nom,
-                "note": "N/A",  # Tu peux ajouter une colonne `note` plus tard si nécessaire
-                "image_url": r.image,
-            }
-        })
-
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": features
-    })
+    data = RestaurantService.get_restaurants_by_client_zones(client_id)
+    return JsonResponse(data)
 
 def restaurant_detail(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
@@ -82,136 +56,50 @@ def restaurant_detail(request, restaurant_id):
     # Get selected type if filtered
     selected_type = request.GET.get('type')
 
-    repas_qs = RepasRestaurant.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
-
-    if selected_type:
-        repas_qs = repas_qs.filter(repas__type__id=selected_type)
-
-    repas_list = [rr.repas for rr in repas_qs]
-    current_time = now()
-    for r in repas_list:
-        is_dispo = DisponibiliteRepas.objects.filter(
-            repas=r,
-            debut__lte=current_time,
-            fin__gte=current_time
-        ).exists()
-        r.disponible = is_dispo
-
-    types = TypeRepas.objects.all()
-    #note = round(random.uniform(3.0, 5.0), 1)
+    data = RestaurantService.get_repas_for_restaurant(restaurant_id, selected_type)
+    if "error" in data:
+        return render(request, 'frontoffice/restaurant_detail.html', {
+            'error': data["error"]
+        })
 
     return render(request, 'frontoffice/restaurant_detail.html', {
         'restaurant': restaurant,
-        'repas': repas_list,
-        'note': 5,
-        'types': types,
-        'selected_type': int(selected_type) if selected_type else None
+        'repas': data['repas'],
+        'note': data['note'],
+        'types': data['types'],
+        'selected_type': data['selected_type']
     })
 
 def mes_commandes(request):
     client_id = request.session.get("client_id")
 
-    commandes = (
-        Commande.objects
-        .filter(client_id=client_id)
-        .order_by('-cree_le')
-    )
-
-    # Attach additional data (number of items, total, last status)
-    commandes_data = []
-    for c in commandes:
-        repas = CommandeRepas.objects.filter(commande=c)
-        total_articles = repas.aggregate(Sum('quantite'))['quantite__sum'] or 0
-        total_prix = sum([r.repas.prix * r.quantite for r in repas])
-        statut = (
-            HistoriqueStatutCommande.objects
-            .filter(commande=c)
-            .order_by('-mis_a_jour_le')
-            .first()
-        )
-        commandes_data.append({
-            'commande': c,
-            'articles': total_articles,
-            'total': total_prix,
-            'statut': statut.statut.appellation if statut else "Inconnu"
-        })
-
+    commandes_data = CommandeService.get_commandes_by_client(client_id)
     return render(request, 'frontoffice/mes_commandes.html', {
         'commandes': commandes_data
     })
 
 def detail_commande(request, commande_id):
-    commande = get_object_or_404(Commande, id=commande_id)
-    repas = CommandeRepas.objects.filter(commande=commande)
-    statut = (
-        HistoriqueStatutCommande.objects
-        .filter(commande=commande)
-        .order_by('-mis_a_jour_le')
-        .first()
-    )
-
-    total = sum([r.repas.prix * r.quantite for r in repas])
+    #commande = get_object_or_404(Commande, id=commande_id)
+    data = CommandeService.get_commande_detail(commande_id)
+    if "error" in data:
+        return render(request, 'frontoffice/detail_commande.html', {
+            'error': data["error"]
+        })
 
     return render(request, 'frontoffice/detail_commande.html', {
-        'commande': commande,
-        'repas': repas,
-        'statut': statut.statut.appellation if statut else "Inconnu",
-        'total': total
+        'commande': data['commande'],
+        'repas': data['repas'],
+        'statut': data['statut'],
+        'total': data['total']
     })
 
 def points_de_recuperation(request):
-    points = PointDeRecuperation.objects.all()
-
-    features = []
-    for point in points:
-        if not point.geo_position:
-            continue
-
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [point.geo_position.x, point.geo_position.y],
-            },
-            "properties": {
-                "id": point.id,
-                "nom": point.nom,
-            }
-        })
-
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": features
-    })
+    data = PointRecupService.get_all_points_recup_geojson()
+    return JsonResponse(data)
 
 def all_restaurants(request):
-    restaurants = Restaurant.objects.all()
-
-    features = []
-    for r in restaurants:
-        if not r.geo_position:
-            continue
-
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [r.geo_position.x, r.geo_position.y],
-            },
-            "properties": {
-                "id": r.id,
-                "nom": r.nom,
-                "note": "N/A",
-                "image_url": r.image,
-                "adresse": r.adresse,
-                "description": r.description if r.description else "Aucune description disponible",
-            }
-        })
-
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": features
-    })
+    data = RestaurantService.get_all_restaurants_geojson()
+    return JsonResponse(data)
 
 def restaurant_view(request):
     return render(request, 'frontoffice/restaurant.html')
