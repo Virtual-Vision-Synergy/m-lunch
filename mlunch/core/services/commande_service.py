@@ -242,3 +242,54 @@ class CommandeService:
             return result
         except Exception as e:
             return {"error": f"Erreur lors de la récupération de toutes les commandes : {str(e)}"}
+
+    @staticmethod
+    def get_commandes_by_client(client_id):
+        commandes = (
+            Commande.objects
+            .filter(client_id=client_id)
+            .order_by('-cree_le')
+        )
+
+        commandes_data = []
+        for c in commandes:
+            repas = CommandeRepas.objects.filter(commande=c)
+            total_articles = repas.aggregate(Sum('quantite'))['quantite__sum'] or 0
+            total_prix = sum([r.repas.prix * r.quantite for r in repas])
+            statut = (
+                HistoriqueStatutCommande.objects
+                .filter(commande=c)
+                .order_by('-mis_a_jour_le')
+                .first()
+            )
+            commandes_data.append({
+                'commande': c,
+                'articles': total_articles,
+                'total': total_prix,
+                'statut': statut.statut.appellation if statut else "Inconnu"
+            })
+
+        return commandes_data
+
+    @staticmethod
+    def get_commande_detail(commande_id):
+        try:
+            commande = Commande.objects.get(id=commande_id)
+            repas = CommandeRepas.objects.filter(commande=commande)
+            statut = (
+                HistoriqueStatutCommande.objects
+                .filter(commande=commande)
+                .order_by('-mis_a_jour_le')
+                .first()
+            )
+            total = sum([r.repas.prix * r.quantite for r in repas])
+            return {
+                'commande': commande,
+                'repas': list(repas),
+                'statut': statut.statut.appellation if statut else "Inconnu",
+                'total': total
+            }
+        except Commande.DoesNotExist:
+            return {"error": "Commande non trouvée"}
+        except Exception as e:
+            return {"error": f"Erreur : {str(e)}"}

@@ -23,7 +23,7 @@
       <img src="{{ r.image }}" alt="{{ r.nom }}" width="100">
       <strong>{{ r.nom }}</strong> - {{ r.prix }} Ar<br>
       <em>{{ r.description }}</em><br>
-      {% if r.disponible %}
+      {% if r.est_dispo %}
         <span style="color:green;">✅ Disponible</span><br>
         <a href="#">
           <button>➕ Ajouter au panier</button>

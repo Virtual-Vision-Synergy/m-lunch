@@ -357,3 +357,15 @@ INSERT INTO core_limitecommandesjournalieres (nombre_commandes, date) VALUES
 (30, '2025-12-25'),
 (40, '2025-12-31'),
 (35, '2025-05-01');
+
+INSERT INTO core_disponibiliterepas (repas_id, est_dispo, mis_a_jour_le) VALUES
+(1,  TRUE, '2025-06-01 10:00:00'),
+(2, TRUE, '2025-06-01 10:00:00'),
+(3,  TRUE, '2025-06-01 10:00:00'),
+(4,  FALSE, '2025-06-01 10:00:00'),
+(5,  TRUE, '2025-06-01 10:00:00'),
+(6,  TRUE, '2025-06-01 10:00:00'),
+(7,  TRUE, '2025-06-01 10:00:00'),
+(8,  TRUE, '2025-06-01 10:00:00'),
+(9,  TRUE, '2025-06-01 10:00:00'),
+(10,  FALSE, '2025-06-01 10:00:00');

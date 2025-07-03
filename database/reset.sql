@@ -82,3 +82,4 @@ WHERE c.relkind = 'r'
 AND n.nspname NOT IN ('pg_catalog', 'information_schema')
 AND n.nspname = 'public' -- ou votre schéma si différent
 ORDER BY c.reltuples DESC;
+
