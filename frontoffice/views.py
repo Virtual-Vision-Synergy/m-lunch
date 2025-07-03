@@ -1,45 +1,37 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import logout
-from django.contrib import messages
-
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
-import random
 import json
+
 from django.contrib.auth.hashers import check_password
-from django.utils.timezone import now
-from django.db.models import Max, Sum, F
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
 from functools import wraps
 from django.views.decorators.csrf import csrf_exempt
-from mlunch.core.models import *
-from mlunch.core.services import ClientService, ZoneService, RestaurantService,CommandeService, PointRecupService
+from mlunch.core.services import RestaurantService,CommandeService, PointRecupService
 from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de liaison
 from shapely import wkt
 from mlunch.core.services import ClientService  
 from mlunch.core.services import ZoneService    
 
-# def connexion_view(request):
-#     error_message = None
-#
-#     if request.method == "POST":
-#         email = request.POST.get('email')
-#         password = request.POST.get('password')
-#
-#         try:
-#             client = Client.objects.get(email=email)
-#             if check_password(password, client.mot_de_passe):
-#                 request.session['client_id'] = client.id  # simple session login
-#                 return redirect('frontoffice_restaurant')  # change to your home URL name
-#             else:
-#                 error_message = "Mot de passe incorrect."
-#         except Client.DoesNotExist:
-#             error_message = "Email introuvable."
-#
-#     return render(request, 'frontoffice/connexion.html', {
-#         'error_message': error_message
-#     })
+def connexion_view(request):
+    error_message = None
+
+    if request.method == "POST":
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        #print(password)
+        try:
+            client = Client.objects.get(email=email)
+            if password == client.mot_de_passe:
+                request.session['client_id'] = client.id  # simple session login
+                return redirect('frontoffice_restaurant')  # change to your home URL name
+            else:
+                error_message = "Mot de passe incorrect."
+        except Client.DoesNotExist:
+            error_message = "Email introuvable."
+
+    return render(request, 'frontoffice/connexion.html', {
+        'error_message': error_message
+    })
     
 def authentification_requise(view_func):
     @wraps(view_func)
@@ -101,29 +93,28 @@ def detail_commande(request, commande_id):
         'total': data['total']
     })
 
-# def points_de_recuperation(request):
-#     data = PointRecupService.get_all_points_recup_geojson()
-#     return JsonResponse(data)
-#
-# def all_restaurants(request):
-#     data = RestaurantService.get_all_restaurants_geojson()
-#     return JsonResponse(data)
+def points_de_recuperation(request):
+    data = PointRecupService.get_all_points_recup_geojson()
+    print(data)
+    return JsonResponse(data)
+def all_restaurants(request):
+    data = RestaurantService.get_all_restaurants_geojson()
+    #print(data)
+    return JsonResponse(data)
 
-# def restaurant_view(request):
-#     return render(request, 'frontoffice/restaurant.html')
+def restaurant_view(request):
+    return render(request, 'frontoffice/restaurant.html')
 
-# def accueil_view(request):
-#     return render(request, 'frontoffice/accueil.html')
+def accueil_view(request):
+    return render(request, 'frontoffice/accueil.html')
 
-# def logout_view(request):
-#     # Clear Django session
-#     request.session.flush()  # Deletes session data and cookie
-#     # OR alternative:
-#     # del request.session['client_id']  # Remove only specific key
-#
-#     return redirect('frontoffice_connexion')  # Redirect to login
+def logout_view(request):
+    # Clear Django session
+    request.session.flush()  # Deletes session data and cookie
+    # OR alternative:
+    # del request.session['client_id']  # Remove only specific key
 
-
+    return redirect('frontoffice_connexion')  # Redirect to login
 
 def index(request):
     return render(request, 'frontoffice/index.html')
@@ -206,4 +197,5 @@ def api_zone_from_coord(request):
 
 def deconnexion(request):
     request.session.flush()  # Supprimer toutes les données de session
-    return redirect('frontoffice_index') 
+    return redirect('frontoffice_index')
+

@@ -3,7 +3,8 @@ from django.utils.timezone import now
 from datetime import datetime
 from django.db import transaction
 from ..models import (
-    Restaurant, StatutRestaurant, HistoriqueStatutRestaurant, HistoriqueStatutCommande, Commission, Horaire, Zone, ZoneRestaurant, Repas, Commande, StatutCommande
+    Restaurant, StatutRestaurant, HistoriqueStatutRestaurant, HistoriqueStatutCommande, Commission, Horaire, Zone,
+    ZoneRestaurant, ZoneClient, Repas, Commande, StatutCommande, RestaurantRepas, DisponibiliteRepas, TypeRepas
 )
 
 class RestaurantService:
@@ -349,108 +350,115 @@ class RestaurantService:
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des statuts : {str(e)}"}
 
-    # @staticmethod
-    # def get_restaurants_by_client_zones(client_id):
-    #
-    #     zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
-    #     zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
-    #
-    #     features = []
-    #     for zr in zone_restaurants:
-    #         r = zr.restaurant
-    #         if not r.geo_position:
-    #             continue
-    #         try:
-    #             # geo_position is a GEOSGeometry (Point)
-    #             coords = [r.geo_position.x, r.geo_position.y]
-    #         except Exception:
-    #             continue
-    #
-    #         features.append({
-    #             "type": "Feature",
-    #             "geometry": {
-    #                 "type": "Point",
-    #                 "coordinates": coords,
-    #             },
-    #             "properties": {
-    #                 "id": r.id,
-    #                 "nom": r.nom,
-    #                 "note": "N/A",
-    #                 "image_url": r.image,
-    #             }
-    #         })
-    #
-    #     return {
-    #         "type": "FeatureCollection",
-    #         "features": features
-    #     }
-    #
-    # @staticmethod
-    # def get_repas_for_restaurant(restaurant_id, selected_type=None):
-    #
-    #     try:
-    #         restaurant = Restaurant.objects.get(id=restaurant_id)
-    #     except Restaurant.DoesNotExist:
-    #         return {"error": "Restaurant non trouvé"}
-    #
-    #     repas_qs = RestaurantRepas.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
-    #     if selected_type:
-    #         repas_qs = repas_qs.filter(repas__type__id=selected_type)
-    #
-    #     repas_list = []
-    #     current_time = now()
-    #     for rr in repas_qs:
-    #         r = rr.repas
-    #         is_dispo = DisponibiliteRepas.objects.filter(
-    #             repas=r,
-    #             debut__lte=current_time,
-    #             fin__gte=current_time
-    #         ).exists()
-    #         repas_list.append({
-    #             "id": r.id,
-    #             "nom": r.nom,
-    #             "type_id": r.type_id,
-    #             "prix": r.prix,
-    #             "description": r.description,
-    #             "image": r.image,
-    #             "est_dispo": is_dispo
-    #         })
-    #
-    #     types = list(TypeRepas.objects.values("id", "nom"))
-    #     return {
-    #         "restaurant": restaurant,
-    #         "repas": repas_list,
-    #         "note": 5,
-    #         "types": types,
-    #         "selected_type": int(selected_type) if selected_type else None
-    #     }
-    #
-    # @staticmethod
-    # def get_all_restaurants_geojson():
-    #     restaurants = Restaurant.objects.all()
-    #     features = []
-    #     for r in restaurants:
-    #         if not r.geo_position:
-    #             continue
-    #
-    #         features.append({
-    #             "type": "Feature",
-    #             "geometry": {
-    #                 "type": "Point",
-    #                 "coordinates": [r.geo_position.x, r.geo_position.y],
-    #             },
-    #             "properties": {
-    #                 "id": r.id,
-    #                 "nom": r.nom,
-    #                 "note": "N/A",
-    #                 "image_url": r.image,
-    #                 "adresse": r.adresse,
-    #                 "description": r.description if hasattr(r,
-    #                                                         'description') and r.description else "Aucune description disponible",
-    #             }
-    #         })
-    #
-    #     return {
-    #         "type": "FeatureCollection",
-    #         "features": features
-    #     }
+    @staticmethod
+    def get_restaurants_by_client_zones(client_id):
+        zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
+        zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
+
+        features = []
+        for zr in zone_restaurants:
+            r = zr.restaurant
+            if not r.geo_position:
+                continue
+            try:
+                # Format: "POINT(47.5310 -18.9120)"
+                coords_str = r.geo_position.replace("POINT(", "").replace(")", "")
+                x_str, y_str = coords_str.split()
+                x, y = float(x_str), float(y_str)
+            except Exception:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [x, y],
+                },
+                "properties": {
+                    "id": r.id,
+                    "nom": r.nom,
+                    "note": "N/A",
+                    "image_url": r.image,
+                }
+            })
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+    @staticmethod
+    def get_repas_for_restaurant(restaurant_id, selected_type=None):
+
+        try:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+        except Restaurant.DoesNotExist:
+            return {"error": "Restaurant non trouvé"}
+
+        repas_qs = RestaurantRepas.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
+        if selected_type:
+            repas_qs = repas_qs.filter(repas__type__id=selected_type)
+
+        repas_list = []
+        current_time = now()
+        for rr in repas_qs:
+            r = rr.repas
+            is_dispo = DisponibiliteRepas.objects.filter(
+                repas=r,
+                est_dispo=True
+            ).exists()
+            #print(f"Checking availability for repas {r.nom}: {is_dispo}")
+            repas_list.append({
+                "id": r.id,
+                "nom": r.nom,
+                "type_id": r.type_id,
+                "prix": r.prix,
+                "description": r.description,
+                "image": r.image,
+                "est_dispo": is_dispo
+            })
+
+        types = list(TypeRepas.objects.values("id", "nom"))
+        return {
+            "restaurant": restaurant,
+            "repas": repas_list,
+            "note": 5,
+            "types": types,
+            "selected_type": int(selected_type) if selected_type else None
+        }
+
+    @staticmethod
+    def get_all_restaurants_geojson():
+        restaurants = Restaurant.objects.all()
+        features = []
+        for r in restaurants:
+            if not r.geo_position:
+                continue
+            try:
+                # Format: "POINT(47.5310 -18.9120)"
+                coords_str = r.geo_position.replace("POINT(", "").replace(")", "")
+                x_str, y_str = coords_str.split()
+                x, y = float(x_str), float(y_str)
+            except Exception:
+                continue
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [x, y],
+                },
+                "properties": {
+                    "id": r.id,
+                    "nom": r.nom,
+                    "note": "N/A",
+                    "image_url": r.image,
+                    "adresse": r.adresse,
+                    "description": r.description if hasattr(r,
+                                                            'description') and r.description else "Aucune description disponible",
+                }
+            })
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }

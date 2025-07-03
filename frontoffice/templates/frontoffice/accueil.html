@@ -73,7 +73,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize map (centered on a default location)
-            const map = L.map('map-container').setView([48.8566, 2.3522], 13);
+           const map = L.map('map-container').setView([-18.8792, 47.5079], 13);
             
             // Add tile layer (OpenStreetMap)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -139,6 +139,8 @@
             });
 
             function loadRestaurants() {
+                // DEBUG: Start loading restaurants
+                console.debug('DEBUG: loadRestaurants called');
                 // Clear existing markers
                 map.eachLayer(layer => {
                     if (layer instanceof L.Marker) {
@@ -149,22 +151,34 @@
                 fetch('/api/all_restaurants/')
                     .then(response => response.json())
                     .then(data => {
+                        console.debug('DEBUG: Data received from /api/all_restaurants/:', data);
+                        if (!data.features || !Array.isArray(data.features)) {
+                            console.warn('DEBUG: No features array in data:', data);
+                        }
                         const bounds = [];
-                        data.features.forEach(restaurant => {
+                        console.debug('DEBUG: Number of features:', data.features ? data.features.length : 0);
+                        data.features && data.features.forEach(restaurant => {
                             if (restaurant.geometry?.coordinates) {
                                 const [lng, lat] = restaurant.geometry.coordinates;
                                 const marker = L.marker([lat, lng]).addTo(map);
                                 marker.bindPopup(`<b>${restaurant.properties.nom}</b><br>${restaurant.properties.description}`);
                                 bounds.push([lat, lng]);
+                            } else {
+                                console.warn('DEBUG: Skipping restaurant, missing geometry.coordinates:', restaurant);
                             }
                         });
+                        console.debug('DEBUG: Final bounds array:', bounds);
                         if (bounds.length > 0) {
                             map.fitBounds(bounds, {padding: [50, 50]});
+                        } else {
+                            console.warn('DEBUG: No bounds to fit.');
                         }
                     });
             }
 
             function loadPickupPoints() {
+                // DEBUG: Start loading pickup points
+                console.debug('DEBUG: loadPickupPoints called');
                 // Clear existing markers
                 map.eachLayer(layer => {
                     if (layer instanceof L.Marker) {
@@ -173,20 +187,38 @@
                 });
 
                 fetch('/api/points_de_recuperation/')
-                .then(response => response.json())
+                .then(response => {
+                    console.debug('DEBUG: Response received from /api/points_de_recuperation/', response);
+                    return response.json();
+                })
                 .then(data => {
+                    console.debug('DEBUG: Data received:', data);
+                    if (!data.features || !Array.isArray(data.features)) {
+                        console.warn('DEBUG: No features array in data:', data);
+                    }
                     const bounds = [];
-                    data.features.forEach(point => {
+                    console.debug('DEBUG: Number of features:', data.features ? data.features.length : 0);
+                    data.features && data.features.forEach(point => {
+                        console.debug('DEBUG: Processing point:', point);
                         if (point.geometry?.coordinates) {
                             const [lng, lat] = point.geometry.coordinates;
                             const marker = L.marker([lat, lng]).addTo(map);
                             marker.bindPopup(`<b>${point.properties.nom}</b>`);
                             bounds.push([lat, lng]);
+                        } else {
+                            console.warn('DEBUG: Skipping point, missing geometry.coordinates:', point);
                         }
                     });
+                    console.debug('DEBUG: Final bounds array:', bounds);
                     if (bounds.length > 0) {
+                        console.debug('DEBUG: Fitting map to bounds:', bounds);
                         map.fitBounds(bounds, {padding: [50, 50]});
+                    } else {
+                        console.warn('DEBUG: No bounds to fit.');
                     }
+                })
+                .catch(error => {
+                    console.error('DEBUG: Error fetching pickup points:', error);
                 });
             }
             
