@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Commandes du Restaurant</title>
+</head>
+<body>
+
+<h1>Commandes du Restaurant</h1>
+
+{% if commandes_resto.error %}
+    <p style="color:red;">{{ commandes_resto.error }}</p>
+{% else %}
+    <h2>Informations sur le restaurant</h2>
+    <ul>
+        <li><strong>ID :</strong> {{ commandes_resto.restaurant.id }}</li>
+        <li><strong>Nom :</strong> {{ commandes_resto.restaurant.nom }}</li>
+        <li><strong>Image :</strong> <img src="/media/{{ commandes_resto.restaurant.image }}" alt="Image du restaurant" width="150" /></li>
+        <li><strong>Secteurs desservis :</strong>
+            <ul>
+                {% for secteur in commandes_resto.restaurant.secteurs %}
+                    <li>{{ secteur }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li><strong>Commission :</strong> {{ commandes_resto.restaurant.commission }}%</li>
+        <li><strong>Horaires :</strong>
+            <ul>
+                {% for horaire in commandes_resto.restaurant.horaire %}
+                    <li>Jour {{ horaire.le_jour }} : {{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li><strong>Statut :</strong> {{ commandes_resto.restaurant.statut }}</li>
+    </ul>
+
+    <h2>Liste des commandes</h2>
+    {% if commandes_resto.commandes %}
+        <table border="1" cellpadding="5" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Secteur</th>
+                    <th>Restaurant</th>
+                    <th>Date & Heure</th>
+                    <th>Nombre de repas</th>
+                    <th>Prix total</th>
+                    <th>Statut</th>
+                    <th>Mode de paiement</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for commande in commandes_resto.commandes %}
+                    <tr>
+                        <td>{{ commande.client }}</td>
+                        <td>{{ commande.secteur }}</td>
+                        <td>{{ commande.restaurant }}</td>
+                        <td>{{ commande.date_heure_commande }}</td>
+                        <td>{{ commande.nombre_repas }}</td>
+                        <td>{{ commande.prix_total }}</td>
+                        <td>{{ commande.statut }}</td>
+                        <td>
+                            {% if commande.mode_paiement %}
+                                {{ commande.mode_paiement }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucune commande trouvée pour ce restaurant.</p>
+    {% endif %}
+{% endif %}
+
+</body>
+</html>

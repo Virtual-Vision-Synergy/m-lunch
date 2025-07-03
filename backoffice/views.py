@@ -30,3 +30,7 @@ def restaurant(request):
 def commande(request):
     commandes = CommandeService.get_all_commandes()
     return render(request, 'backoffice/commande.html', {'commandes': commandes})
+
+def restaurant_commandes(request, restaurant_id):
+    commandes = RestaurantService.get_commandes_by_restaurant(restaurant_id)
+    return render(request, 'backoffice/restaurant_commandes.html', {'commandes_resto': commandes, 'restaurant_id': restaurant_id})

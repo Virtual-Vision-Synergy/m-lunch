@@ -349,6 +349,39 @@ class RestaurantService:
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des statuts : {str(e)}"}
 
+    @staticmethod
+    def get_commandes_by_restaurant(restaurant_id):
+        # pdb.set_trace()
+        """
+        Retourne toutes les commandes associées à un restaurant donné, avec tous les détails,
+        ainsi que les informations du restaurant concerné.
+        """
+        from .commande_service import CommandeService
+        try:
+            restaurant_info = RestaurantService.get_restaurant_details(restaurant_id)
+            commandes = Commande.objects.filter(
+                repas_commandes__repas__restaurantrepas__restaurant=restaurant_id
+            ).distinct()
+            result = []
+            for commande in commandes:
+                details = CommandeService.get_commande_details(commande.id)
+                # Récupérer le dernier statut
+                historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                statut = None
+                if historique and hasattr(historique, 'statut') and historique.statut:
+                    statut = historique.statut.appellation
+                # Récupérer le mode de paiement si le modèle Commande a ce champ
+                mode_paiement = getattr(commande, 'mode_paiement', None)
+                details['statut'] = statut
+                details['mode_paiement'] = mode_paiement
+                result.append(details)
+            return {
+                "restaurant": restaurant_info,
+                "commandes": result
+            }
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes du restaurant : {str(e)}"}
+
     # @staticmethod
     # def get_restaurants_by_client_zones(client_id):
     #
