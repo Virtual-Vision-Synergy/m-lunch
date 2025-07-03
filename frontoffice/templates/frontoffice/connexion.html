@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion</title>
+</head>
+<body>
+
+<h2>Formulaire de Connexion</h2>
+
+{% if error_message %}
+    <p style="color: red;">{{ error_message }}</p>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+    <p>
+        <label for="email">Adresse e-mail</label><br>
+        <input type="email" id="email" name="email" required>
+    </p>
+    <p>
+        <label for="password-field">Mot de passe</label><br>
+        <input type="password" id="password-field" name="password" required>
+        <button type="button" onclick="togglePassword()">👁️</button>
+    </p>
+    <button type="submit">Connexion</button>
+</form>
+
+<script>
+function togglePassword() {
+    const passwordField = document.getElementById("password-field");
+    passwordField.type = passwordField.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>

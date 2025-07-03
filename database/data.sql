@@ -1,7 +1,3 @@
-\c postgres;
-drop database mlunch;
-create database mlunch;
-\c mlunch;
 
 -- insertion.sql
 -- Données initiales pour l'application de livraison de repas
@@ -11,72 +7,72 @@ create database mlunch;
 -- TABLES STATIQUES (non modifiées)
 -- ======================
 
-INSERT INTO core_typerepas (id, nom) VALUES
-(1, 'Plat principal'),
-(2, 'Entrée'),
-(3, 'Dessert'),
-(4, 'Boisson'),
-(5, 'Spécialité malgache');
+INSERT INTO core_typerepas (nom) VALUES
+('Plat principal'),
+('Entrée'),
+('Dessert'),
+('Boisson'),
+('Spécialité malgache');
 
-INSERT INTO core_statutcommande (id, appellation) VALUES
-(1, 'En attente'),
-(2, 'En cours'),
-(3, 'Livrée'),
-(4, 'Annulée');
+INSERT INTO core_statutcommande (appellation) VALUES
+('En attente'),
+('En cours'),
+('Livrée'),
+('Annulée');
 
-INSERT INTO core_statutlivraison (id, appellation) VALUES
-(1, 'En attente'),
-(2, 'En cours'),
-(3, 'Effectuée'),
-(4, 'Annulée');
-    
-INSERT INTO core_statutlivreur (id, appellation) VALUES
-(1, 'Disponible'),
-(2, 'En livraison'),
-(3, 'Inactif');
+INSERT INTO core_statutlivraison (appellation) VALUES
+('En attente'),
+('En cours'),
+('Effectuée'),
+('Annulée');
+
+INSERT INTO core_statutlivreur (appellation) VALUES
+('Disponible'),
+('En livraison'),
+('Inactif');
 
 -- ======================
 -- TABLES DYNAMIQUES (sans accents)
 -- ======================
 
-INSERT INTO core_statutrestaurant (id, appellation) VALUES
-(1, 'Actif'),
-(2, 'Inactif');
+INSERT INTO core_statutrestaurant (appellation) VALUES
+('Actif'),
+('Inactif');
 
-INSERT INTO core_statutzone (id, appellation) VALUES
-(1, 'Active'),
-(2, 'Inactive');
+INSERT INTO core_statutzone (appellation) VALUES
+('Active'),
+('Inactive');
 
-INSERT INTO core_modepaiement (id, nom) VALUES
-(1, 'Especes'),
-(2, 'Carte bancaire'),
-(3, 'Mobile Money'),
-(4, 'Virement');
+INSERT INTO core_modepaiement (nom) VALUES
+('Especes'),
+('Carte bancaire'),
+('Mobile Money'),
+('Virement');
 
-INSERT INTO core_zone (id, nom, description, zone) VALUES
-(1, 'Analakely', 'Centre-ville', 'POLYGON((47.5259 -18.9141, 47.5352 -18.9141, 47.5352 -18.9070, 47.5259 -18.9070, 47.5259 -18.9141))'),
-(2, 'Andravoahangy', 'Zone commerciale', 'POLYGON((47.5330 -18.8950, 47.5430 -18.8950, 47.5430 -18.8880, 47.5330 -18.8880, 47.5330 -18.8950))'),
-(3, 'Ankorondrano', 'Zone d''affaires', 'POLYGON((47.5210 -18.8830, 47.5310 -18.8830, 47.5310 -18.8750, 47.5210 -18.8750, 47.5210 -18.8830))'),
-(4, 'Ivandry', 'Zone residentielle', 'POLYGON((47.5390 -18.8730, 47.5480 -18.8730, 47.5480 -18.8650, 47.5390 -18.8650, 47.5390 -18.8730))'),
-(5, 'Ankadimbahoaka', 'Zone commerciale', 'POLYGON((47.5180 -18.9300, 47.5280 -18.9300, 47.5280 -18.9220, 47.5180 -18.9220, 47.5180 -18.9300))');
+INSERT INTO core_zone (nom, description, zone) VALUES
+('Analakely', 'Centre-ville', 'POLYGON((47.5259 -18.9141, 47.5352 -18.9141, 47.5352 -18.9070, 47.5259 -18.9070, 47.5259 -18.9141))'),
+('Andravoahangy', 'Zone commerciale', 'POLYGON((47.5330 -18.8950, 47.5430 -18.8950, 47.5430 -18.8880, 47.5330 -18.8880, 47.5330 -18.8950))'),
+('Ankorondrano', 'Zone d''affaires', 'POLYGON((47.5210 -18.8830, 47.5310 -18.8830, 47.5310 -18.8750, 47.5210 -18.8750, 47.5210 -18.8830))'),
+('Ivandry', 'Zone residentielle', 'POLYGON((47.5390 -18.8730, 47.5480 -18.8730, 47.5480 -18.8650, 47.5390 -18.8650, 47.5390 -18.8730))'),
+('Ankadimbahoaka', 'Zone commerciale', 'POLYGON((47.5180 -18.9300, 47.5280 -18.9300, 47.5280 -18.9220, 47.5180 -18.9220, 47.5180 -18.9300))');
 
-INSERT INTO core_client (id, email, mot_de_passe, contact, prenom, nom, date_inscri) VALUES
-(1, 'jean.rakoto@example.com', 'pbkdf2_sha256$260000$abc123$def456ghi789=', '+261341234567', 'Jean', 'Rakoto', '2025-01-15 08:30:45'),
-(2, 'marie.rasoa@example.com', 'pbkdf2_sha256$260000$xyz789$uvw456rst123=', '+261331234568', 'Marie', 'Rasoa', '2025-02-20 12:15:30'),
-(3, 'pierre.rajaona@example.com', 'pbkdf2_sha256$260000$mno456$pqr789stu123=', '+261321234569', 'Pierre', 'Rajaona', '2025-03-05 14:45:22'),
-(4, 'aina.rabesoa@example.com', 'pbkdf2_sha256$260000$jkl123$mno456pqr789=', '+261331234570', 'Aina', 'Rabesoa', '2025-03-18 09:20:15'),
-(5, 'faly.andriamanana@example.com', 'pbkdf2_sha256$260000$def456$ghi789jkl123=', '+261341234571', 'Faly', 'Andriamanana', '2025-04-10 16:40:33'),
-(6, 'sarah.randria@example.com', 'pbkdf2_sha256$260000$pqr789$stu123vwx456=', '+261331234572', 'Sarah', 'Randria', '2025-05-22 11:25:18'),
-(7, 'tiana.raharimanana@example.com', 'pbkdf2_sha256$260000$vwx456$yz123abc789=', '+261321234573', 'Tiana', 'Raharimanana', '2025-06-08 17:50:42');
+INSERT INTO core_client (email, mot_de_passe, contact, prenom, nom, date_inscri) VALUES
+('jean.rakoto@example.com', 'pbkdf2_sha256$260000$abc123$def456ghi789=', '+261341234567', 'Jean', 'Rakoto', '2025-01-15 08:30:45'),
+('marie.rasoa@example.com', 'pbkdf2_sha256$260000$xyz789$uvw456rst123=', '+261331234568', 'Marie', 'Rasoa', '2025-02-20 12:15:30'),
+('pierre.rajaona@example.com', 'pbkdf2_sha256$260000$mno456$pqr789stu123=', '+261321234569', 'Pierre', 'Rajaona', '2025-03-05 14:45:22'),
+('aina.rabesoa@example.com', 'pbkdf2_sha256$260000$jkl123$mno456pqr789=', '+261331234570', 'Aina', 'Rabesoa', '2025-03-18 09:20:15'),
+('faly.andriamanana@example.com', 'pbkdf2_sha256$260000$def456$ghi789jkl123=', '+261341234571', 'Faly', 'Andriamanana', '2025-04-10 16:40:33'),
+('sarah.randria@example.com', 'pbkdf2_sha256$260000$pqr789$stu123vwx456=', '+261331234572', 'Sarah', 'Randria', '2025-05-22 11:25:18'),
+('tiana.raharimanana@example.com', 'pbkdf2_sha256$260000$vwx456$yz123abc789=', '+261321234573', 'Tiana', 'Raharimanana', '2025-06-08 17:50:42');
 
-INSERT INTO core_restaurant (id, nom, adresse, description, image, geo_position) VALUES
-(1, 'Le Carnivore', 'Avenue de l''Independance, Analakely', 'Specialiste des viandes grillees et plats malgaches', 'restaurant1.jpg', 'POINT(47.5310 -18.9120)'),
-(2, 'La Varangue', 'Rue Rainitovo, Ankorondrano', 'Cuisine gastronomique francaise et malgache', 'restaurant2.jpg', 'POINT(47.5260 -18.8800)'),
-(3, 'Sakamanga', 'Rue Dr Villette, Andravoahangy', 'Cuisine traditionnelle malgache dans un cadre chaleureux', 'restaurant3.jpg', 'POINT(47.5380 -18.8920)'),
-(4, 'Pizza Mia', 'Rue Ratsimilaho, Ivandry', 'Pizzas artisanales et plats italiens', 'restaurant4.jpg', 'POINT(47.5420 -18.8700)'),
-(5, 'Le Jardin', 'Avenue Ramanantsoa, Ankadimbahoaka', 'Cuisine fusion et plats vegetariens', 'restaurant5.jpg', 'POINT(47.5220 -18.9250)'),
-(6, 'Chez Mariette', 'Rue Ravoahangy, Analakely', 'Petit restaurant familial specialise en fruits de mer', 'restaurant6.jpg', 'POINT(47.5290 -18.9100)'),
-(7, 'Le Bistrot', 'Rue Patrice Lumumba, Ankorondrano', 'Bistrot francais avec terrasse', 'restaurant7.jpg', 'POINT(47.5240 -18.8780)');
+INSERT INTO core_restaurant (nom, adresse, description, image, geo_position) VALUES
+('Le Carnivore', 'Avenue de l''Independance, Analakely', 'Specialiste des viandes grillees et plats malgaches', 'restaurant1.jpg', 'POINT(47.5310 -18.9120)'),
+('La Varangue', 'Rue Rainitovo, Ankorondrano', 'Cuisine gastronomique francaise et malgache', 'restaurant2.jpg', 'POINT(47.5260 -18.8800)'),
+('Sakamanga', 'Rue Dr Villette, Andravoahangy', 'Cuisine traditionnelle malgache dans un cadre chaleureux', 'restaurant3.jpg', 'POINT(47.5380 -18.8920)'),
+('Pizza Mia', 'Rue Ratsimilaho, Ivandry', 'Pizzas artisanales et plats italiens', 'restaurant4.jpg', 'POINT(47.5420 -18.8700)'),
+('Le Jardin', 'Avenue Ramanantsoa, Ankadimbahoaka', 'Cuisine fusion et plats vegetariens', 'restaurant5.jpg', 'POINT(47.5220 -18.9250)'),
+('Chez Mariette', 'Rue Ravoahangy, Analakely', 'Petit restaurant familial specialise en fruits de mer', 'restaurant6.jpg', 'POINT(47.5290 -18.9100)'),
+('Le Bistrot', 'Rue Patrice Lumumba, Ankorondrano', 'Bistrot francais avec terrasse', 'restaurant7.jpg', 'POINT(47.5240 -18.8780)');
 
 INSERT INTO core_commission (restaurant_id, valeur, mis_a_jour_le) VALUES
 (1, 10, '2025-01-01 00:00:00'),
@@ -150,7 +146,7 @@ INSERT INTO core_livreur (id, nom, contact, position, date_inscri) VALUES
 
 INSERT INTO core_historiquestatutlivreur (livreur_id, statut_id, mis_a_jour_le) VALUES
 (1, 1, '2025-06-01 08:00:00'), (1, 2, '2025-06-01 12:30:00'), (1, 1, '2025-06-01 13:45:00'),
-(2, 1, '2025-06-01 09:00:00'), (2, 4, '2025-06-01 12:00:00'), (2, 1, '2025-06-01 13:30:00'),
+(2, 1, '2025-06-01 09:00:00'), (2, 3, '2025-06-01 12:00:00'), (2, 1, '2025-06-01 13:30:00'),
 (3, 3, '2025-06-01 00:00:00'), (3, 1, '2025-06-10 08:00:00'),
 (4, 1, '2025-06-01 08:00:00'), (4, 2, '2025-06-01 11:45:00'), (4, 1, '2025-06-01 14:30:00'),
 (5, 1, '2025-06-01 08:00:00'), (5, 2, '2025-06-01 12:15:00'), (5, 1, '2025-06-01 15:00:00'),

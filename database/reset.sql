@@ -6,6 +6,7 @@ SET session_replication_role = 'replica';
 -- 2. Vider toutes les tables en commençant par les tables enfants
 -- Ordre de suppression soigneusement organisé pour respecter les dépendances
 TRUNCATE TABLE
+
     core_historiquestatutzone,
     core_historiquestatutrestaurant,
     core_historiquestatutlivreur,
@@ -34,11 +35,11 @@ TRUNCATE TABLE
     core_modepaiement,
     core_horaire,
     core_horairespecial,
-    core_commission
+    core_commission,
+    core_limitecommandesjournalieres
 RESTART IDENTITY CASCADE;
 
 -- 3. Réinitialiser les séquences pour toutes les tables avec auto-incrément
--- Liste complète et organisée des séquences à réinitialiser
 DO $$
 DECLARE
     seq_record RECORD;
