@@ -11,7 +11,7 @@ from ..models import Zone, StatutZone, HistoriqueStatutZone
 class ZoneService:
     @staticmethod
     def create_zone(nom, description, coordinates, initial_statut_id):
-        pdb.set_trace()
+        # pdb.set_trace()
         from django.db import transaction
         if not nom or len(nom) > 100 or not nom.strip():
             return {"error": "Nom de zone invalide"}
@@ -54,7 +54,7 @@ class ZoneService:
 
     @staticmethod
     def get_zone_by_coord(lat, lon, max_distance_m=5000):
-        pdb.set_trace()
+        # pdb.set_trace()
         """
         Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).
         """
@@ -78,7 +78,7 @@ class ZoneService:
 
     @staticmethod
     def list_zones_actives():
-        pdb.set_trace()
+        # pdb.set_trace()
         """Liste toutes les zones actives (dernier statut = actif)."""
         try:
             actifs = []
