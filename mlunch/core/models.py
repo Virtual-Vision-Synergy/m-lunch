@@ -26,7 +26,7 @@ class ZoneClient(models.Model):
 
 class PointRecup(models.Model):
     nom = models.CharField(max_length=100)
-    adresse = models.CharField(max_length=255)
+    geo_position = models.PointField(geography=True, srid=4326)
 
     def __str__(self):
         return self.nom
