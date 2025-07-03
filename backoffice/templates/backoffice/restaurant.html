@@ -96,5 +96,10 @@
         {% endfor %}
 
     </section>
+    <div style="text-align:center; margin-top: 20px;">
+        <form action="{% url 'backoffice_restaurant_ajouter' %}" method="get">
+            <button type="submit">Ajouter un restaurant</button>
+        </form>
+    </div>
 </body>
 </html>

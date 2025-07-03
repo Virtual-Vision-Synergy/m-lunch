@@ -44,7 +44,7 @@ class RestaurantService:
                     }
                 }
         except Exception as e:
-            return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}
+            return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}    
 
     @staticmethod
     def update_restaurant(restaurant_id, data):
