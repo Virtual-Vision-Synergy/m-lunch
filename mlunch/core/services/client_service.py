@@ -8,7 +8,7 @@ import pdb
 class ClientService:
     @staticmethod
     def create_client(email, mot_de_passe, contact=None, prenom=None, nom=None):
-        pdb.set_trace()
+        # pdb.set_trace()
         try:
             validate_email(email)
         except ValidationError:
@@ -36,7 +36,7 @@ class ClientService:
 
     @staticmethod
     def get_client_by_id(client_id):
-        pdb.set_trace()
+        # pdb.set_trace()
         try:
             client = Client.objects.get(id=client_id)
             return {
@@ -54,7 +54,7 @@ class ClientService:
 
     @staticmethod
     def get_client_by_email(email):
-        pdb.set_trace()
+        # pdb.set_trace()
         try:
             validate_email(email)
         except ValidationError:
@@ -76,7 +76,7 @@ class ClientService:
 
     @staticmethod
     def get_all_clients():
-        pdb.set_trace()
+        # pdb.set_trace()
         try:
             clients = Client.objects.all().order_by('nom', 'prenom')
             return [{
@@ -92,7 +92,7 @@ class ClientService:
 
     @staticmethod
     def update_client(client_id, email=None, mot_de_passe=None, contact=None, prenom=None, nom=None):
-        pdb.set_trace()
+        # pdb.set_trace()
         try:
             client = Client.objects.get(id=client_id)
             if email:
@@ -124,7 +124,7 @@ class ClientService:
 
     @staticmethod
     def list_commandes(client_id):
-        pdb.set_trace()
+        # pdb.set_trace()
         """Liste toutes les commandes d'un client."""
         try:
             commandes = Commande.objects.filter(client_id=client_id)
