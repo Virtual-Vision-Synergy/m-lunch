@@ -20,26 +20,26 @@ from shapely import wkt
 from mlunch.core.services import ClientService  
 from mlunch.core.services import ZoneService    
 
-def connexion_view(request):
-    error_message = None
-
-    if request.method == "POST":
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-
-        try:
-            client = Client.objects.get(email=email)
-            if check_password(password, client.mot_de_passe):
-                request.session['client_id'] = client.id  # simple session login
-                return redirect('frontoffice_restaurant')  # change to your home URL name
-            else:
-                error_message = "Mot de passe incorrect."
-        except Client.DoesNotExist:
-            error_message = "Email introuvable."
-
-    return render(request, 'frontoffice/connexion.html', {
-        'error_message': error_message
-    })
+# def connexion_view(request):
+#     error_message = None
+#
+#     if request.method == "POST":
+#         email = request.POST.get('email')
+#         password = request.POST.get('password')
+#
+#         try:
+#             client = Client.objects.get(email=email)
+#             if check_password(password, client.mot_de_passe):
+#                 request.session['client_id'] = client.id  # simple session login
+#                 return redirect('frontoffice_restaurant')  # change to your home URL name
+#             else:
+#                 error_message = "Mot de passe incorrect."
+#         except Client.DoesNotExist:
+#             error_message = "Email introuvable."
+#
+#     return render(request, 'frontoffice/connexion.html', {
+#         'error_message': error_message
+#     })
     
 def authentification_requise(view_func):
     @wraps(view_func)
@@ -101,27 +101,27 @@ def detail_commande(request, commande_id):
         'total': data['total']
     })
 
-def points_de_recuperation(request):
-    data = PointRecupService.get_all_points_recup_geojson()
-    return JsonResponse(data)
+# def points_de_recuperation(request):
+#     data = PointRecupService.get_all_points_recup_geojson()
+#     return JsonResponse(data)
+#
+# def all_restaurants(request):
+#     data = RestaurantService.get_all_restaurants_geojson()
+#     return JsonResponse(data)
 
-def all_restaurants(request):
-    data = RestaurantService.get_all_restaurants_geojson()
-    return JsonResponse(data)
+# def restaurant_view(request):
+#     return render(request, 'frontoffice/restaurant.html')
 
-def restaurant_view(request):
-    return render(request, 'frontoffice/restaurant.html')
+# def accueil_view(request):
+#     return render(request, 'frontoffice/accueil.html')
 
-def accueil_view(request):
-    return render(request, 'frontoffice/accueil.html')
-
-def logout_view(request):
-    # Clear Django session
-    request.session.flush()  # Deletes session data and cookie
-    # OR alternative:
-    # del request.session['client_id']  # Remove only specific key
-    
-    return redirect('frontoffice_connexion')  # Redirect to login
+# def logout_view(request):
+#     # Clear Django session
+#     request.session.flush()  # Deletes session data and cookie
+#     # OR alternative:
+#     # del request.session['client_id']  # Remove only specific key
+#
+#     return redirect('frontoffice_connexion')  # Redirect to login
 
 
 
