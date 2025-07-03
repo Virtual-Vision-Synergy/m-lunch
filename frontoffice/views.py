@@ -1,3 +1,8 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth import logout
+from django.contrib import messages
+
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 import random
@@ -8,9 +13,12 @@ from django.db.models import Max, Sum, F
 from django.http import HttpResponseRedirect
 from functools import wraps
 from django.views.decorators.csrf import csrf_exempt
+from mlunch.core.models import *
 from mlunch.core.services import ClientService, ZoneService, RestaurantService,CommandeService, PointRecupService
 from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de liaison
 from shapely import wkt
+from mlunch.core.services import ClientService  
+from mlunch.core.services import ZoneService    
 
 def connexion_view(request):
     error_message = None
@@ -119,7 +127,6 @@ def logout_view(request):
 
 def index(request):
     return render(request, 'frontoffice/index.html')
-
 
 @csrf_exempt  # Adding this to allow testing without CSRF
 def inscription_page(request):
