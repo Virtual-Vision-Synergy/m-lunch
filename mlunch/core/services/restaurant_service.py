@@ -453,6 +453,7 @@ class RestaurantService:
             "type": "FeatureCollection",
             "features": features
         }
+        
     @staticmethod   
     def get_commandes_by_restaurant_filtrer(restaurant_id, date_debut=None, date_fin=None, idstatut=None, idmodepaiement=None):
         """
