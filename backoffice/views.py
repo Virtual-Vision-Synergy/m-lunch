@@ -2,6 +2,7 @@ from django.shortcuts import render
 from mlunch.core.services import CommandeService
 from mlunch.core.services import RestaurantService  
 from mlunch.core.services import ZoneService
+from mlunch.core.models import StatutCommande, ModePaiement
 
 
 def index(request):
@@ -32,5 +33,29 @@ def commande(request):
     return render(request, 'backoffice/commande.html', {'commandes': commandes})
 
 def restaurant_commandes(request, restaurant_id):
-    commandes = RestaurantService.get_commandes_by_restaurant(restaurant_id)
-    return render(request, 'backoffice/restaurant_commandes.html', {'commandes_resto': commandes, 'restaurant_id': restaurant_id})
+    date_debut = request.GET.get('date_debut')
+    date_fin = request.GET.get('date_fin')
+    idstatut = request.GET.get('statut')
+    idmodepaiement = request.GET.get('mode_paiement')
+
+    commandes = RestaurantService.get_commandes_by_restaurant_filtrer(
+        restaurant_id,
+        date_debut=date_debut if date_debut else None,
+        date_fin=date_fin if date_fin else None,
+        idstatut=idstatut if idstatut else None,
+        idmodepaiement=idmodepaiement if idmodepaiement else None
+    )
+
+    statuts = StatutCommande.objects.all()
+    modes_paiement = ModePaiement.objects.all()
+
+    return render(request, 'backoffice/restaurant_commandes.html', {
+        'commandes_resto': commandes,
+        'restaurant_id': restaurant_id,
+        'statuts': statuts,
+        'modes_paiement': modes_paiement,
+        'selected_statut': int(idstatut) if idstatut else None,
+        'selected_mode_paiement': int(idmodepaiement) if idmodepaiement else None,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    })

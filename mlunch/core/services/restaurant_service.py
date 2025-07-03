@@ -349,19 +349,40 @@ class RestaurantService:
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des statuts : {str(e)}"}
 
-    @staticmethod
-    def get_commandes_by_restaurant(restaurant_id):
-        # pdb.set_trace()
+    @staticmethod   
+    def get_commandes_by_restaurant_filtrer(restaurant_id, date_debut=None, date_fin=None, idstatut=None, idmodepaiement=None):
         """
-        Retourne toutes les commandes associées à un restaurant donné, avec tous les détails,
-        ainsi que les informations du restaurant concerné.
+        Retourne les commandes associées à un restaurant donné, filtrées par période (date_debut, date_fin),
+        statut de commande (idstatut), et mode de paiement (idmodepaiement).
+        Tous les filtres sont optionnels.
         """
         from .commande_service import CommandeService
+        from django.db.models import Q
         try:
             restaurant_info = RestaurantService.get_restaurant_details(restaurant_id)
             commandes = Commande.objects.filter(
                 repas_commandes__repas__restaurantrepas__restaurant=restaurant_id
             ).distinct()
+
+            # Filtre période (utilise le champ 'cree_le')
+            if date_debut:
+                commandes = commandes.filter(cree_le__date__gte=date_debut)
+            if date_fin:
+                commandes = commandes.filter(cree_le__date__lte=date_fin)
+
+            # Filtre mode de paiement (si le champ existe)
+            if idmodepaiement:
+                commandes = commandes.filter(mode_paiement_id=idmodepaiement)
+
+            # Filtre statut (dernier historique)
+            if idstatut:
+                commandes_ids = []
+                for commande in commandes:
+                    historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                    if historique and historique.statut_id == int(idstatut):
+                        commandes_ids.append(commande.id)
+                commandes = commandes.filter(id__in=commandes_ids)
+
             result = []
             for commande in commandes:
                 details = CommandeService.get_commande_details(commande.id)
@@ -370,7 +391,6 @@ class RestaurantService:
                 statut = None
                 if historique and hasattr(historique, 'statut') and historique.statut:
                     statut = historique.statut.appellation
-                # Récupérer le mode de paiement si le modèle Commande a ce champ
                 mode_paiement = getattr(commande, 'mode_paiement', None)
                 details['statut'] = statut
                 details['mode_paiement'] = mode_paiement
@@ -380,7 +400,7 @@ class RestaurantService:
                 "commandes": result
             }
         except Exception as e:
-            return {"error": f"Erreur lors de la récupération des commandes du restaurant : {str(e)}"}
+            return {"error": f"Erreur lors de la récupération des commandes filtrées du restaurant : {str(e)}"}
 
     # @staticmethod
     # def get_restaurants_by_client_zones(client_id):
