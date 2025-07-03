@@ -120,20 +120,12 @@ class RestaurantService:
             with transaction.atomic():
                 restaurant = Restaurant.objects.get(id=restaurant_id)
 
-                # Récupérer les commandes liées à ce restaurant via ZoneRestaurant et Commande -> PointRecup ?
-                # Plus simple : récupérer les commandes qui contiennent des repas du restaurant
-                # ou via zones et restaurants liés
-                # Selon ta modélisation, il faut récupérer toutes les commandes associées à ce restaurant
-
-                # Une manière efficace (via commandes qui ont au moins un repas de ce restaurant)
                 commandes_ids = Commande.objects.filter(
                     repas_commandes__repas__restaurants_repas__restaurant=restaurant
                 ).distinct().values_list('id', flat=True)
 
-                # Statut 'Livree' (ou équivalent) => commandes terminées
                 statut_livree = StatutCommande.objects.get(nom__iexact='Livree')
 
-                # Vérifier s'il existe des commandes liées qui ne sont pas livrées
                 commandes_en_cours = HistoriqueStatutCommande.objects.filter(
                     commande_id__in=commandes_ids
                 ).exclude(statut=statut_livree).values('commande').distinct()
@@ -141,7 +133,6 @@ class RestaurantService:
                 if commandes_en_cours.exists():
                     return "Suppression impossible : des commandes sont encore en cours pour ce restaurant."
 
-                # Pas de commandes en cours, on peut passer le restaurant en 'Inactif'
                 statut_inactif = StatutRestaurant.objects.get(nom__iexact="Inactif")
 
                 HistoriqueStatutRestaurant.objects.create(
@@ -401,109 +392,3 @@ class RestaurantService:
             }
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des commandes filtrées du restaurant : {str(e)}"}
-
-    # @staticmethod
-    # def get_restaurants_by_client_zones(client_id):
-    #
-    #     zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
-    #     zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
-    #
-    #     features = []
-    #     for zr in zone_restaurants:
-    #         r = zr.restaurant
-    #         if not r.geo_position:
-    #             continue
-    #         try:
-    #             # geo_position is a GEOSGeometry (Point)
-    #             coords = [r.geo_position.x, r.geo_position.y]
-    #         except Exception:
-    #             continue
-    #
-    #         features.append({
-    #             "type": "Feature",
-    #             "geometry": {
-    #                 "type": "Point",
-    #                 "coordinates": coords,
-    #             },
-    #             "properties": {
-    #                 "id": r.id,
-    #                 "nom": r.nom,
-    #                 "note": "N/A",
-    #                 "image_url": r.image,
-    #             }
-    #         })
-    #
-    #     return {
-    #         "type": "FeatureCollection",
-    #         "features": features
-    #     }
-    #
-    # @staticmethod
-    # def get_repas_for_restaurant(restaurant_id, selected_type=None):
-    #
-    #     try:
-    #         restaurant = Restaurant.objects.get(id=restaurant_id)
-    #     except Restaurant.DoesNotExist:
-    #         return {"error": "Restaurant non trouvé"}
-    #
-    #     repas_qs = RestaurantRepas.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
-    #     if selected_type:
-    #         repas_qs = repas_qs.filter(repas__type__id=selected_type)
-    #
-    #     repas_list = []
-    #     current_time = now()
-    #     for rr in repas_qs:
-    #         r = rr.repas
-    #         is_dispo = DisponibiliteRepas.objects.filter(
-    #             repas=r,
-    #             debut__lte=current_time,
-    #             fin__gte=current_time
-    #         ).exists()
-    #         repas_list.append({
-    #             "id": r.id,
-    #             "nom": r.nom,
-    #             "type_id": r.type_id,
-    #             "prix": r.prix,
-    #             "description": r.description,
-    #             "image": r.image,
-    #             "est_dispo": is_dispo
-    #         })
-    #
-    #     types = list(TypeRepas.objects.values("id", "nom"))
-    #     return {
-    #         "restaurant": restaurant,
-    #         "repas": repas_list,
-    #         "note": 5,
-    #         "types": types,
-    #         "selected_type": int(selected_type) if selected_type else None
-    #     }
-    #
-    # @staticmethod
-    # def get_all_restaurants_geojson():
-    #     restaurants = Restaurant.objects.all()
-    #     features = []
-    #     for r in restaurants:
-    #         if not r.geo_position:
-    #             continue
-    #
-    #         features.append({
-    #             "type": "Feature",
-    #             "geometry": {
-    #                 "type": "Point",
-    #                 "coordinates": [r.geo_position.x, r.geo_position.y],
-    #             },
-    #             "properties": {
-    #                 "id": r.id,
-    #                 "nom": r.nom,
-    #                 "note": "N/A",
-    #                 "image_url": r.image,
-    #                 "adresse": r.adresse,
-    #                 "description": r.description if hasattr(r,
-    #                                                         'description') and r.description else "Aucune description disponible",
-    #             }
-    #         })
-    #
-    #     return {
-    #         "type": "FeatureCollection",
-    #         "features": features
-    #     }
