@@ -47,8 +47,11 @@ class Commande(models.Model):
     client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='commandes')
     point_recup = models.ForeignKey('PointRecup', on_delete=models.CASCADE)
     cree_le = models.DateTimeField(default=now)
+    mode_paiement = models.ForeignKey('ModePaiement', on_delete=models.SET_NULL, null=True, blank=True)
+
     def __str__(self):
         return f"Commande {self.id} - {self.client}"
+
 
 class HistoriqueStatutCommande(models.Model):
     commande = models.ForeignKey('Commande', on_delete=models.CASCADE, related_name='historiques')
@@ -192,3 +195,9 @@ class Promotion(models.Model):
 class LimiteCommandesJournalieres(models.Model):
     nombre_commandes = models.IntegerField()
     date = models.DateField()
+
+class ModePaiement(models.Model):
+    nom = models.CharField(max_length=100, unique=True)
+    def __str__(self):
+        return self.nom
+

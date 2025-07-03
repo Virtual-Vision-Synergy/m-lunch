@@ -215,6 +215,33 @@ class CommandeService:
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des repas : {str(e)}"}
 
+    @staticmethod
+    def get_all_commandes():
+        # pdb.set_trace()
+        """
+        Retourne la liste de toutes les commandes avec tous les détails (get_commande_details)
+        + le statut actuel et le mode de paiement utilisé (si disponible).
+        """
+        try:
+            commandes = Commande.objects.all()
+            result = []
+            for commande in commandes:
+                details = CommandeService.get_commande_details(commande.id)
+                # Récupérer le dernier statut
+                historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                statut = None
+                if historique and hasattr(historique, 'statut') and historique.statut:
+                    statut = historique.statut.appellation
+                # Récupérer le mode de paiement si le modèle Commande a ce champ (ex: commande.mode_paiement)
+                mode_paiement = getattr(commande, 'mode_paiement', None)
+                # Ajout au résultat
+                details['statut'] = statut
+                details['mode_paiement'] = mode_paiement
+                result.append(details)
+            return result
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération de toutes les commandes : {str(e)}"}
+
 
 # Pour utiliser le debugger (pdb) dans get_commande_details :
 # 1. Appelez la méthode CommandeService.get_commande_details(commande_id) depuis un shell Python/Django ou un script.

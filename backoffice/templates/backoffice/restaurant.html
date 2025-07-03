@@ -2,19 +2,19 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Liste des Restaurants</title>
+    <title>Restaurant</title>
 </head>
 <body>
     <h1>Bienvenue Admin</h1>
 
     <header>
         <ul>
-            <li><a href="">Logo</a></li>
-            <li><a href="#">Statistiques</a></li>
+            <li><a href="{% url 'backoffice_index' %}">Logo</a></li>
+            <li><a href="{% url 'backoffice_index' %}">Statistiques</a></li>
             <li><a href="{% url 'backoffice_restaurant' %}">Restaurant</a></li>
             <li><a href="#">Secteur</a></li>
             <li><a href="#">Livraison</a></li>
-            <li><a href="#">Commande</a></li>
+            <li><a href="{% url 'backoffice_commande' %}">Commande</a></li>
         </ul>
     </header>
 
@@ -85,7 +85,5 @@
         {% endfor %}
 
     </section>
-</body>
-</html>
 </body>
 </html>

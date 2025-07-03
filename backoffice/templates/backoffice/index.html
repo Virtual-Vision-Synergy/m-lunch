@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>statistique</title>
 </head>
 <body>
     <h1>Bienvenue Admin</h1>
     <header>
         <ul>
-            <li><a href="">Logo</a></li>
-            <li><a href="#">Statistiques</a></li>
+            <li><a href="{% url 'backoffice_index' %}">Logo</a></li>
+            <li><a href="{% url 'backoffice_index' %}">Statistiques</a></li>
             <li><a href="{% url 'backoffice_restaurant' %}">Restaurant</a></li>
             <li><a href="#">Secteur</a></li>
             <li><a href="#">Livraison</a></li>
-            <li><a href="#">Commande</a></li>
+            <li><a href="{% url 'backoffice_commande' %}">Commande</a></li>
         </ul>
     </header>
     <section>
-        <h2>Liste des commandes</h2>
+        <h2>Liste des commandes en attente</h2>
         <table border="1">
             <thead>
                 <tr>

@@ -26,3 +26,7 @@ def restaurant(request):
         'selected_zone': selected_zone,
         'selected_statut': selected_statut
     })
+
+def commande(request):
+    commandes = CommandeService.get_all_commandes()
+    return render(request, 'backoffice/commande.html', {'commandes': commandes})
