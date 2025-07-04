@@ -43,18 +43,18 @@ INSERT INTO core_modepaiement (nom) VALUES
 ('Carte bancaire'),
 ('Virement');
 
--- 3. Zones d'Antananarivo
+-- 3. Zones d'Antananarivo (coordonnées corrigées: longitude, latitude)
 INSERT INTO core_zone (nom, description, zone) VALUES
-('Analakely', 'Centre ville commercial', 'POLYGON((-18.9140 47.5205, -18.9150 47.5225, -18.9160 47.5215, -18.9150 47.5195, -18.9140 47.5205))'),
-('Antsahamanitra', 'Quartier résidentiel', 'POLYGON((-18.9050 47.5180, -18.9070 47.5200, -18.9080 47.5190, -18.9060 47.5170, -18.9050 47.5180))'),
-('Andravoahangy', 'Zone universitaire', 'POLYGON((-18.9200 47.5300, -18.9220 47.5320, -18.9230 47.5310, -18.9210 47.5290, -18.9200 47.5300))'),
-('Tsaralalana', 'Quartier administratif', 'POLYGON((-18.9120 47.5240, -18.9140 47.5260, -18.9150 47.5250, -18.9130 47.5230, -18.9120 47.5240))'),
-('Antaninarenina', 'Zone commerciale', 'POLYGON((-18.9180 47.5280, -18.9200 47.5300, -18.9210 47.5290, -18.9190 47.5270, -18.9180 47.5280))'),
-('Isotry', 'Marché populaire', 'POLYGON((-18.9250 47.5150, -18.9270 47.5170, -18.9280 47.5160, -18.9260 47.5140, -18.9250 47.5150))'),
-('Behoririka', 'Centre commercial', 'POLYGON((-18.9160 47.5220, -18.9180 47.5240, -18.9190 47.5230, -18.9170 47.5210, -18.9160 47.5220))'),
-('Ambatonakanga', 'Quartier résidentiel', 'POLYGON((-18.9100 47.5320, -18.9120 47.5340, -18.9130 47.5330, -18.9110 47.5310, -18.9100 47.5320))');
+('Analakely', 'Centre ville commercial', 'POLYGON((47.5205 -18.9140, 47.5225 -18.9150, 47.5215 -18.9160, 47.5195 -18.9150, 47.5205 -18.9140))'),
+('Antsahamanitra', 'Quartier résidentiel', 'POLYGON((47.5180 -18.9050, 47.5200 -18.9070, 47.5190 -18.9080, 47.5170 -18.9060, 47.5180 -18.9050))'),
+('Andravoahangy', 'Zone universitaire', 'POLYGON((47.5300 -18.9200, 47.5320 -18.9220, 47.5310 -18.9230, 47.5290 -18.9210, 47.5300 -18.9200))'),
+('Tsaralalana', 'Quartier administratif', 'POLYGON((47.5240 -18.9120, 47.5260 -18.9140, 47.5250 -18.9150, 47.5230 -18.9130, 47.5240 -18.9120))'),
+('Antaninarenina', 'Zone commerciale', 'POLYGON((47.5280 -18.9180, 47.5300 -18.9200, 47.5290 -18.9210, 47.5270 -18.9190, 47.5280 -18.9180))'),
+('Isotry', 'Marché populaire', 'POLYGON((47.5150 -18.9250, 47.5170 -18.9270, 47.5160 -18.9280, 47.5140 -18.9260, 47.5150 -18.9250))'),
+('Behoririka', 'Centre commercial', 'POLYGON((47.5220 -18.9160, 47.5240 -18.9180, 47.5230 -18.9190, 47.5210 -18.9170, 47.5220 -18.9160))'),
+('Ambatonakanga', 'Quartier résidentiel', 'POLYGON((47.5320 -18.9100, 47.5340 -18.9120, 47.5330 -18.9130, 47.5310 -18.9110, 47.5320 -18.9100))');
 
--- 4. Points de récupération
+-- 4. Points de récupération (coordonnées corrigées: latitude, longitude)
 INSERT INTO core_pointrecup (nom, geo_position) VALUES
 ('Analakely Market', '-18.9145,47.5210'),
 ('Université d''Antananarivo', '-18.9210,47.5305'),
@@ -74,7 +74,7 @@ INSERT INTO core_typerepas (nom) VALUES
 ('Snack'),
 ('Menu complet');
 
--- 6. Restaurants d'Antananarivo
+-- 6. Restaurants d'Antananarivo (coordonnées corrigées: latitude, longitude)
 INSERT INTO core_restaurant (nom, adresse, description, image, geo_position) VALUES
 ('Chez Mariette', 'Analakely, près du marché', 'Restaurant traditionnel malgache, spécialités locales', 'mariette.jpg', '-18.9142,47.5212'),
 ('Le Sakamanga', 'Rue Rainitovo, Antaninarenina', 'Cuisine fusion malgache-française', 'sakamanga.jpg', '-18.9185,47.5285'),

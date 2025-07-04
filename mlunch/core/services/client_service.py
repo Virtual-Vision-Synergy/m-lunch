@@ -148,3 +148,19 @@ class ClientService:
             } for z in zones]
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des zones : {str(e)}"}
+
+    @staticmethod
+    def get_client_zone(client_id):
+        """
+        Récupère la zone associée à un client via ZoneClient.
+        """
+        try:
+            zone_client = ZoneClient.objects.filter(client_id=client_id).select_related('zone').first()
+            if zone_client:
+                return {
+                    'zone_id': zone_client.zone.id,
+                    'zone_nom': zone_client.zone.nom
+                }
+            return None
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération de la zone du client : {str(e)}"}

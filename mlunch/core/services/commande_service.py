@@ -293,3 +293,183 @@ class CommandeService:
             return {"error": "Commande non trouvée"}
         except Exception as e:
             return {"error": f"Erreur : {str(e)}"}
+
+    @staticmethod
+    def get_commandes_en_cours(client_id):
+        """
+        Récupère les commandes en cours pour un client
+        """
+        try:
+            from django.db.models import Q
+            from ..models import Commande, HistoriqueStatutCommande, StatutCommande
+
+            # Récupérer les statuts qui indiquent une commande en cours
+            statuts_en_cours = StatutCommande.objects.filter(
+                Q(appellation__icontains='attente') |
+                Q(appellation__icontains='preparation') |
+                Q(appellation__icontains='pret') |
+                Q(appellation__icontains='en cours')
+            ).values_list('id', flat=True)
+
+            # Récupérer les commandes du client
+            commandes = Commande.objects.filter(client_id=client_id).order_by('-cree_le')
+
+            commandes_en_cours = []
+            for commande in commandes:
+                # Récupérer le dernier statut
+                dernier_historique = HistoriqueStatutCommande.objects.filter(
+                    commande=commande
+                ).order_by('-mis_a_jour_le').first()
+
+                if dernier_historique and dernier_historique.statut_id in statuts_en_cours:
+                    commande_dict = {
+                        'id': commande.id,
+                        'cree_le': commande.cree_le,
+                        'point_recup_nom': commande.point_recup.nom if commande.point_recup else 'Non défini',
+                        'statut': dernier_historique.statut.appellation,
+                        'statut_id': dernier_historique.statut_id,
+                        'mis_a_jour_le': dernier_historique.mis_a_jour_le
+                    }
+
+                    # Vérifier si la commande peut être annulée
+                    commande_dict['peut_annuler'] = CommandeService.peut_annuler_commande(commande.id)
+
+                    # Calculer le temps estimé (placeholder)
+                    commande_dict['temps_estime'] = "15-30 minutes"
+
+                    commandes_en_cours.append(commande_dict)
+
+            return commandes_en_cours
+
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes en cours : {str(e)}"}
+
+    @staticmethod
+    def get_historique_commandes(client_id):
+        """
+        Récupère l'historique complet des commandes pour un client
+        """
+        try:
+            from ..models import Commande, HistoriqueStatutCommande
+
+            commandes = Commande.objects.filter(client_id=client_id).order_by('-cree_le')
+
+            historique = []
+            for commande in commandes:
+                # Récupérer le dernier statut
+                dernier_historique = HistoriqueStatutCommande.objects.filter(
+                    commande=commande
+                ).order_by('-mis_a_jour_le').first()
+
+                commande_dict = {
+                    'id': commande.id,
+                    'cree_le': commande.cree_le,
+                    'point_recup_nom': commande.point_recup.nom if commande.point_recup else 'Non défini',
+                    'statut': dernier_historique.statut.appellation if dernier_historique else 'Inconnu',
+                    'statut_id': dernier_historique.statut_id if dernier_historique else None,
+                    'mis_a_jour_le': dernier_historique.mis_a_jour_le if dernier_historique else commande.cree_le
+                }
+
+                # Calculer le total de la commande
+                total = CommandeService.calculate_commande_total(commande.id)
+                commande_dict['total'] = total.get('total', 0) if isinstance(total, dict) else 0
+
+                historique.append(commande_dict)
+
+            return historique
+
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération de l'historique : {str(e)}"}
+
+    @staticmethod
+    def peut_annuler_commande(commande_id):
+        """
+        Vérifie si une commande peut être annulée
+        """
+        try:
+            from ..models import HistoriqueStatutCommande, StatutCommande
+
+            # Récupérer le dernier statut
+            dernier_historique = HistoriqueStatutCommande.objects.filter(
+                commande_id=commande_id
+            ).order_by('-mis_a_jour_le').first()
+
+            if not dernier_historique:
+                return False
+
+            # Les commandes peuvent être annulées si elles sont en attente ou en préparation
+            statuts_annulables = StatutCommande.objects.filter(
+                appellation__in=['En attente', 'En préparation', 'Confirmée']
+            ).values_list('id', flat=True)
+
+            return dernier_historique.statut_id in statuts_annulables
+
+        except Exception as e:
+            return False
+
+    @staticmethod
+    def annuler_commande(commande_id, client_id):
+        """
+        Annule une commande si possible
+        """
+        try:
+            from django.db import transaction
+            from ..models import Commande, HistoriqueStatutCommande, StatutCommande
+
+            # Vérifier que la commande appartient au client
+            try:
+                commande = Commande.objects.get(id=commande_id, client_id=client_id)
+            except Commande.DoesNotExist:
+                return False, "Commande non trouvée"
+
+            # Vérifier si la commande peut être annulée
+            if not CommandeService.peut_annuler_commande(commande_id):
+                return False, "Cette commande ne peut plus être annulée"
+
+            # Récupérer le statut "Annulée"
+            try:
+                statut_annule = StatutCommande.objects.get(appellation__iexact='Annulée')
+            except StatutCommande.DoesNotExist:
+                # Créer le statut s'il n'existe pas
+                statut_annule = StatutCommande.objects.create(appellation='Annulée')
+
+            # Mettre à jour le statut avec transaction
+            with transaction.atomic():
+                HistoriqueStatutCommande.objects.create(
+                    commande=commande,
+                    statut=statut_annule,
+                    mis_a_jour_le=now()
+                )
+
+            return True, f"Commande #{commande_id} annulée avec succès"
+
+        except Exception as e:
+            return False, f"Erreur lors de l'annulation : {str(e)}"
+
+    @staticmethod
+    def calculate_commande_total(commande_id):
+        """
+        Calcule le total d'une commande
+        """
+        try:
+            from django.db.models import Sum, F
+            from ..models import CommandeRepas
+
+            total = CommandeRepas.objects.filter(
+                commande_id=commande_id
+            ).aggregate(
+                total=Sum(F('quantite') * F('repas__prix'))
+            )['total'] or 0
+
+            # Ajouter les frais de livraison (placeholder)
+            frais_livraison = 2000
+            total_final = total + frais_livraison
+
+            return {
+                'sous_total': total,
+                'frais_livraison': frais_livraison,
+                'total': total_final
+            }
+
+        except Exception as e:
+            return {"error": f"Erreur lors du calcul du total : {str(e)}"}

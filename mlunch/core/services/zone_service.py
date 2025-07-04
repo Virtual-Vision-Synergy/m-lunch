@@ -51,7 +51,7 @@ class ZoneService:
             return {"error": f"Erreur lors de la création de la zone : {str(e)}"}
 
     @staticmethod
-    def get_zone_by_coord(lat, lon, max_distance_m=10000000):
+    def get_zone_by_coord(lat, lon, max_distance_m=5000):
         #pdb.set_trace()
         """
         Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).

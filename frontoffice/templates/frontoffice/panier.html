@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Panier - Restaurant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .panier-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .panier-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .panier-item:hover {
+            transform: translateY(-2px);
+        }
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .quantity-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quantity-btn:hover {
+            background: #0056b3;
+        }
+        .quantity-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        .totals-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+        }
+        .btn-commander {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .btn-commander:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        .empty-cart {
+            text-align: center;
+            padding: 80px 20px;
+            color: #6c757d;
+        }
+        .empty-cart i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        .remove-btn {
+            color: #dc3545;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .remove-btn:hover {
+            color: #c82333;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="panier-container">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Mon Panier
+            </h1>
+            {% if items %}
+            <button type="button" class="btn btn-outline-danger" onclick="clearPanier()">
+                <i class="fas fa-trash me-2"></i>
+                Vider le panier
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Messages -->
+        <div id="messages-container"></div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                {% if items %}
+                    <!-- Articles du panier -->
+                    <div id="panier-items">
+                        {% for item in items %}
+                        <div class="panier-item" data-item-id="{{ item.item_id }}">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    {% if item.image %}
+                                    <img src="{{ item.image }}" alt="{{ item.nom_plat }}" class="item-image">
+                                    {% else %}
+                                    <div class="item-image bg-light d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-utensils text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <h5 class="mb-1">{{ item.nom_plat }}</h5>
+                                    {% if item.restaurant_nom %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-store me-1"></i>
+                                        {{ item.restaurant_nom }}
+                                    </small>
+                                    {% endif %}
+                                    <div class="text-primary fw-bold mt-1">
+                                        {{ item.prix_unitaire|floatformat:0 }} FCFA
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="quantity-controls">
+                                        <button type="button" class="quantity-btn" onclick="updateQuantity({{ item.item_id }}, {{ item.quantite|add:'-1' }})">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" class="quantity-input" value="{{ item.quantite }}" min="1" 
+                                               onchange="updateQuantity({{ item.item_id }}, this.value)">
+                                        <button type="button" class="quantity-btn" onclick="updateQuantity({{ item.item_id }}, {{ item.quantite|add:'1' }})">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <div class="fw-bold text-primary mb-2">
+                                        {{ item.prix_total|floatformat:0 }} FCFA
+                                    </div>
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <button type="button" class="remove-btn" onclick="removeFromPanier({{ item.item_id }})" title="Supprimer">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Panier vide -->
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Votre panier est vide</h3>
+                        <p>Parcourez notre menu et ajoutez des plats délicieux à votre panier.</p>
+                        <a href="###" class="btn btn-primary">
+                            <i class="fas fa-utensils me-2"></i>
+                            Voir le menu
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if items %}
+            <div class="col-lg-4">
+                <!-- Récapitulatif de la commande -->
+                <div class="totals-card">
+                    <h4 class="mb-3">Récapitulatif</h4>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Sous-total</span>
+                        <span id="sous-total">{{ totals.sous_total|floatformat:0 }} FCFA</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Frais de livraison</span>
+                        <span id="frais-livraison">
+                            {% if totals.frais_livraison > 0 %}
+                                {{ totals.frais_livraison|floatformat:0 }} FCFA
+                            {% else %}
+                                <span class="text-success">Gratuit</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if totals.sous_total > 0 and totals.sous_total < 5000 %}
+                    <small class="text-muted d-block mb-3">
+                        Livraison gratuite à partir de 5 000 FCFA
+                    </small>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-4">
+                        <strong>Total</strong>
+                        <strong class="text-primary" id="total">{{ totals.total|floatformat:0 }} FCFA</strong>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-box me-1"></i>
+                            {{ totals.quantite_totale }} article{{ totals.quantite_totale|pluralize }}
+                        </small>
+                    </div>
+                    
+                    <!-- Point de récupération -->
+                    <div class="mb-3">
+                        <label for="point-recuperation" class="form-label">Point de récupération</label>
+                        <select class="form-select" id="point-recuperation" required>
+                            <option value="">Choisir un point de récupération</option>
+                            {% for point in points_recuperation %}
+                            <option value="{{ point.id }}">{{ point.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Mode de paiement -->
+                    <div class="mb-4">
+                        <label class="form-label">Mode de paiement</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="mode_paiement" id="paiement-espece" value="espece" checked>
+                            <label class="form-check-label" for="paiement-espece">
+                                <i class="fas fa-money-bill me-2"></i>
+                                Paiement en espèces
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="mode_paiement" id="paiement-carte" value="carte">
+                            <label class="form-check-label" for="paiement-carte">
+                                <i class="fas fa-credit-card me-2"></i>
+                                Paiement par carte
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="mode_paiement" id="paiement-mobile" value="mobile">
+                            <label class="form-check-label" for="paiement-mobile">
+                                <i class="fas fa-mobile-alt me-2"></i>
+                                Paiement mobile
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-commander w-100" onclick="validateCommande()">
+                        <i class="fas fa-check me-2"></i>
+                        Valider la commande
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuration CSRF pour Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // Fonction pour afficher les messages
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('messages-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            container.appendChild(alertDiv);
+            
+            // Auto-remove après 5 secondes
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Mettre à jour la quantité
+        function updateQuantity(itemId, newQuantity) {
+            if (newQuantity < 1) {
+                removeFromPanier(itemId);
+                return;
+            }
+
+            const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+            itemElement.classList.add('loading');
+
+            fetch('{% url "update_quantity" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    quantite: parseInt(newQuantity)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateTotals(data.totals);
+                    // Mettre à jour l'affichage local si nécessaire
+                    location.reload(); // Ou mise à jour dynamique
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Erreur de connexion', 'danger');
+            })
+            .finally(() => {
+                itemElement.classList.remove('loading');
+            });
+        }
+
+        // Supprimer un article
+        function removeFromPanier(itemId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
+                return;
+            }
+
+            const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+            itemElement.classList.add('loading');
+
+            fetch('{% url "remove_from_panier" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    item_id: itemId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    itemElement.style.transform = 'translateX(-100%)';
+                    itemElement.style.opacity = '0';
+                    setTimeout(() => {
+                        itemElement.remove();
+                        updateTotals(data.totals);
+                        
+                        // Vérifier si le panier est vide
+                        if (data.totals.nombre_articles === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+                    showMessage(data.message);
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Erreur de connexion', 'danger');
+            })
+            .finally(() => {
+                itemElement.classList.remove('loading');
+            });
+        }
+
+        // Vider le panier
+        function clearPanier() {
+            if (!confirm('Êtes-vous sûr de vouloir vider votre panier ?')) {
+                return;
+            }
+
+            fetch('{% url "clear_panier" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Erreur de connexion', 'danger');
+            });
+        }
+
+        // Valider la commande
+        function validateCommande() {
+            const pointRecup = document.getElementById('point-recuperation').value;
+            const modePaiement = document.querySelector('input[name="mode_paiement"]:checked')?.value;
+
+            if (!pointRecup) {
+                showMessage('Veuillez choisir un point de récupération', 'warning');
+                return;
+            }
+
+            if (!modePaiement) {
+                showMessage('Veuillez choisir un mode de paiement', 'warning');
+                return;
+            }
+
+            const btn = document.querySelector('.btn-commander');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validation en cours...';
+
+            fetch('{% url "validate_commande" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    point_recup_id: pointRecup,
+                    mode_paiement: modePaiement
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message);
+                    setTimeout(() => {
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            location.reload();
+                        }
+                    }, 1500);
+                } else {
+                    showMessage(data.message, 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check me-2"></i>Valider la commande';
+                }
+            })
+            .catch(error => {
+                showMessage('Erreur de connexion', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>Valider la commande';
+            });
+        }
+
+        // Mettre à jour les totaux
+        function updateTotals(totals) {
+            if (totals) {
+                document.getElementById('sous-total').textContent = totals.sous_total.toLocaleString() + ' FCFA';
+                
+                const fraisElement = document.getElementById('frais-livraison');
+                if (totals.frais_livraison > 0) {
+                    fraisElement.innerHTML = totals.frais_livraison.toLocaleString() + ' FCFA';
+                } else {
+                    fraisElement.innerHTML = '<span class="text-success">Gratuit</span>';
+                }
+                
+                document.getElementById('total').textContent = totals.total.toLocaleString() + ' FCFA';
+            }
+        }
+/*
+        // Mise à jour automatique du nombre d'articles dans la navigation (si applicable)
+        function updateCartBadge() {
+            fetch('{% url "panier_count" %}')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.querySelector('.cart-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.style.display = data.count > 0 ? 'inline' : 'none';
+                }
+            })
+            .catch(error => console.log('Erreur mise à jour badge:', error));
+        }
+
+        // Appeler au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            //updateCartBadge();
+        });
+        */
+    </script>
+</body>
+</html>
