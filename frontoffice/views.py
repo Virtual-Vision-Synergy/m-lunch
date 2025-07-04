@@ -1,16 +1,120 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import logout
-from django.contrib import messages
-
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-
 import json
+
+from django.contrib.auth.hashers import check_password
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect
+from functools import wraps
 from django.views.decorators.csrf import csrf_exempt
-from mlunch.core.models import *
+from mlunch.core.services import RestaurantService,CommandeService, PointRecupService
+from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de liaison
 from shapely import wkt
 from mlunch.core.services import ClientService  
 from mlunch.core.services import ZoneService    
+
+def connexion_view(request):
+    error_message = None
+
+    if request.method == "POST":
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        #print(password)
+        try:
+            client = Client.objects.get(email=email)
+            if password == client.mot_de_passe:
+                request.session['client_id'] = client.id  # simple session login
+                return redirect('frontoffice_restaurant')  # change to your home URL name
+            else:
+                error_message = "Mot de passe incorrect."
+        except Client.DoesNotExist:
+            error_message = "Email introuvable."
+
+    return render(request, 'frontoffice/connexion.html', {
+        'error_message': error_message
+    })
+    
+def authentification_requise(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.session.get('client_id'):
+            return HttpResponseRedirect('/connexion/')  # Change to your login URL if different
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+@authentification_requise    
+def restaurants_geojson(request):
+    client_id = request.session.get('client_id')
+    if not client_id:
+        return JsonResponse({'error': 'Non connecté'}, status=401)
+
+    data = RestaurantService.get_restaurants_by_client_zones(client_id)
+    return JsonResponse(data)
+
+def restaurant_detail(request, restaurant_id):
+    #restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    # Get selected type if filtered
+    selected_type = request.GET.get('type')
+
+    data = RestaurantService.get_repas_for_restaurant(restaurant_id, selected_type)
+    if "error" in data:
+        return render(request, 'frontoffice/restaurant_detail.html', {
+            'error': data["error"]
+        })
+
+    return render(request, 'frontoffice/restaurant_detail.html', {
+        'restaurant': data['restaurant'],
+        'repas': data['repas'],
+        'note': data['note'],
+        'types': data['types'],
+        'selected_type': data['selected_type']
+    })
+
+def mes_commandes(request):
+    client_id = request.session.get("client_id")
+
+    commandes_data = CommandeService.get_commandes_by_client(client_id)
+    return render(request, 'frontoffice/mes_commandes.html', {
+        'commandes': commandes_data
+    })
+
+def detail_commande(request, commande_id):
+    #commande = get_object_or_404(Commande, id=commande_id)
+    data = CommandeService.get_commande_detail(commande_id)
+    if "error" in data:
+        return render(request, 'frontoffice/detail_commande.html', {
+            'error': data["error"]
+        })
+
+    return render(request, 'frontoffice/detail_commande.html', {
+        'commande': data['commande'],
+        'repas': data['repas'],
+        'statut': data['statut'],
+        'total': data['total']
+    })
+
+def points_de_recuperation(request):
+    data = PointRecupService.get_all_points_recup_geojson()
+    print(data)
+    return JsonResponse(data)
+def all_restaurants(request):
+    data = RestaurantService.get_all_restaurants_geojson()
+    #print(data)
+    return JsonResponse(data)
+
+def restaurant_view(request):
+    return render(request, 'frontoffice/restaurant.html')
+
+def accueil_view(request):
+    return render(request, 'frontoffice/accueil.html')
+
+def logout_view(request):
+    # Clear Django session
+    request.session.flush()  # Deletes session data and cookie
+    # OR alternative:
+    # del request.session['client_id']  # Remove only specific key
+
+    return redirect('frontoffice_connexion')  # Redirect to login
 
 def index(request):
     return render(request, 'frontoffice/index.html')
@@ -92,4 +196,5 @@ def api_zone_from_coord(request):
 
 def deconnexion(request):
     request.session.flush()  # Supprimer toutes les données de session
-    return redirect('frontoffice_index') 
+    return redirect('frontoffice_index')
+

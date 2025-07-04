@@ -1,0 +1,39 @@
+<h2>{{ restaurant.nom }}</h2>
+<p>📍 {{ restaurant.adresse }}</p>
+<p>⭐ Note: {{ note }} / 5</p>
+<p>⏰ {{ restaurant.horaire_debut }} - {{ restaurant.horaire_fin }}</p>
+
+<h3>Filtrer par type</h3>
+<ul>
+  {% for type in types %}
+    <li>
+      <a href="?type={{ type.id }}"
+         {% if selected_type == type.id %}style="font-weight:bold"{% endif %}>
+         {{ type.nom }}
+      </a>
+    </li>
+  {% endfor %}
+  <li><a href="{% url 'restaurant_detail' restaurant.id %}">Afficher tout</a></li>
+</ul>
+
+<h3>Menu</h3>
+<ul>
+  {% for r in repas %}
+    <li>
+      <img src="{{ r.image }}" alt="{{ r.nom }}" width="100">
+      <strong>{{ r.nom }}</strong> - {{ r.prix }} Ar<br>
+      <em>{{ r.description }}</em><br>
+      {% if r.est_dispo %}
+        <span style="color:green;">✅ Disponible</span><br>
+        <a href="#">
+          <button>➕ Ajouter au panier</button>
+        </a>
+      {% else %}
+        <span style="color:red;">❌ Indisponible</span><br>
+        <button disabled>Ajouter au panier</button>
+      {% endif %}
+    </li>
+  {% empty %}
+    <p>Aucun plat disponible.</p>
+  {% endfor %}
+</ul>

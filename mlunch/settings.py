@@ -86,7 +86,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', ''),
+        'PORT': os.getenv('DB_PORT', ''), 
     }
 }
 
@@ -136,3 +136,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Make session expire when browser is closed
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Ensure the session cookie is marked as temporary
+SESSION_SAVE_EVERY_REQUEST = True  # Optional but recommended

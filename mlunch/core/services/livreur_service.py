@@ -24,7 +24,7 @@ from ..models import (
 class LivreurService:
     @staticmethod
     def create_livreur(nom, initial_statut_id, contact=None, position=None):
-        pdb.set_trace()
+        # pdb.set_trace()
         from django.db import transaction
         if not nom or len(nom) > 100:
             return {"error": "Le nom doit être une chaîne non vide de 100 caractères maximum"}
@@ -61,7 +61,7 @@ class LivreurService:
 
     @staticmethod
     def list_livreurs_actifs():
-        pdb.set_trace()
+        # pdb.set_trace()
         """Liste tous les livreurs actifs (dernier statut = actif)."""
         try:
             actifs = []
@@ -81,7 +81,7 @@ class LivreurService:
 
     @staticmethod
     def list_livreurs_par_zone(zone_id):
-        pdb.set_trace()
+        # pdb.set_trace()
         """
         Liste tous les livreurs associés à une zone donnée via ZoneLivreur.
         """
@@ -103,7 +103,7 @@ class LivreurService:
 
     @staticmethod
     def list_livreurs_par_statut(statut_id):
-        pdb.set_trace()
+        # pdb.set_trace()
         """
         Liste tous les livreurs ayant un statut donné (dernier statut).
         """
@@ -125,7 +125,7 @@ class LivreurService:
 
     @staticmethod
     def list_livreurs_par_date_inscription(date_debut, date_fin):
-        pdb.set_trace()
+        # pdb.set_trace()
         """
         Liste tous les livreurs inscrits entre deux dates.
         """
@@ -145,7 +145,7 @@ class LivreurService:
 
     @staticmethod
     def list_livreurs_disponibles():
-        pdb.set_trace()
+        # pdb.set_trace()
         """
         Liste tous les livreurs disponibles (dernier statut = disponible).
         """

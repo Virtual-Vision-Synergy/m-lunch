@@ -1,0 +1,13 @@
+<h2>Commande #{{ commande.id }}</h2>
+<p>Date: {{ commande.cree_le }}</p>
+<p>Statut: {{ statut }}</p>
+
+<h3>Détails des plats</h3>
+<ul>
+  {% for r in repas %}
+    <li>
+      {{ r.repas.nom }} × {{ r.quantite }} → {{ r.repas.prix|floatformat:0 }} Ar
+    </li>
+  {% endfor %}
+</ul>
+<p>Total: <strong>{{ total|floatformat:0 }} Ar</strong></p>

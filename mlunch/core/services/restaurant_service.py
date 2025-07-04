@@ -3,9 +3,9 @@ from django.utils.timezone import now
 from datetime import datetime
 from django.db import transaction
 from ..models import (
-    Restaurant, StatutRestaurant, HistoriqueStatutRestaurant, HistoriqueStatutCommande, Commission, Horaire, Zone, ZoneRestaurant, Repas, Commande, StatutCommande
+    Restaurant, StatutRestaurant, HistoriqueStatutRestaurant, HistoriqueStatutCommande, Commission, Horaire, Zone,
+    ZoneRestaurant, ZoneClient, Repas, Commande, StatutCommande, RestaurantRepas, DisponibiliteRepas, TypeRepas
 )
-
 
 class RestaurantService:
     @staticmethod
@@ -44,7 +44,7 @@ class RestaurantService:
                     }
                 }
         except Exception as e:
-            return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}
+            return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}    
 
     @staticmethod
     def update_restaurant(restaurant_id, data):
@@ -121,20 +121,12 @@ class RestaurantService:
             with transaction.atomic():
                 restaurant = Restaurant.objects.get(id=restaurant_id)
 
-                # Récupérer les commandes liées à ce restaurant via ZoneRestaurant et Commande -> PointRecup ?
-                # Plus simple : récupérer les commandes qui contiennent des repas du restaurant
-                # ou via zones et restaurants liés
-                # Selon ta modélisation, il faut récupérer toutes les commandes associées à ce restaurant
-
-                # Une manière efficace (via commandes qui ont au moins un repas de ce restaurant)
                 commandes_ids = Commande.objects.filter(
                     repas_commandes__repas__restaurants_repas__restaurant=restaurant
                 ).distinct().values_list('id', flat=True)
 
-                # Statut 'Livree' (ou équivalent) => commandes terminées
                 statut_livree = StatutCommande.objects.get(nom__iexact='Livree')
 
-                # Vérifier s'il existe des commandes liées qui ne sont pas livrées
                 commandes_en_cours = HistoriqueStatutCommande.objects.filter(
                     commande_id__in=commandes_ids
                 ).exclude(statut=statut_livree).values('commande').distinct()
@@ -142,7 +134,6 @@ class RestaurantService:
                 if commandes_en_cours.exists():
                     return "Suppression impossible : des commandes sont encore en cours pour ce restaurant."
 
-                # Pas de commandes en cours, on peut passer le restaurant en 'Inactif'
                 statut_inactif = StatutRestaurant.objects.get(nom__iexact="Inactif")
 
                 HistoriqueStatutRestaurant.objects.create(
@@ -349,3 +340,169 @@ class RestaurantService:
             return list(StatutRestaurant.objects.values('id', 'appellation'))
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des statuts : {str(e)}"}
+
+    @staticmethod
+    def get_restaurants_by_client_zones(client_id):
+        zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
+        zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
+
+        features = []
+        for zr in zone_restaurants:
+            r = zr.restaurant
+            if not r.geo_position:
+                continue
+            try:
+                # Format: "POINT(47.5310 -18.9120)"
+                coords_str = r.geo_position.replace("POINT(", "").replace(")", "")
+                x_str, y_str = coords_str.split()
+                x, y = float(x_str), float(y_str)
+            except Exception:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [x, y],
+                },
+                "properties": {
+                    "id": r.id,
+                    "nom": r.nom,
+                    "note": "N/A",
+                    "image_url": r.image,
+                }
+            })
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+    @staticmethod
+    def get_repas_for_restaurant(restaurant_id, selected_type=None):
+
+        try:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+        except Restaurant.DoesNotExist:
+            return {"error": "Restaurant non trouvé"}
+
+        repas_qs = RestaurantRepas.objects.filter(restaurant=restaurant).select_related('repas', 'repas__type')
+        if selected_type:
+            repas_qs = repas_qs.filter(repas__type__id=selected_type)
+
+        repas_list = []
+        current_time = now()
+        for rr in repas_qs:
+            r = rr.repas
+            is_dispo = DisponibiliteRepas.objects.filter(
+                repas=r,
+                est_dispo=True
+            ).exists()
+            #print(f"Checking availability for repas {r.nom}: {is_dispo}")
+            repas_list.append({
+                "id": r.id,
+                "nom": r.nom,
+                "type_id": r.type_id,
+                "prix": r.prix,
+                "description": r.description,
+                "image": r.image,
+                "est_dispo": is_dispo
+            })
+
+        types = list(TypeRepas.objects.values("id", "nom"))
+        return {
+            "restaurant": restaurant,
+            "repas": repas_list,
+            "note": 5,
+            "types": types,
+            "selected_type": int(selected_type) if selected_type else None
+        }
+
+    @staticmethod
+    def get_all_restaurants_geojson():
+        restaurants = Restaurant.objects.all()
+        features = []
+        for r in restaurants:
+            if not r.geo_position:
+                continue
+            try:
+                # Format: "POINT(47.5310 -18.9120)"
+                coords_str = r.geo_position.replace("POINT(", "").replace(")", "")
+                x_str, y_str = coords_str.split()
+                x, y = float(x_str), float(y_str)
+            except Exception:
+                continue
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [x, y],
+                },
+                "properties": {
+                    "id": r.id,
+                    "nom": r.nom,
+                    "note": "N/A",
+                    "image_url": r.image,
+                    "adresse": r.adresse,
+                    "description": r.description if hasattr(r,
+                                                            'description') and r.description else "Aucune description disponible",
+                }
+            })
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+        
+    @staticmethod   
+    def get_commandes_by_restaurant_filtrer(restaurant_id, date_debut=None, date_fin=None, idstatut=None, idmodepaiement=None):
+        """
+        Retourne les commandes associées à un restaurant donné, filtrées par période (date_debut, date_fin),
+        statut de commande (idstatut), et mode de paiement (idmodepaiement).
+        Tous les filtres sont optionnels.
+        """
+        from .commande_service import CommandeService
+        from django.db.models import Q
+        try:
+            restaurant_info = RestaurantService.get_restaurant_details(restaurant_id)
+            commandes = Commande.objects.filter(
+                repas_commandes__repas__restaurantrepas__restaurant=restaurant_id
+            ).distinct()
+
+            # Filtre période (utilise le champ 'cree_le')
+            if date_debut:
+                commandes = commandes.filter(cree_le__date__gte=date_debut)
+            if date_fin:
+                commandes = commandes.filter(cree_le__date__lte=date_fin)
+
+            # Filtre mode de paiement (si le champ existe)
+            if idmodepaiement:
+                commandes = commandes.filter(mode_paiement_id=idmodepaiement)
+
+            # Filtre statut (dernier historique)
+            if idstatut:
+                commandes_ids = []
+                for commande in commandes:
+                    historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                    if historique and historique.statut_id == int(idstatut):
+                        commandes_ids.append(commande.id)
+                commandes = commandes.filter(id__in=commandes_ids)
+
+            result = []
+            for commande in commandes:
+                details = CommandeService.get_commande_details(commande.id)
+                # Récupérer le dernier statut
+                historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                statut = None
+                if historique and hasattr(historique, 'statut') and historique.statut:
+                    statut = historique.statut.appellation
+                mode_paiement = getattr(commande, 'mode_paiement', None)
+                details['statut'] = statut
+                details['mode_paiement'] = mode_paiement
+                result.append(details)
+            return {
+                "restaurant": restaurant_info,
+                "commandes": result
+            }
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des commandes filtrées du restaurant : {str(e)}"}
