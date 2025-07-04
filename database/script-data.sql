@@ -1,5 +1,5 @@
 -- Script d'insertion des données de test pour M-Lunch - Antananarivo, Madagascar
--- PostgreSQL + PostGIS
+-- PostgreSQL + PostGIS - Version mise à jour avec nouvelles tables
 
 -- 1. Statuts
 INSERT INTO core_statutcommande (appellation) VALUES
@@ -36,6 +36,13 @@ INSERT INTO core_statutzone (appellation) VALUES
 ('Inactive'),
 ('En maintenance');
 
+-- Nouveaux statuts pour entités
+INSERT INTO core_statutentite (appellation) VALUES
+('Active'),
+('Inactive'),
+('En cours de validation'),
+('Suspendue');
+
 -- 2. Modes de paiement
 INSERT INTO core_modepaiement (nom) VALUES
 ('Espèces'),
@@ -43,7 +50,16 @@ INSERT INTO core_modepaiement (nom) VALUES
 ('Carte bancaire'),
 ('Virement');
 
--- 3. Zones d'Antananarivo (coordonnées corrigées: longitude, latitude)
+-- 3. Entités
+INSERT INTO core_entite (nom) VALUES
+('Zone Commerciale'),
+('Zone Résidentielle'),
+('Zone Universitaire'),
+('Zone Administrative'),
+('Zone Industrielle'),
+('Zone Touristique');
+
+-- 4. Zones d'Antananarivo (coordonnées corrigées: longitude, latitude)
 INSERT INTO core_zone (nom, description, zone) VALUES
 ('Analakely', 'Centre ville commercial', 'POLYGON((47.5205 -18.9140, 47.5225 -18.9150, 47.5215 -18.9160, 47.5195 -18.9150, 47.5205 -18.9140))'),
 ('Antsahamanitra', 'Quartier résidentiel', 'POLYGON((47.5180 -18.9050, 47.5200 -18.9070, 47.5190 -18.9080, 47.5170 -18.9060, 47.5180 -18.9050))'),
@@ -54,7 +70,7 @@ INSERT INTO core_zone (nom, description, zone) VALUES
 ('Behoririka', 'Centre commercial', 'POLYGON((47.5220 -18.9160, 47.5240 -18.9180, 47.5230 -18.9190, 47.5210 -18.9170, 47.5220 -18.9160))'),
 ('Ambatonakanga', 'Quartier résidentiel', 'POLYGON((47.5320 -18.9100, 47.5340 -18.9120, 47.5330 -18.9130, 47.5310 -18.9110, 47.5320 -18.9100))');
 
--- 4. Points de récupération (coordonnées corrigées: latitude, longitude)
+-- 5. Points de récupération (coordonnées corrigées: latitude, longitude)
 INSERT INTO core_pointrecup (nom, geo_position) VALUES
 ('Analakely Market', '-18.9145,47.5210'),
 ('Université d''Antananarivo', '-18.9210,47.5305'),
@@ -65,7 +81,7 @@ INSERT INTO core_pointrecup (nom, geo_position) VALUES
 ('Place de l''Indépendance', '-18.9125,47.5235'),
 ('Antsahamanitra Centre', '-18.9060,47.5185');
 
--- 5. Types de repas
+-- 6. Types de repas
 INSERT INTO core_typerepas (nom) VALUES
 ('Plat principal'),
 ('Entrée'),
@@ -74,7 +90,7 @@ INSERT INTO core_typerepas (nom) VALUES
 ('Snack'),
 ('Menu complet');
 
--- 6. Restaurants d'Antananarivo (coordonnées corrigées: latitude, longitude)
+-- 7. Restaurants d'Antananarivo (coordonnées corrigées: latitude, longitude)
 INSERT INTO core_restaurant (nom, adresse, description, image, geo_position) VALUES
 ('Chez Mariette', 'Analakely, près du marché', 'Restaurant traditionnel malgache, spécialités locales', 'mariette.jpg', '-18.9142,47.5212'),
 ('Le Sakamanga', 'Rue Rainitovo, Antaninarenina', 'Cuisine fusion malgache-française', 'sakamanga.jpg', '-18.9185,47.5285'),
@@ -85,7 +101,7 @@ INSERT INTO core_restaurant (nom, adresse, description, image, geo_position) VAL
 ('Villa Vanille', 'Tsaralalana', 'Restaurant gastronomique', 'villa_vanille.jpg', '-18.9125,47.5245'),
 ('Mama Afrika', 'Antsahamanitra', 'Spécialités africaines', 'mama_afrika.jpg', '-18.9065,47.5188');
 
--- 7. Repas malgaches typiques
+-- 8. Repas malgaches typiques
 INSERT INTO core_repas (nom, description, image, type_id, prix) VALUES
 -- Plats principaux
 ('Romazava', 'Plat traditionnel malgache aux brèdes et viande de zébu', 'romazava.jpg', 1, 8000),
@@ -125,7 +141,7 @@ INSERT INTO core_repas (nom, description, image, type_id, prix) VALUES
 ('Menu Découverte', 'Ravitoto + koba + litchi juice', 'menu_decouverte.jpg', 6, 15000),
 ('Menu Grillades', 'Hen''omby ritra + salade + THB', 'menu_grillade.jpg', 6, 22000);
 
--- 8. Clients
+-- 9. Clients
 INSERT INTO core_client (email, mot_de_passe, contact, prenom, nom, date_inscri) VALUES
 ('rakoto.jean@gmail.com', 'hashed_password_1', '+261 34 12 345 67', 'Jean', 'Rakoto', '2024-01-15 10:30:00'),
 ('razafy.marie@yahoo.fr', 'hashed_password_2', '+261 33 98 765 43', 'Marie', 'Razafy', '2024-02-20 14:15:00'),
@@ -136,7 +152,7 @@ INSERT INTO core_client (email, mot_de_passe, contact, prenom, nom, date_inscri)
 ('rajao.david@gmail.com', 'hashed_password_7', '+261 34 22 678 90', 'David', 'Rajao', '2024-05-01 08:15:00'),
 ('raveloson.lucia@outlook.com', 'hashed_password_8', '+261 33 66 789 01', 'Lucia', 'Raveloson', '2024-05-20 15:30:00');
 
--- 9. Livreurs
+-- 10. Livreurs
 INSERT INTO core_livreur (nom, contact, position, date_inscri) VALUES
 ('Randria Thierry', '+261 34 11 222 33', 'Analakely', '2024-01-10 08:00:00'),
 ('Razaka Joseph', '+261 33 44 555 66', 'Behoririka', '2024-01-15 09:30:00'),
@@ -145,7 +161,7 @@ INSERT INTO core_livreur (nom, contact, position, date_inscri) VALUES
 ('Rakotozafy Bruno', '+261 33 88 333 44', 'Antsahamanitra', '2024-03-01 07:30:00'),
 ('Randriamampionona Solo', '+261 32 99 666 77', 'Tsaralalana', '2024-03-15 12:00:00');
 
--- 10. Horaires des restaurants (lundi=1, dimanche=7)
+-- 11. Horaires des restaurants (lundi=1, dimanche=7)
 INSERT INTO core_horaire (restaurant_id, le_jour, horaire_debut, horaire_fin, mis_a_jour_le) VALUES
 -- Chez Mariette (du lundi au samedi)
 (1, 1, '07:00', '20:00', NOW()),
@@ -170,7 +186,7 @@ INSERT INTO core_horaire (restaurant_id, le_jour, horaire_debut, horaire_fin, mi
 (3, 6, '12:00', '23:00', NOW()),
 (3, 7, '12:00', '22:00', NOW());
 
--- 11. Commissions des restaurants
+-- 12. Commissions des restaurants
 INSERT INTO core_commission (restaurant_id, valeur, mis_a_jour_le) VALUES
 (1, 15, NOW()),
 (2, 20, NOW()),
@@ -181,7 +197,7 @@ INSERT INTO core_commission (restaurant_id, valeur, mis_a_jour_le) VALUES
 (7, 30, NOW()),
 (8, 22, NOW());
 
--- 12. Association restaurants-repas
+-- 13. Association restaurants-repas
 INSERT INTO core_restaurantrepas (restaurant_id, repas_id) VALUES
 -- Chez Mariette (cuisine traditionnelle)
 (1, 1), (1, 2), (1, 6), (1, 8), (1, 9), (1, 12), (1, 16), (1, 17), (1, 23),
@@ -200,7 +216,7 @@ INSERT INTO core_restaurantrepas (restaurant_id, repas_id) VALUES
 -- Mama Afrika
 (8, 2), (8, 4), (8, 5), (8, 11), (8, 19), (8, 24);
 
--- 13. Association zones-restaurants
+-- 14. Association zones-restaurants
 INSERT INTO core_zonerestaurant (restaurant_id, zone_id) VALUES
 (1, 1), -- Chez Mariette à Analakely
 (2, 5), -- Le Sakamanga à Antaninarenina
@@ -211,7 +227,7 @@ INSERT INTO core_zonerestaurant (restaurant_id, zone_id) VALUES
 (7, 4), -- Villa Vanille à Tsaralalana
 (8, 2); -- Mama Afrika à Antsahamanitra
 
--- 14. Association zones-clients
+-- 15. Association zones-clients
 INSERT INTO core_zoneclient (client_id, zone_id) VALUES
 (1, 1), (1, 2), -- Jean Rakoto
 (2, 3), (2, 4), -- Marie Razafy
@@ -222,7 +238,7 @@ INSERT INTO core_zoneclient (client_id, zone_id) VALUES
 (7, 6), (7, 7), -- David Rajao
 (8, 1), (8, 5); -- Lucia Raveloson
 
--- 15. Association zones-livreurs
+-- 16. Association zones-livreurs
 INSERT INTO core_zonelivreur (zone_id, livreur_id) VALUES
 (1, 1), (2, 1), -- Randria Thierry
 (7, 2), (1, 2), -- Razaka Joseph
@@ -231,7 +247,18 @@ INSERT INTO core_zonelivreur (zone_id, livreur_id) VALUES
 (2, 5), (8, 5), -- Rakotozafy Bruno
 (4, 6), (5, 6); -- Randriamampionona Solo
 
--- 16. Historiques des statuts
+-- 17. Référence zone-entité (NOUVELLES DONNÉES)
+INSERT INTO core_referencezoneentite (zone_id, entite_id) VALUES
+(1, 1), -- Analakely -> Zone Commerciale
+(2, 2), -- Antsahamanitra -> Zone Résidentielle
+(3, 3), -- Andravoahangy -> Zone Universitaire
+(4, 4), -- Tsaralalana -> Zone Administrative
+(5, 1), -- Antaninarenina -> Zone Commerciale
+(6, 1), -- Isotry -> Zone Commerciale
+(7, 1), -- Behoririka -> Zone Commerciale
+(8, 2); -- Ambatonakanga -> Zone Résidentielle
+
+-- 18. Historiques des statuts
 INSERT INTO core_historiquestatutzone (zone_id, statut_id, mis_a_jour_le) VALUES
 (1, 1, '2024-01-01 00:00:00'),
 (2, 1, '2024-01-01 00:00:00'),
@@ -241,6 +268,15 @@ INSERT INTO core_historiquestatutzone (zone_id, statut_id, mis_a_jour_le) VALUES
 (6, 1, '2024-01-01 00:00:00'),
 (7, 1, '2024-01-01 00:00:00'),
 (8, 1, '2024-01-01 00:00:00');
+
+-- NOUVEAUX historiques pour entités
+INSERT INTO core_historiquestatutentite (entite_id, statut_id, mis_a_jour_le) VALUES
+(1, 1, '2024-01-01 00:00:00'), -- Zone Commerciale -> Active
+(2, 1, '2024-01-01 00:00:00'), -- Zone Résidentielle -> Active
+(3, 1, '2024-01-01 00:00:00'), -- Zone Universitaire -> Active
+(4, 1, '2024-01-01 00:00:00'), -- Zone Administrative -> Active
+(5, 1, '2024-01-01 00:00:00'), -- Zone Industrielle -> Active
+(6, 1, '2024-01-01 00:00:00'); -- Zone Touristique -> Active
 
 INSERT INTO core_historiquestatutrestaurant (restaurant_id, statut_id, mis_a_jour_le) VALUES
 (1, 1, NOW()),
@@ -260,7 +296,7 @@ INSERT INTO core_historiquestatutlivreur (livreur_id, statut_id, mis_a_jour_le) 
 (5, 3, NOW()),
 (6, 1, NOW());
 
--- 17. Commandes d'exemple
+-- 19. Commandes d'exemple
 INSERT INTO core_commande (client_id, point_recup_id, cree_le, mode_paiement_id) VALUES
 (1, 1, '2024-07-04 12:30:00', 2), -- Jean Rakoto, Mobile Money
 (2, 2, '2024-07-04 13:15:00', 1), -- Marie Razafy, Espèces
@@ -268,7 +304,26 @@ INSERT INTO core_commande (client_id, point_recup_id, cree_le, mode_paiement_id)
 (4, 4, '2024-07-04 19:20:00', 2), -- Sarah Ratsimba, Mobile Money
 (5, 5, '2024-07-03 12:00:00', 1); -- Michel Rasolofo, Espèces
 
--- 18. Détails des commandes (repas commandés)
+-- 20. NOUVEAUX paiements de commandes
+INSERT INTO core_commandepaiement (paiement_id, ajouter_le) VALUES
+(2, '2024-07-04 12:30:00'), -- Mobile Money
+(1, '2024-07-04 13:15:00'), -- Espèces
+(3, '2024-07-04 18:45:00'), -- Carte bancaire
+(2, '2024-07-04 19:20:00'), -- Mobile Money
+(1, '2024-07-03 12:00:00'); -- Espèces
+
+-- 21. NOUVEAU historique des zones de récupération
+INSERT INTO core_historiquezonesrecuperation (zone_id, point_recup_id, mis_a_jour_le) VALUES
+(1, 1, '2024-01-01 00:00:00'), -- Analakely -> Analakely Market
+(3, 2, '2024-01-01 00:00:00'), -- Andravoahangy -> Université
+(4, 3, '2024-01-01 00:00:00'), -- Tsaralalana -> Gare Soarano
+(5, 4, '2024-01-01 00:00:00'), -- Antaninarenina -> Tana Water Front
+(6, 5, '2024-01-01 00:00:00'), -- Isotry -> Marché Isotry
+(7, 6, '2024-01-01 00:00:00'), -- Behoririka -> Behoririka Shopping
+(4, 7, '2024-01-01 00:00:00'), -- Tsaralalana -> Place Indépendance
+(2, 8, '2024-01-01 00:00:00'); -- Antsahamanitra -> Antsahamanitra Centre
+
+-- 22. Détails des commandes (repas commandés)
 INSERT INTO core_commanderepas (commande_id, repas_id, quantite, ajoute_le) VALUES
 -- Commande 1 (Jean Rakoto)
 (1, 1, 1, '2024-07-04 12:30:00'), -- Romazava
@@ -285,7 +340,7 @@ INSERT INTO core_commanderepas (commande_id, repas_id, quantite, ajoute_le) VALU
 (5, 2, 1, '2024-07-03 12:00:00'), -- Ravitoto sy henakisoa
 (5, 17, 1, '2024-07-03 12:00:00'); -- Ranon'ampango
 
--- 19. Historiques des statuts de commandes
+-- 23. Historiques des statuts de commandes
 INSERT INTO core_historiquestatutcommande (commande_id, statut_id, mis_a_jour_le) VALUES
 (1, 1, '2024-07-04 12:30:00'), -- En attente
 (1, 2, '2024-07-04 12:35:00'), -- Confirmée
@@ -302,12 +357,12 @@ INSERT INTO core_historiquestatutcommande (commande_id, statut_id, mis_a_jour_le
 (5, 5, '2024-07-03 13:10:00'), -- En livraison
 (5, 6, '2024-07-03 13:40:00'); -- Livrée
 
--- 20. Livraisons
+-- 24. Livraisons
 INSERT INTO core_livraison (livreur_id, commande_id, attribue_le) VALUES
 (1, 1, '2024-07-04 13:15:00'), -- Randria Thierry pour commande 1
 (5, 5, '2024-07-03 13:10:00'); -- Rakotozafy Bruno pour commande 5
 
--- 21. Historiques des statuts de livraisons
+-- 25. Historiques des statuts de livraisons
 INSERT INTO core_historiquestatutlivraison (livraison_id, statut_id, mis_a_jour_le) VALUES
 (1, 1, '2024-07-04 13:15:00'), -- Assignée
 (2, 1, '2024-07-03 13:10:00'), -- Assignée
@@ -316,21 +371,21 @@ INSERT INTO core_historiquestatutlivraison (livraison_id, statut_id, mis_a_jour_
 (2, 4, '2024-07-03 13:30:00'), -- En route vers client
 (2, 5, '2024-07-03 13:40:00'); -- Livrée
 
--- 22. Promotions
+-- 26. Promotions
 INSERT INTO core_promotion (repas_id, pourcentage_reduction, date_concerne) VALUES
 (1, 20, '2024-07-05'), -- 20% sur Romazava
 (23, 15, '2024-07-05'), -- 15% sur Menu Traditionnel
 (7, 25, '2024-07-06'), -- 25% sur Poisson à la vanille
 (19, 10, '2024-07-04'); -- 10% sur Three Horses Beer
 
--- 23. Limites de commandes journalières
+-- 27. Limites de commandes journalières
 INSERT INTO core_limitecommandesjournalieres (nombre_commandes, date) VALUES
 (50, '2024-07-04'),
 (60, '2024-07-05'),
 (45, '2024-07-06'),
 (55, '2024-07-07');
 
--- 24. Horaires spéciaux (jours fériés malgaches)
+-- 28. Horaires spéciaux (jours fériés malgaches)
 INSERT INTO core_horairespecial (restaurant_id, date_concerne, horaire_debut, horaire_fin, mis_a_jour_le) VALUES
 (1, '2024-06-26', '08:00', '15:00', NOW()), -- Fête de l'Indépendance
 (2, '2024-06-26', '12:00', '18:00', NOW()),
@@ -342,6 +397,8 @@ COMMIT;
 -- Vérification des données insérées
 SELECT 'Zones' as table_name, COUNT(*) as count FROM core_zone
 UNION ALL
+SELECT 'Entités', COUNT(*) FROM core_entite
+UNION ALL
 SELECT 'Restaurants', COUNT(*) FROM core_restaurant
 UNION ALL
 SELECT 'Repas', COUNT(*) FROM core_repas
@@ -352,4 +409,14 @@ SELECT 'Livreurs', COUNT(*) FROM core_livreur
 UNION ALL
 SELECT 'Commandes', COUNT(*) FROM core_commande
 UNION ALL
-SELECT 'Points de récupération', COUNT(*) FROM core_pointrecup;
+SELECT 'Points de récupération', COUNT(*) FROM core_pointrecup
+UNION ALL
+SELECT 'Modes de paiement', COUNT(*) FROM core_modepaiement
+UNION ALL
+SELECT 'Paiements commandes', COUNT(*) FROM core_commandepaiement
+UNION ALL
+SELECT 'Historique zones récupération', COUNT(*) FROM core_historiquezonesrecuperation
+UNION ALL
+SELECT 'Référence zone-entité', COUNT(*) FROM core_referencezoneentite
+UNION ALL
+SELECT 'Historique statut entité', COUNT(*) FROM core_historiquestatutentite;

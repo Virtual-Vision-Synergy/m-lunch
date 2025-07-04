@@ -9,7 +9,11 @@ from ..models import Zone, StatutZone, HistoriqueStatutZone
 class ZoneService:
     @staticmethod
     def create_zone(nom, description, coordinates, initial_statut_id):
+<<<<<<< Updated upstream
         # pdb.set_trace()
+=======
+        #pdb.set_trace()
+>>>>>>> Stashed changes
         from django.db import transaction
         if not nom or len(nom) > 100 or not nom.strip():
             return {"error": "Nom de zone invalide"}
@@ -64,7 +68,7 @@ class ZoneService:
                 poly = wkt.loads(zone.zone)
                 if poly.contains(point):
                     return {'id': zone.id, 'nom': zone.nom}
-                dist = poly.distance(point) * 111320  # deg -> m (approx)
+                dist = poly.distance(point) * 111320
                 if closest_dist is None or dist < closest_dist:
                     closest_zone = zone
                     closest_dist = dist
@@ -76,7 +80,11 @@ class ZoneService:
 
     @staticmethod
     def list_zones_actives():
+<<<<<<< Updated upstream
         # pdb.set_trace()
+=======
+        #pdb.set_trace()
+>>>>>>> Stashed changes
         """Liste toutes les zones actives (dernier statut = actif)."""
         try:
             actifs = []

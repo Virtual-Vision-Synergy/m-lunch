@@ -205,7 +205,42 @@ class LimiteCommandesJournalieres(models.Model):
     date = models.DateField()
 
 class ModePaiement(models.Model):
-    nom = models.CharField(max_length=100, unique=True)
+    nom = models.CharField(max_length=150)
     def __str__(self):
         return self.nom
 
+class StatutEntite(models.Model):
+    appellation = models.CharField(max_length=100)
+    def __str__(self):
+        return self.appellation
+
+class Entite(models.Model):
+    nom = models.CharField(max_length=100)
+    def __str__(self):
+        return self.nom
+
+class HistoriqueStatutEntite(models.Model):
+    entite = models.ForeignKey('Entite', on_delete=models.CASCADE, related_name='historiques')
+    statut = models.ForeignKey('StatutEntite', on_delete=models.CASCADE)
+    mis_a_jour_le = models.DateTimeField(default=now)
+    def __str__(self):
+        return f"{self.entite} - {self.statut} ({self.mis_a_jour_le})"
+
+class ReferenceZoneEntite(models.Model):
+    zone = models.ForeignKey('Zone', on_delete=models.CASCADE)
+    entite = models.ForeignKey('Entite', on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('zone', 'entite')
+
+class CommandePaiement(models.Model):
+    paiement = models.ForeignKey('ModePaiement', on_delete=models.CASCADE)
+    ajouter_le = models.DateTimeField(default=now)
+    def __str__(self):
+        return f"Paiement {self.paiement} - {self.ajouter_le}"
+
+class HistoriqueZonesRecuperation(models.Model):
+    zone = models.ForeignKey('Zone', on_delete=models.CASCADE, related_name='historiques_recuperation')
+    point_recup = models.ForeignKey('PointRecup', on_delete=models.CASCADE)
+    mis_a_jour_le = models.DateTimeField(default=now)
+    def __str__(self):
+        return f"{self.zone} - {self.point_recup} ({self.mis_a_jour_le})"

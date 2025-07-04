@@ -1,18 +1,22 @@
 import json
 
-from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from functools import wraps
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 
-from mlunch.core.services import RestaurantService,CommandeService, PointRecupService, PanierService
-from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de liaison
+from mlunch.core.services import RestaurantService, CommandeService, PointRecupService, PanierService
+from mlunch.core.services.restaurant_service import RestaurantService
+from mlunch.core.services.repas_service import RepasService
+from mlunch.core.services.zone_service import ZoneService
+from mlunch.core.models import Zone, Client, ZoneClient, Restaurant, Repas  # Import du modèle de liaison
 from shapely import wkt
-from mlunch.core.services import ClientService  
-from mlunch.core.services import ZoneService    
+from mlunch.core.services import ClientService
+from mlunch.core.services import ZoneService
+
 
 def connexion_view(request):
     error_message = None
@@ -34,7 +38,8 @@ def connexion_view(request):
     return render(request, 'frontoffice/connexion.html', {
         'error_message': error_message
     })
-    
+
+
 def authentification_requise(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
@@ -43,7 +48,8 @@ def authentification_requise(view_func):
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
-@authentification_requise    
+
+@authentification_requise
 def restaurants_geojson(request):
     client_id = request.session.get('client_id')
     if not client_id:
@@ -52,25 +58,63 @@ def restaurants_geojson(request):
     data = RestaurantService.get_restaurants_by_client_zones(client_id)
     return JsonResponse(data)
 
+
+def index(request):
+    """Page d'accueil du frontoffice"""
+    restaurants_populaires = RestaurantService.get_restaurants_populaires()[:6]
+    zones_disponibles = ZoneService.get_all_zones()
+
+    return render(request, 'frontoffice/index.html', {
+        'restaurants_populaires': restaurants_populaires,
+        'zones_disponibles': zones_disponibles
+    })
+
+
+def accueil(request):
+    """Page d'accueil alternative avec recherche"""
+    return render(request, 'frontoffice/accueil.html')
+
+
+def restaurant_list(request):
+    """Liste des restaurants pour les clients"""
+    zone_id = request.GET.get('zone')
+    search_query = request.GET.get('q')
+
+    if zone_id:
+        restaurants = RestaurantService.get_restaurants_by_zone(zone_id)
+    elif search_query:
+        restaurants = RestaurantService.search_restaurants(search_query)
+    else:
+        restaurants = RestaurantService.get_restaurants_actifs()
+
+    zones = ZoneService.get_all_zones()
+
+    return render(request, 'frontoffice/restaurant.html', {
+        'restaurants': restaurants,
+        'zones': zones,
+        'selected_zone': int(zone_id) if zone_id else None,
+        'search_query': search_query
+    })
+
+
 def restaurant_detail(request, restaurant_id):
-    #restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    """Détail d'un restaurant avec ses repas"""
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    repas_disponibles = RepasService.get_repas_by_restaurant(restaurant_id)
 
-    # Get selected type if filtered
-    selected_type = request.GET.get('type')
-
-    data = RestaurantService.get_repas_for_restaurant(restaurant_id, selected_type)
-    if "error" in data:
-        return render(request, 'frontoffice/restaurant_detail.html', {
-            'error': data["error"]
-        })
+    # Organiser les repas par type
+    repas_par_type = {}
+    for repas in repas_disponibles:
+        type_nom = repas.type.nom if repas.type else 'Autres'
+        if type_nom not in repas_par_type:
+            repas_par_type[type_nom] = []
+        repas_par_type[type_nom].append(repas)
 
     return render(request, 'frontoffice/restaurant_detail.html', {
-        'restaurant': data['restaurant'],
-        'repas': data['repas'],
-        'note': data['note'],
-        'types': data['types'],
-        'selected_type': data['selected_type']
+        'restaurant': restaurant,
+        'repas_par_type': repas_par_type
     })
+
 
 def mes_commandes(request):
     client_id = request.session.get("client_id")
@@ -79,6 +123,7 @@ def mes_commandes(request):
     return render(request, 'frontoffice/mes_commandes.html', {
         'commandes': commandes_data
     })
+
 
 def detail_commande(request, commande_id):
     #commande = get_object_or_404(Commande, id=commande_id)
@@ -95,20 +140,18 @@ def detail_commande(request, commande_id):
         'total': data['total']
     })
 
+
 def points_de_recuperation(request):
     data = PointRecupService.get_all_points_recup_geojson()
     print(data)
     return JsonResponse(data)
+
+
 def all_restaurants(request):
     data = RestaurantService.get_all_restaurants_geojson()
     #print(data)
     return JsonResponse(data)
 
-def restaurant_view(request):
-    return render(request, 'frontoffice/restaurant.html')
-
-def accueil_view(request):
-    return render(request, 'frontoffice/accueil.html')
 
 def logout_view(request):
     # Clear Django session
@@ -117,69 +160,6 @@ def logout_view(request):
     # del request.session['client_id']  # Remove only specific key
 
     return redirect('frontoffice_connexion')  # Redirect to login
-
-def index(request):
-    return render(request, 'frontoffice/index.html')
-
-def inscription_page(request):
-    # Initialize error variable to None
-    error = None
-
-    if request.method == 'POST':
-        nom = request.POST.get('nom')
-        prenom = request.POST.get('prenom')
-        email = request.POST.get('email')
-        mot_de_passe = request.POST.get('mot_de_passe')
-        telephone = request.POST.get('telephone')
-        secteur_nom = request.POST.get('secteur')
-
-        # Vérifier que tous les champs sont remplis
-        if not all([nom, prenom, email, mot_de_passe, telephone]):
-            error = "Tous les champs sont obligatoires."
-        # Vérifier que le secteur est fourni
-        elif not secteur_nom:
-            error = "Veuillez sélectionner un secteur en cliquant sur la carte."
-        else:
-            # 1. Insérer client via ORM
-            result = ClientService.create_client(email, mot_de_passe, contact=telephone, prenom=prenom, nom=nom)
-            if 'error' in result:
-                error = result['error']
-            else:
-                client_id = result['client']['id']
-
-                # 2. Vérifier que la zone existe et récupérer son instance
-                try:
-                    zone = Zone.objects.get(nom=secteur_nom)
-                except Zone.DoesNotExist:
-                    error = f"Secteur '{secteur_nom}' introuvable."
-                else:
-                    # 3. Lier client/zone via ZoneClient
-                    try:
-                        client = Client.objects.get(id=client_id)
-                        ZoneClient.objects.create(client=client, zone=zone)
-                        # Si tout s'est bien passé, rediriger vers la page d'accueil
-                        return redirect('frontoffice_index')
-                    except Exception as e:
-                        error = f"Erreur lors de l'insertion dans zones_clients: {e}"
-
-    # Préparer les données des zones pour l'affichage de la carte
-    zones = Zone.objects.all()
-    zones_features = []
-    for z in zones:
-        try:
-            geom = wkt.loads(z.zone)
-            zones_features.append({
-                'type': 'Feature',
-                'geometry': json.loads(geom.to_geojson()),
-                'properties': {'id': z.id, 'nom': z.nom}
-            })
-        except Exception:
-            continue
-
-    return render(request, 'frontoffice/inscription.html', {
-        'zones': zones_features,
-        'erreur': error
-    })
 
 
 def barre_recherche(request):
@@ -580,6 +560,8 @@ def get_panier_count(request):
         return JsonResponse({
             'count': 0
         })
+
+
 def api_zone_from_coord(request):
     try:
         lat = float(request.GET.get('lat'))
