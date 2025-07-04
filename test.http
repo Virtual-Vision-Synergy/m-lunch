@@ -4,5 +4,11 @@ GET http://localhost:8000/api/zone-from-coord/?lat=-18.9145&lon=47.5215
 POST http://localhost:8000/api/inscription/
 Content-Type: application/x-www-form-urlencoded
 
+<<<<<<< Updated upstream
 nom=Dupont&prenom=Jean&email=jean.dupont@example.com&mot_de_passe=MotDePasse123&telephone=0123456789&secteur=NomDuSecteur
 
+=======
+nom=Dupont&prenom=Jean&email=jean.dupont@example.com &mot_de_passe=MotDePasse123&telephone=0123456789&secteur=NomDuSecteur
+
+GET /api/zone-from-coord/?lat=-18.901046469461686&lon=47.54024505615235 HTTP/1.1
+>>>>>>> Stashed changes
