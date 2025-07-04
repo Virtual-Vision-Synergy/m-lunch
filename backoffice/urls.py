@@ -2,14 +2,12 @@ from django.urls import path
 from . import views
 from .views import restaurant_views, commande_views, zone_views, stats_views
 
-app_name = 'backoffice'
-
 urlpatterns = [
     # Dashboard principal
     path('', views.index, name='index'),
 
     # Gestion des restaurants
-    path('restaurants/', restaurant_views.restaurant_list, name='restaurant_list'),
+    path('restaurants/', restaurant_views.restaurant, name='restaurant_list'),
     path('restaurants/<int:restaurant_id>/', restaurant_views.restaurant_detail, name='restaurant_detail'),
     path('restaurants/<int:restaurant_id>/commandes/', restaurant_views.restaurant_commandes, name='restaurant_commandes'),
     path('restaurants/ajouter/', restaurant_views.restaurant_ajouter, name='restaurant_add'),

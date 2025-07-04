@@ -81,7 +81,7 @@
     {% if erreur %}
         <div class="alert alert-danger" style="margin-bottom:16px;">{{ erreur }}</div>
     {% endif %}
-    <form method="post" action="/api/inscription/" autocomplete="off" style="margin-bottom:0;">
+    <form method="post" autocomplete="off" style="margin-bottom:0;">
         {% csrf_token %}
         <div class="form-group">
             <label for="prenom">Prénom:</label>
@@ -98,6 +98,10 @@
         <div class="form-group">
             <label for="mot_de_passe">Mot de passe:</label>
             <input type="password" name="mot_de_passe" class="form-control" required placeholder="Mot de passe sécurisé">
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirmer le mot de passe:</label>
+            <input type="password" name="confirm_password" class="form-control" required placeholder="Confirmez votre mot de passe">
         </div>
         <div class="form-group">
             <label for="telephone">Numéro de téléphone:</label>
