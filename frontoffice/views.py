@@ -15,7 +15,6 @@ from mlunch.core.services import ZoneService
 def index(request):
     return render(request, 'frontoffice/index.html')
 
-@csrf_exempt  # Adding this to allow testing without CSRF
 def inscription_page(request):
     # Initialize error variable to None
     error = None
