@@ -115,11 +115,14 @@ class Livraison:
         if error:
             return {"error": str(error)}
         return result if result else None
+    
+
 
     @staticmethod
     def delete(livraison_id):
         """Marque une livraison comme annulée en mettant à jour son statut. Retourne les données mises à jour ou None si non trouvé."""
         if not isinstance(livraison_id, int) or livraison_id <= 0:
+            
             return {"error": "ID invalide"}
 
         statut_id = 3  # Statut "Annulé"
@@ -153,10 +156,13 @@ class Livraison:
         query = "SELECT * FROM v_livraisons_detail WHERE id = %s"
         return db.fetch_one(query, (livraison_id,))
     
+
+
     @staticmethod
     def update_status(livraison_id, statut_id):
         """Met à jour le statut d'une livraison."""
         try:
+
             # Vérification que les paramètres sont des entiers
             livraison_id = int(livraison_id)
             statut_id = int(statut_id)

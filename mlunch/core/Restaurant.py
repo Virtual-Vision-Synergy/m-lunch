@@ -385,6 +385,7 @@ class Restaurant:
             'nb_commandes': nb_commandes
         }
 
+
     @staticmethod
     def financial_graph(restaurant_id, date_from, date_to, periode):
         """Génère les données de graphique financier pour un restaurant."""

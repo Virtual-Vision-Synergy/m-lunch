@@ -499,6 +499,8 @@ def zone_edit(request, zone_id):
             return redirect('zones_list')
     return render(request, 'backoffice/zones/zone_form.html', {'action': 'Modifier', 'zone': zone})
 
+
+
 def zone_delete(request, zone_id):
     zone = db.fetch_one("SELECT id, nom FROM zones WHERE id=%s", (zone_id,))
     if not zone:
