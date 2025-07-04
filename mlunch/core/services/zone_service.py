@@ -1,9 +1,7 @@
 import pdb
 from shapely import wkt
 from shapely.geometry import Point
-from django.db import transaction
-from django.utils.timezone import now
-from datetime import datetime
+
 
 from ..models import Zone, StatutZone, HistoriqueStatutZone
 
@@ -53,8 +51,8 @@ class ZoneService:
             return {"error": f"Erreur lors de la création de la zone : {str(e)}"}
 
     @staticmethod
-    def get_zone_by_coord(lat, lon, max_distance_m=5000):
-        # pdb.set_trace()
+    def get_zone_by_coord(lat, lon, max_distance_m=10000000):
+        #pdb.set_trace()
         """
         Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).
         """
