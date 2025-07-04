@@ -419,3 +419,5 @@ class Restaurant:
                 graph_values.append(float(row['total']))
 
         return graph_labels, graph_values
+    
+# modif kely

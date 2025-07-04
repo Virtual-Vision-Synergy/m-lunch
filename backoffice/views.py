@@ -529,3 +529,5 @@ def zone_delete(request, zone_id):
         )
         return redirect('zones_list')
     return render(request, 'backoffice/zones/zone_delete_confirm.html', {'zone': zone})
+
+# modif kely
