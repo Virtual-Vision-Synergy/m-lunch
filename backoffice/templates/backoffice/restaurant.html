@@ -9,12 +9,11 @@
 
     <header>
         <ul>
-            <li><a href="{% url 'backoffice_index' %}">Logo</a></li>
-            <li><a href="{% url 'backoffice_index' %}">Statistiques</a></li>
-            <li><a href="{% url 'backoffice_restaurant' %}">Restaurant</a></li>
-            <li><a href="#">Secteur</a></li>
-            <li><a href="#">Livraison</a></li>
-            <li><a href="{% url 'backoffice_commande' %}">Commande</a></li>
+            <li><a href="{% url 'index' %}">Logo</a></li>
+            <li><a href="{% url 'index' %}">Statistiques</a></li>
+            <li><a href="{% url 'restaurant_list' %}">Restaurant</a></li>
+            <li><a href="{% url 'zone_list' %}">Secteur</a></li>
+            {% comment %} <li><a href="{% url 'livraison_list' %}">Livraison</a></li> {% endcomment %}
         </ul>
     </header>
 
@@ -83,7 +82,7 @@
                 <button type="submit">Supprimer</button>
             </form>
 
-            <form action="{% url 'backoffice_restaurant_commandes' restaurant.id %}" method="get" style="display:inline;">
+            <form action="{% url 'restaurant_commandes' restaurant.id %}" method="get" style="display:inline;">
                 <button type="submit">Info commande</button>
             </form>
 
@@ -97,7 +96,7 @@
 
     </section>
     <div style="text-align:center; margin-top: 20px;">
-        <form action="{% url 'backoffice_restaurant_ajouter' %}" method="get">
+        <form action="{% url 'restaurant_add_form' %}" method="get">
             <button type="submit">Ajouter un restaurant</button>
         </form>
     </div>

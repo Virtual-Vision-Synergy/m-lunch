@@ -1,21 +1,16 @@
 from django.urls import path
 
 from .views import signin_views, views, zone_views, restaurant_views, panier_views,commande_views
-
+    
 urlpatterns = [
     # Pages principales
     path('', views.accueil, name='frontoffice_index'),
 
     # mitia
-    path('deconnexion/', views.logout_view, name='frontoffice_logout'),
-    path('api/points_de_recuperation/', views.points_de_recuperation, name='points_de_recuperation'),
-    path('api/all_restaurants/', views.all_restaurants, name='all_restaurants'),
-    path('',views.index,name='frontoffice_index'),
-    path('inscription/',views.inscription_page,name='inscription_page'),
-    path('api/zone-from-coord/', views.api_zone_from_coord, name='api_zone_from_coord'),
     # randy
     path('connexion/', views.connexion_view, name='connexion'),
     path('signin/', signin_views.signin, name='signin'),
+    path('logout/', views.logout_view, name='frontoffice_logout'),
 
     # Restaurants et recherche
     path('restaurants/', restaurant_views.restaurant_list, name='restaurant_list'),
@@ -23,7 +18,10 @@ urlpatterns = [
     path('recherche/', restaurant_views.barre_recherche_view, name='barre_recherche'),
     path('api/restaurants/', restaurant_views.restaurants_geojson, name='restaurants_geojson'),
     path('api/all_restaurants/', restaurant_views.all_restaurants, name='all_restaurants'),
-
+    path('api/points_de_recuperation/', zone_views.points_de_recuperation, name='points_de_recuperation'),
+    path('api/zone-from-coord/', restaurant_views.api_zone_from_coord, name='api_zone_from_coord'),
+    path('menu/<int:restaurant_id>/', restaurant_views.restaurant_detail, name='restaurant_detail'),
+    
     # Commandes
         path('mes-commandes/', commande_views.mes_commandes, name='mes_commandes'),
     path('commandes/en-cours/', commande_views.commandes_en_cours, name='commandes_en_cours'),

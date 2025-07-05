@@ -8,12 +8,11 @@
     <h1>Bienvenue Admin</h1>
     <header>
         <ul>
-            <li><a href="">Logo</a></li>
-            <li><a href="">Statistiques</a></li>
-            <li><a href="/staff/restaurants/">Restaurant</a></li>
-            <li><a href="#">Secteur</a></li>
-            <li><a href="#">Livraison</a></li>
-            <li><a href="/staff/commandes/">Commande</a></li>
+            <li><a href="{% url 'index' %}">Logo</a></li>
+            <li><a href="{% url 'index' %}">Statistiques</a></li>
+            <li><a href="{% url 'restaurant_list' %}">Restaurant</a></li>
+            <li><a href="{% url 'zone_list' %}">Secteur</a></li>
+            {% comment %} <li><a href="{% url 'livraison_list' %}">Livraison</a></li> {% endcomment %}
         </ul>
     </header>
     <section>

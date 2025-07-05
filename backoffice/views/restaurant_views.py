@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from mlunch.core.services.restaurant_service import RestaurantService
 from mlunch.core.services.zone_service import ZoneService
-from mlunch.core.models import Restaurant, Zone, StatutRestaurant
+from mlunch.core.models import Commission, Horaire, ModePaiement, Restaurant, StatutCommande, Zone, StatutRestaurant, ZoneRestaurant
 import json
 import os
 from django.conf import settings
