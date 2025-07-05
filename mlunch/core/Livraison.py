@@ -1,6 +1,6 @@
 import psycopg2.errors
 from typing import Optional, Dict, List, Any
-from database.db import execute_query, fetch_query, fetch_one
+from database.db import fetch_one, execute_query
 from database import db
 
 class Livraison:
@@ -115,14 +115,11 @@ class Livraison:
         if error:
             return {"error": str(error)}
         return result if result else None
-    
-
 
     @staticmethod
     def delete(livraison_id):
         """Marque une livraison comme annulée en mettant à jour son statut. Retourne les données mises à jour ou None si non trouvé."""
         if not isinstance(livraison_id, int) or livraison_id <= 0:
-            
             return {"error": "ID invalide"}
 
         statut_id = 3  # Statut "Annulé"
@@ -156,13 +153,10 @@ class Livraison:
         query = "SELECT * FROM v_livraisons_detail WHERE id = %s"
         return db.fetch_one(query, (livraison_id,))
     
-
-
     @staticmethod
     def update_status(livraison_id, statut_id):
         """Met à jour le statut d'une livraison."""
         try:
-
             # Vérification que les paramètres sont des entiers
             livraison_id = int(livraison_id)
             statut_id = int(statut_id)
@@ -234,4 +228,22 @@ class Livraison:
         db.execute_query(query, (livreur_id, livraison_id))
         return True
 
-# modif kely
+    @staticmethod
+    def create(livreur_id, commande_id, statut_id):
+        # Créer la livraison
+        query = """
+            INSERT INTO livraisons (livreur_id, commande_id)
+            VALUES (%s, %s)
+            RETURNING id
+        """
+        result, error = fetch_one(query, (livreur_id, commande_id))
+        if error or not result:
+            return {"error": str(error) if error else "Erreur lors de la création de la livraison"}
+        livraison_id = result['id']
+        # Historiser le statut
+        query_statut = """
+            INSERT INTO historique_statut_livraison (livraison_id, statut_id)
+            VALUES (%s, %s)
+        """
+        execute_query(query_statut, (livraison_id, statut_id))
+        return {"success": True, "livraison_id": livraison_id}

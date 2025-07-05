@@ -385,7 +385,6 @@ class Restaurant:
             'nb_commandes': nb_commandes
         }
 
-
     @staticmethod
     def financial_graph(restaurant_id, date_from, date_to, periode):
         """Génère les données de graphique financier pour un restaurant."""
@@ -420,5 +419,4 @@ class Restaurant:
                 graph_values.append(float(row['total']))
 
         return graph_labels, graph_values
-    
-# modif kely
+
