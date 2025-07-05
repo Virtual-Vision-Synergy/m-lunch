@@ -43,3 +43,6 @@ urlpatterns = [
 ]
 
 # modif kely
+    path('restaurant/', views.restaurant, name='backoffice_restaurant'),
+    path('commande/', views.commande, name='backoffice_commande'),
+]
