@@ -293,18 +293,3 @@ class CommandeService:
             return {"error": "Commande non trouvée"}
         except Exception as e:
             return {"error": f"Erreur : {str(e)}"}
-# Pour utiliser le debugger (pdb) dans get_commande_details :
-# 1. Appelez la méthode CommandeService.get_commande_details(commande_id) depuis un shell Python/Django ou un script.
-# 2. L'exécution s'arrêtera à la ligne 'pdb.set_trace()'.
-# 3. Vous pouvez alors inspecter les variables, exécuter des commandes, etc.
-#    Exemples de commandes utiles dans pdb :
-#      - n (next) : exécute la ligne suivante
-#      - c (continue) : continue jusqu'au prochain breakpoint ou la fin
-#      - p variable : affiche la valeur de 'variable'
-#      - l : affiche le code autour du point d'arrêt
-#      - q : quitte le debugger
-
-# Exemple d'utilisation dans un shell Django :
-# >>> from mlunch.core.services.commande_service import CommandeService
-# >>> CommandeService.get_commande_details(1)
-# (le debugger s'active ici, suivez les instructions ci-dessus)

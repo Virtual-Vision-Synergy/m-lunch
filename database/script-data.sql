@@ -124,6 +124,14 @@ CREATE TABLE core_repas (
     prix INTEGER NOT NULL
 );
 
+-- DISPONIBILITE REPAS
+CREATE TABLE core_disponibiliterepas (
+    id SERIAL PRIMARY KEY,
+    repas_id INTEGER REFERENCES core_repas(id) ON DELETE CASCADE,
+    est_dispo BOOLEAN DEFAULT TRUE,
+    mis_a_jour_le TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- HISTORIQUE STATUT LIVREUR
 CREATE TABLE core_historiquestatutlivreur (
     id SERIAL PRIMARY KEY,

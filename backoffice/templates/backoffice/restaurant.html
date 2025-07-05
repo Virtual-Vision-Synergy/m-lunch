@@ -58,7 +58,18 @@
             <p><strong>Horaires :</strong></p>
             <ul>
                 {% for horaire in restaurant.horaire %}
-                    <li>{{ horaire.le_jour }} : {{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}</li>
+                    <li>
+                        {% if horaire.le_jour == 0 %}Lundi
+                        {% elif horaire.le_jour == 1 %}Mardi
+                        {% elif horaire.le_jour == 2 %}Mercredi
+                        {% elif horaire.le_jour == 3 %}Jeudi
+                        {% elif horaire.le_jour == 4 %}Vendredi
+                        {% elif horaire.le_jour == 5 %}Samedi
+                        {% elif horaire.le_jour == 6 %}Dimanche
+                        {% else %}Jour {{ horaire.le_jour }}
+                        {% endif %}
+                        : {{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}
+                    </li>
                 {% endfor %}
             </ul>
 
@@ -72,7 +83,7 @@
                 <button type="submit">Supprimer</button>
             </form>
 
-            <form action="#" method="get" style="display:inline;">
+            <form action="{% url 'backoffice_restaurant_commandes' restaurant.id %}" method="get" style="display:inline;">
                 <button type="submit">Info commande</button>
             </form>
 
@@ -85,5 +96,10 @@
         {% endfor %}
 
     </section>
+    <div style="text-align:center; margin-top: 20px;">
+        <form action="{% url 'backoffice_restaurant_ajouter' %}" method="get">
+            <button type="submit">Ajouter un restaurant</button>
+        </form>
+    </div>
 </body>
 </html>
