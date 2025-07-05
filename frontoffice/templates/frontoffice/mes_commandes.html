@@ -17,13 +17,13 @@
                     <div class="overlap-group-3">
                         <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
                         <div class="group-11">
-                            <a href="{% url 'frontoffice_accueil' %}" class="text-wrapper-10">Accueil</a>
+                            <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
                             <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
-                            <a href="{% url 'frontoffice_restaurant' %}" class="text-wrapper-12">Restaurant</a>
+                            <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
                             <a href="#about" class="text-wrapper-12">A propos</a>
                         </div>
                         <div class="icons-right">
-                            <a href="{% url 'frontoffice_connexion' %}" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+                            <a href="{% url 'connexion' %}" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
                             <a href="#" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
                             <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
                             <nav id="hamburger-menu" class="hamburger-menu">
@@ -37,7 +37,7 @@
                                     </li>
                                     <li><a href="#">Panier</a></li>
                                     <li><a href="#about">A propos</a></li>
-                                    <li><a href="{% url 'frontoffice_connexion' %}">Connexion</a></li>
+                                    <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
                                 </ul>
                             </nav>
                         </div>

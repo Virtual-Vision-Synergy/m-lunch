@@ -25,40 +25,17 @@
           <div class="overlap-group-3">
             <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
             <div class="group-11">
-              <a href="{% url 'frontoffice_accueil' %}" class="text-wrapper-10">Accueil</a>
-              <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
-              <a href="{% url 'frontoffice_restaurant' %}" class="text-wrapper-12">Restaurant</a>
-              <a href="#about" class="text-wrapper-12">A propos</a>
-    <header>
-        <div>
-            <a href="/">Accueil</a>
-            {% if request.session.client_id %}
-                <a href="/mes-commandes/">Historiques des commandes</a>
-                <a href="/restaurants/">Restaurants</a>
-                <a href="/logout/">Déconnexion</a>
-                <a href="/panier/">Pannier</a>
-
-            {% else %}
-                <a href="/connexion/">Historiques des commandes</a>
-                <a href="/connexion/">Restaurants</a>
-                <a href="/connexion/">Pannier</a>
-            {% endif %}
-        </div>
-    </header>
-
-    <main>``
-        <section>
-            <h2>Bienvenue chez M'Lunch ! Un délicieux repas vous attend.</h2>
-            <p>Rapide, simple, délicieux.</p>
-            
-            <hr>
-            {% if not request.session.client_id %}
-                <a href="{% url 'connexion' %}" style="display: inline-block; padding: 10px 20px; background-color: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;">Commencer →</a>
-            {% else %}
-                <h2>Vous pouvez commencer a naviguer dans les restaurants pour voir leurs menus et passer une commande.</h2>
-            {% endif %}
-            <div id="restaurants-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                <!-- Restaurant images will be loaded here -->
+              {% if request.session.client_id %}
+                <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
+                <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
+                <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
+                <a href="#about" class="text-wrapper-12">A propos</a>
+              {% else %}
+                <a href="{% url 'connexion' %}" class="text-wrapper-10">Accueil</a>
+                <a href="{% url 'connexion' %}" class="text-wrapper-11">Commandes</a>
+                <a href="{% url 'connexion' %}" class="text-wrapper-12">Restaurant</a>
+                <a href="{% url 'connexion' %}" class="text-wrapper-12">A propos</a>
+              {% endif %}
             </div>
             <div class="icons-right">
               <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
@@ -76,7 +53,7 @@
                   </li>
                   <li><a href="panier.html">Panier</a></li>
                   <li><a href="#about">A propos</a></li>
-                  <li><a href="login.html">Connexion</a></li>
+                  <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
                 </ul>
               </nav>
             </div>
@@ -91,10 +68,12 @@
     <div class="texte-gauche">
       <h1>Bienvenue chez <span>M'Lunch</span> Un délicieux repas vous attend !</h1>
       <p>Rapide, simple, délicieux.</p>
-      <a href="{% url 'frontoffice_connexion' %}" class="btn-commencer" style="display: inline-flex; align-items: center; text-decoration: none;">
+      {% if not request.session.client_id %}
+      <a href="{% url 'connexion' %}" class="btn-commencer" style="display: inline-flex; align-items: center; text-decoration: none;">
         <span>Commencer</span>
         <img src="{% static 'img/icones/fleche.svg' %}" alt="Aide" style="margin-left: 6px; vertical-align: middle;" />
       </a>
+      {% endif %}
     </div>
     <div class="image-droite">
       <img src="{% static 'img/Humans/bi.png' %}" alt="Repas délicieux" />
