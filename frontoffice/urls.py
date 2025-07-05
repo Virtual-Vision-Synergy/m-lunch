@@ -17,7 +17,7 @@ urlpatterns = [
     path('api/all_restaurants/', restaurant_views.all_restaurants, name='all_restaurants'),
 
     # Commandes
-    path('mes-commandes/', commande_views.mes_commandes, name='mes_commandes'),
+        path('mes-commandes/', commande_views.mes_commandes, name='mes_commandes'),
     path('commandes/en-cours/', commande_views.commandes_en_cours, name='commandes_en_cours'),
     path('commandes/<int:commande_id>/', commande_views.detail_commande, name='detail_commande'),
     path('api/commandes/<int:commande_id>/annuler/', commande_views.annuler_commande, name='annuler_commande'),
