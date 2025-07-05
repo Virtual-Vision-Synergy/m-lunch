@@ -14,24 +14,30 @@
         <div>
             <a href="/">Accueil</a>
             {% if request.session.client_id %}
-                <a href="#">Livraison</a>
-                <a href="/restaurant/">Restaurant</a>
+                <a href="/mes-commandes/">Historiques des commandes</a>
+                <a href="/restaurants/">Restaurants</a>
+                <a href="/logout/">Déconnexion</a>
+                <a href="/panier/">Pannier</a>
+
             {% else %}
-                <a href="/connexion/">Livraison</a>
-                <a href="/connexion/">Restaurant</a>
-            {% endif %} 
+                <a href="/connexion/">Historiques des commandes</a>
+                <a href="/connexion/">Restaurants</a>
+                <a href="/connexion/">Pannier</a>
+            {% endif %}
         </div>
     </header>
 
-    <main>
+    <main>``
         <section>
             <h2>Bienvenue chez M'Lunch ! Un délicieux repas vous attend.</h2>
             <p>Rapide, simple, délicieux.</p>
             
             <hr>
-            
-            <a href="{% url 'connexion' %}" style="display: inline-block; padding: 10px 20px; background-color: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;">Commencer →</a>
-            
+            {% if not request.session.client_id %}
+                <a href="{% url 'connexion' %}" style="display: inline-block; padding: 10px 20px; background-color: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;">Commencer →</a>
+            {% else %}
+                <h2>Vous pouvez commencer a naviguer dans les restaurants pour voir leurs menus et passer une commande.</h2>
+            {% endif %}
             <div id="restaurants-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                 <!-- Restaurant images will be loaded here -->
             </div>

@@ -4,7 +4,7 @@ from django.db.models import Q
 
 from frontoffice.views.commande_views import authentification_requise
 from mlunch.core.models import Restaurant, Zone, ZoneClient
-from mlunch.core.services import RestaurantService, ZoneService, RepasService
+from mlunch.core.services import RestaurantService, ZoneService, RepasService, CommandeService
 
 
 def restaurant_list(request):
@@ -29,22 +29,38 @@ def restaurant_list(request):
     })
 
 
-def restaurant_detail(request, restaurant_id):
-    """Détail d'un restaurant avec ses repas"""
-    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
-    repas_disponibles = RepasService.list_repas_by_restaurant(restaurant_id)
+# def restaurant_detail(request, restaurant_id):
+#     """Détail d'un restaurant avec ses repas"""
+#     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+#     repas_disponibles = RepasService.list_repas_by_restaurant(restaurant_id)
 
-    # Organiser les repas par type
-    repas_par_type = {}
-    for repas in repas_disponibles:
-        type_nom = repas.type.nom if repas.type else 'Autres'
-        if type_nom not in repas_par_type:
-            repas_par_type[type_nom] = []
-        repas_par_type[type_nom].append(repas)
+#     repas_par_type = {}
+#     for repas in repas_disponibles:
+#         type_nom = repas.type.nom if repas.type else 'Autres'
+#         if type_nom not in repas_par_type:
+#             repas_par_type[type_nom] = []
+#         repas_par_type[type_nom].append(repas)
+
+#     return render(request, 'frontoffice/restaurant_detail.html', {
+#         'restaurant': restaurant,
+#         'repas_par_type': repas_par_type
+#     })
+
+def restaurant_detail(request, restaurant_id):
+    selected_type = request.GET.get('type')
+
+    data = RestaurantService.get_repas_for_restaurant(restaurant_id, selected_type)
+    if "error" in data:
+        return render(request, 'frontoffice/restaurant_detail.html', {
+            'error': data["error"]
+        })
 
     return render(request, 'frontoffice/restaurant_detail.html', {
-        'restaurant': restaurant,
-        'repas_par_type': repas_par_type
+        'restaurant': data['restaurant'],
+        'repas': data['repas'],
+        'note': data['note'],
+        'types': data['types'],
+        'selected_type': data['selected_type']
     })
 
 
@@ -127,3 +143,48 @@ def barre_recherche_view(request):
     }
 
     return render(request, 'frontoffice/barre_recherche.html', context)
+
+
+
+def restaurants_geojson(request):
+    client_id = request.session.get('client_id')
+    if not client_id:
+        return JsonResponse({'error': 'Non connecté'}, status=401)
+
+    data = RestaurantService.get_restaurants_by_client_zones(client_id)
+    return JsonResponse(data)
+
+def mes_commandes(request):
+    client_id = request.session.get("client_id")
+
+    commandes_data = CommandeService.get_commandes_by_client(client_id)
+    return render(request, 'frontoffice/mes_commandes.html', {
+        'commandes': commandes_data
+    })
+
+def detail_commande(request, commande_id):
+    data = CommandeService.get_commande_detail(commande_id)
+    if "error" in data:
+        return render(request, 'frontoffice/detail_commande.html', {
+            'error': data["error"]
+        })
+
+    return render(request, 'frontoffice/detail_commande.html', {
+        'commande': data['commande'],
+        'repas': data['repas'],
+        'statut': data['statut'],
+        'total': data['total']
+    })
+
+def api_zone_from_coord(request):
+    try:
+        lat = float(request.GET.get('lat'))
+        lon = float(request.GET.get('lon'))
+    except (TypeError, ValueError):
+        return JsonResponse({'success': False, 'error': 'Coordonnées invalides'})
+
+    zone = ZoneService.get_zone_by_coord(lat, lon)
+    if zone:
+        return JsonResponse({'success': True, 'nom': zone['nom'], 'zone_id': zone['id']})
+    else:
+        return JsonResponse({'success': False})

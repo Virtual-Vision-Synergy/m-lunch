@@ -19,8 +19,8 @@ def connexion_view(request):
         try:
             client = Client.objects.get(email=email)
             if password == client.mot_de_passe:
-                request.session['client_id'] = client.id  # simple session login
-                return redirect('restaurant_list')  # change to your home URL name
+                request.session['client_id'] = client.id  
+                return redirect('/')  
             else:
                 error_message = "Mot de passe incorrect."
         except Client.DoesNotExist:
@@ -29,3 +29,10 @@ def connexion_view(request):
     return render(request, 'frontoffice/connexion.html', {
         'error_message': error_message
     })
+
+def logout_view(request):
+    try:
+        del request.session['client_id']  # remove the client_id from the session
+    except KeyError:
+        pass
+    return redirect('/')  # Redirect to the home page after logout

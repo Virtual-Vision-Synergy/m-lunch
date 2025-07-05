@@ -3,7 +3,6 @@ from django.shortcuts import render, redirect
 
 from mlunch.core.services import ClientService
 
-
 def signin_view(request):
     return render(request, 'frontoffice/signin.html')
 def signin(request):
