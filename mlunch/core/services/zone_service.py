@@ -1,9 +1,7 @@
 import pdb
 from shapely import wkt
 from shapely.geometry import Point
-from django.db import transaction
-from django.utils.timezone import now
-from datetime import datetime
+
 
 from ..models import Zone, StatutZone, HistoriqueStatutZone
 
@@ -11,7 +9,7 @@ from ..models import Zone, StatutZone, HistoriqueStatutZone
 class ZoneService:
     @staticmethod
     def create_zone(nom, description, coordinates, initial_statut_id):
-        # pdb.set_trace()
+
         from django.db import transaction
         if not nom or len(nom) > 100 or not nom.strip():
             return {"error": "Nom de zone invalide"}
@@ -54,7 +52,7 @@ class ZoneService:
 
     @staticmethod
     def get_zone_by_coord(lat, lon, max_distance_m=5000):
-        # pdb.set_trace()
+        #pdb.set_trace()
         """
         Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).
         """
@@ -66,7 +64,7 @@ class ZoneService:
                 poly = wkt.loads(zone.zone)
                 if poly.contains(point):
                     return {'id': zone.id, 'nom': zone.nom}
-                dist = poly.distance(point) * 111320  # deg -> m (approx)
+                dist = poly.distance(point) * 111320
                 if closest_dist is None or dist < closest_dist:
                     closest_zone = zone
                     closest_dist = dist
@@ -78,7 +76,7 @@ class ZoneService:
 
     @staticmethod
     def list_zones_actives():
-        # pdb.set_trace()
+
         """Liste toutes les zones actives (dernier statut = actif)."""
         try:
             actifs = []

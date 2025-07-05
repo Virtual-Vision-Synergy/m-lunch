@@ -77,7 +77,33 @@ class RepasService:
                 "nom": r.nom,
                 "prix": r.prix,
                 "description": r.description,
-                "image": r.image
+                "image": r.image,
+                "type": r.type.nom,
+                "est_dispo": r.est_dispo
             } for r in repas]
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des repas par type : {str(e)}"}
+
+    @staticmethod
+    def list_repas_by_restaurant(restaurant_id):
+        # pdb.set_trace()
+        """Liste les repas proposés par un restaurant spécifique."""
+        try:
+            # Récupérer les repas via la table de liaison RestaurantRepas
+            repas = Repas.objects.filter(
+                restaurantrepas__restaurant_id=restaurant_id
+            ).select_related('type')
+
+            return [{
+                "id": r.id,
+                "nom": r.nom,
+                "prix": r.prix,
+                "description": r.description,
+                "image": r.image,
+                "type": r.type.nom,
+                "est_dispo": r.est_dispo
+            } for r in repas]
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des repas du restaurant : {str(e)}"}
+
+

@@ -506,3 +506,77 @@ class RestaurantService:
             }
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des commandes filtrées du restaurant : {str(e)}"}
+
+    @staticmethod
+    def search_restaurants(secteur=None, nom=None, adresse=None):
+        """
+        Recherche de restaurants par secteur (zone), nom ou adresse.
+        Retourne les restaurants avec les informations détaillées incluant la zone.
+        """
+        try:
+            from django.db.models import Q, Avg
+            from django.contrib.gis.geos import Point
+            import re
+
+            # Base queryset avec les restaurants actifs
+            qs = Restaurant.objects.all()
+
+            # Filtrer par secteur (zone)
+            if secteur:
+                qs = qs.filter(zonerestaurant__zone__nom__icontains=secteur)
+
+            # Filtrer par nom de restaurant
+            if nom:
+                qs = qs.filter(nom__icontains=nom)
+
+            # Filtrer par adresse
+            if adresse:
+                qs = qs.filter(adresse__icontains=adresse)
+
+            # Récupérer les restaurants distincts avec leurs informations
+            restaurants = qs.distinct().select_related().prefetch_related('zonerestaurant_set__zone')
+
+            result = []
+            for restaurant in restaurants:
+                # Récupérer les coordonnées
+                longitude = latitude = None
+                if restaurant.geo_position:
+                    try:
+                        # Format: "POINT(longitude latitude)"
+                        coords_str = restaurant.geo_position.replace("POINT(", "").replace(")", "")
+                        longitude, latitude = map(float, coords_str.split())
+                    except Exception:
+                        pass
+
+                # Récupérer le nom de la zone
+                zone_nom = None
+                zone_relations = restaurant.zonerestaurant_set.all()
+                if zone_relations:
+                    zone_nom = zone_relations[0].zone.nom
+
+                # Note moyenne (placeholder - peut être calculée si des évaluations existent)
+                note_moyenne = 4.5  # Valeur par défaut
+
+                result.append({
+                    'id': restaurant.id,
+                    'nom': restaurant.nom,
+                    'adresse': restaurant.adresse or '',
+                    'image': restaurant.image or '',
+                    'longitude': longitude,
+                    'latitude': latitude,
+                    'note_moyenne': note_moyenne,
+                    'zone_nom': zone_nom,
+                    'description': restaurant.description or ''
+                })
+
+            return result
+
+        except Exception as e:
+            return {"error": f"Erreur lors de la recherche de restaurants : {str(e)}"}
+
+    @staticmethod
+    def search_restaurants_by_address(adresse):
+        """
+        Recherche spécifique par adresse.
+        """
+        return RestaurantService.search_restaurants(adresse=adresse)

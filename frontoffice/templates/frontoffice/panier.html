@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mon Panier</title>
+</head>
+<body>
+
+<h1>Mon Panier</h1>
+
+{% if items %}
+
+    <!-- Boutons -->
+    <p>
+        <button onclick="#">Actualiser</button>
+        <button onclick="#">Vider le panier</button>
+        <button onclick="#">Effectuer la commande</button>
+    </p>
+
+    {% for item in items %}
+        <h2>{{ item.nom_plat }}</h2>
+        {% if item.image %}
+            <img src="{{ item.image }}" alt="{{ item.nom_plat }}" width="100" /><br />
+        {% endif %}
+        {% if item.restaurant_nom %}
+            <p>Restaurant : {{ item.restaurant_nom }}</p>
+        {% endif %}
+        <p>Prix unitaire : {{ item.prix_unitaire|floatformat:0 }} FCFA</p>
+
+        <p>Quantité :
+            <button onclick="changeQuantity({{ item.item_id }}, -1)">-</button>
+            <span id="quantite-{{ item.item_id }}">{{ item.quantite }}</span>
+            <button onclick="changeQuantity({{ item.item_id }}, 1)">+</button>
+        </p>
+
+        <p>Total : {{ item.prix_total|floatformat:0 }} FCFA</p>
+        <p><button onclick="removeFromPanier({{ item.item_id }})">Supprimer</button></p>
+        <hr />
+    {% endfor %}
+
+    <h3>Récapitulatif</h3>
+    <p>Sous-total : {{ totals.sous_total|floatformat:0 }} FCFA</p>
+    <p>Frais de livraison : 
+        {% if totals.frais_livraison > 0 %}
+            {{ totals.frais_livraison|floatformat:0 }} FCFA
+        {% else %}
+            Gratuit
+        {% endif %}
+    </p>
+    <p>Total : {{ totals.total|floatformat:0 }} FCFA</p>
+    <p>Articles : {{ totals.quantite_totale }}</p>
+
+    <p>Point de récupération :</p>
+    <select id="point_recuperation" required>
+        <option value="">Choisir un point</option>
+        {% for point in points_recuperation %}
+            <option value="{{ point.id }}">{{ point.nom }}</option>
+        {% endfor %}
+    </select>
+
+    <p>Mode de paiement :</p>
+    <label><input type="radio" name="mode_paiement" value="espece" checked /> Espèces</label><br />
+    <label><input type="radio" name="mode_paiement" value="carte" /> Carte</label><br />
+    <label><input type="radio" name="mode_paiement" value="mobile" /> Mobile</label>
+
+    
+
+{% else %}
+    <h2>Votre panier est vide</h2>
+    <p>Parcourez notre menu et ajoutez des plats à votre panier.</p>
+    <a href="###">Voir le menu</a>
+{% endif %}
+
+<script>
+let panierModifications = {};
+
+function changeQuantity(itemId, delta) {
+    const quantiteElement = document.getElementById(`quantite-${itemId}`);
+    let currentQuantity = parseInt(quantiteElement.textContent);
+    let newQuantity = currentQuantity + delta;
+    if (newQuantity < 1) newQuantity = 1;
+
+    quantiteElement.textContent = newQuantity;
+    panierModifications[itemId] = newQuantity;
+}
+</script>
+
+</body>
+</html>
