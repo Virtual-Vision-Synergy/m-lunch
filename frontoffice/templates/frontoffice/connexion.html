@@ -1,39 +1,118 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Connexion</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connexion - M'Lunch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/login.css' %}" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
 </head>
 <body>
+  <div class="main-container login-flex-container">
+    <img class="illustration" src="{% static 'img/Humans/log.png' %}" alt="illustration">
+    <div class="login-container">
+      <div class="login-title">Welcome to</div>
+      <div class="login-subtitle">M'Lunch</div>
 
-<h2>Formulaire de Connexion</h2>
+      {% if error_message %}
+        <p class="error-message">{{ error_message }}</p>
+      {% endif %}
 
-{% if error_message %}
-    <p style="color: red;">{{ error_message }}</p>
-{% endif %}
+      <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrapper">
+            <img src="{% static 'img/icones/mail.svg' %}" alt="email icon">
+            <input type="email" id="email" name="email" placeholder="example@gmail.com" required />
+          </div>
+        </div>
 
-<form method="POST">
-    {% csrf_token %}
-    <p>
-        <label for="email">Adresse e-mail</label><br>
-        <input type="email" id="email" name="email" required>
-    </p>
-    <p>
-        <label for="password-field">Mot de passe</label><br>
-        <input type="password" id="password-field" name="password" required>
-        <button type="button" onclick="togglePassword()">👁️</button>
-    </p>
-    <button type="submit">Connexion</button>
-    <p>
-        <a href="/inscription">Pas encore inscrit ? Créez un compte</a>
-</form>
+        <div class="form-group">
+          <label for="password-field">Mot de passe</label>
+          <div class="input-wrapper">
+            <img src="{% static 'img/icones/cle.svg' %}" alt="password icon">
+            <input type="password" id="password-field" name="password" placeholder="***********" required />
+            <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+          </div>
+        </div>
 
-<script>
-function togglePassword() {
-    const passwordField = document.getElementById("password-field");
-    passwordField.type = passwordField.type === "password" ? "text" : "password";
-}
-</script>
+        <div class="form-options">
+          <label><input type="checkbox" /> Se souvenir de moi</label>
+          <a href="#">Mot de passe oublié ?</a>
+        </div>
 
+        <button type="submit" class="btn-login">Connexion</button>
+
+        <div class="register-link">
+          Vous n'avez pas de compte ? <a href="#" id="open-delivery-popup">S'inscrire</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="delivery-popup" class="popup-overlay">
+    <div class="popup-content">
+      <button class="close-popup">&times;</button>
+      <div class="popup-header">
+        <h2>Conditions de livraison</h2>
+      </div>
+      <div class="delivery-conditions-content">
+        <p><strong>Zone de livraison limitée</strong></p>
+        <p>M'Lunch ne livre pas dans toutes les zones. Nous avons des points de livraison prédéfinis. Vous devez choisir l'un de ces points lors de votre inscription.</p>
+        <p>Les commandes ne seront acceptées que si votre adresse correspond à l'un de nos points de livraison.</p>
+        <label class="checkbox-container">
+          <input type="checkbox" id="verify-zones-checkbox" />
+          <span class="checkmark"></span>
+          Veuillez vérifier les zones couvertes avant de continuer.
+        </label>
+      </div>
+      <button class="btn-delivery-continue" disabled onclick="window.location.href='/inscription'">Continuer l'inscription</button>
+    </div>
+  </div>
+
+  <script>
+    // Password toggle function
+    function togglePassword() {
+      const passwordField = document.getElementById("password-field");
+      passwordField.type = passwordField.type === "password" ? "text" : "password";
+    }
+
+    // JavaScript pour gérer l'ouverture et la fermeture du popup
+    const openDeliveryPopupButton = document.getElementById('open-delivery-popup');
+    const deliveryPopup = document.getElementById('delivery-popup');
+    const closePopupButton = document.querySelector('.close-popup');
+    const verifyZonesCheckbox = document.getElementById('verify-zones-checkbox');
+    const continueDeliveryButton = document.querySelector('.btn-delivery-continue');
+
+    if (openDeliveryPopupButton) {
+      openDeliveryPopupButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        deliveryPopup.classList.add('active');
+      });
+    }
+
+    if (closePopupButton) {
+      closePopupButton.addEventListener('click', function() {
+        deliveryPopup.classList.remove('active');
+      });
+    }
+
+    if (deliveryPopup) {
+      deliveryPopup.addEventListener('click', function(event) {
+        if (event.target === deliveryPopup) {
+          deliveryPopup.classList.remove('active');
+        }
+      });
+    }
+
+    if (verifyZonesCheckbox) {
+      verifyZonesCheckbox.addEventListener('change', function() {
+        continueDeliveryButton.disabled = !this.checked;
+      });
+    }
+  </script>
 </body>
 </html>

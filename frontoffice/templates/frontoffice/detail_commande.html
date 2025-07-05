@@ -1,13 +1,79 @@
-<h2>Commande #{{ commande.id }}</h2>
-<p>Date: {{ commande.cree_le }}</p>
-<p>Statut: {{ statut }}</p>
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail Commande #{{ commande.id }} - M'Lunch</title>
+    <link rel="stylesheet" href="{% static 'css/header.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/detail_commandes.css' %}" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="overlap-wrapper">
+      <div class="overlap-2">
+        <div class="group-8">
+          <div class="overlap-group-3">
+            <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+            <div class="group-11">
+              <a href="{% url 'frontoffice_accueil' %}" class="text-wrapper-10">Accueil</a>
+              <a href="#" class="text-wrapper-11">Livraison</a>
+              <a href="{% url 'frontoffice_restaurant' %}" class="text-wrapper-12">Restaurant</a>
+              <a href="#about" class="text-wrapper-12">A propos</a>
+            </div>
+            <div class="icons-right">
+              <a href="{% url 'frontoffice_connexion' %}" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+              <a href="#" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+              <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+              <nav id="hamburger-menu" class="hamburger-menu">
+                <ul>
+                  <li class="has-submenu">
+                    <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                    <ul class="submenu">
+                      <li><a href="#">Mes commandes</a></li>
+                      <li><a href="#">En cours</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="#">Panier</a></li>
+                  <li><a href="#about">A propos</a></li>
+                  <li><a href="{% url 'frontoffice_connexion' %}">Connexion</a></li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
-<h3>Détails des plats</h3>
-<ul>
-  {% for r in repas %}
-    <li>
-      {{ r.repas.nom }} × {{ r.quantite }} → {{ r.repas.prix|floatformat:0 }} Ar
-    </li>
-  {% endfor %}
-</ul>
-<p>Total: <strong>{{ total|floatformat:0 }} Ar</strong></p>
+  <div class="commande-detail-container">
+    <h2>Commande #{{ commande.id }}</h2>
+    <div class="commande-info">
+      <span>Date : {{ commande.cree_le }}</span>
+      <span>Statut : {{ statut }}</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Plat</th>
+          <th>Quantité</th>
+          <th>Prix unitaire</th>
+          <th>Sous-total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in repas %}
+        <tr>
+          <td class="plat-nom">{{ r.repas.nom }}</td>
+          <td class="plat-quantite">{{ r.quantite }}</td>
+          <td class="plat-prix">{{ r.repas.prix|floatformat:0 }} Ar</td>
+          <td class="plat-prix">{{ r.repas.prix|floatformat:0|add:"0"|floatformat:0|add:"0"|floatformat:0 }} Ar</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="total">Total : <strong>{{ total|floatformat:0 }} Ar</strong></div>
+  </div>
+</body>
+</html>
