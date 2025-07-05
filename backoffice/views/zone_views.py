@@ -7,7 +7,6 @@ from mlunch.core.models import Zone, ZoneRestaurant, ZoneClient
 import json
 
 def zone_list(request):
-    """Liste toutes les zones pour le backoffice"""
     zones = ZoneService.get_all_zones()
     return render(request, 'backoffice/zones_management.html', {
         'zones': zones

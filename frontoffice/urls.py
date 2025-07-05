@@ -1,10 +1,10 @@
 from django.urls import path
 
-from .views import signin_views, views, zone_views, restaurant_views, panier_views
+from .views import signin_views, views, zone_views, restaurant_views, panier_views,commande_views
 
 urlpatterns = [
     # Pages principales
-    path('', views.accueil, name='index'),
+    path('', views.accueil, name='frontoffice_index'),
 
     path('connexion/', views.connexion_view, name='connexion'),
     path('signin/', signin_views.signin, name='signin'),
@@ -17,12 +17,11 @@ urlpatterns = [
     path('api/all_restaurants/', restaurant_views.all_restaurants, name='all_restaurants'),
 
     # Commandes
-    #path('mes-commandes/', commande_views.mes_commandes, name='mes_commandes'),
-    #path('commandes/en-cours/', commande_views.commandes_en_cours, name='commandes_en_cours'),
-    #path('commandes/historique/', commande_views.historique_commandes, name='historique_commandes'),
-    #path('commandes/<int:commande_id>/', commande_views.detail_commande, name='detail_commande'),
-    #path('api/commandes/<int:commande_id>/annuler/', commande_views.annuler_commande, name='annuler_commande'),
-    #path('api/commandes/<int:commande_id>/reorder/', commande_views.reorder_commande, name='reorder_commande'),
+    path('mes-commandes/', commande_views.mes_commandes, name='mes_commandes'),
+    path('commandes/en-cours/', commande_views.commandes_en_cours, name='commandes_en_cours'),
+    path('commandes/<int:commande_id>/', commande_views.detail_commande, name='detail_commande'),
+    path('api/commandes/<int:commande_id>/annuler/', commande_views.annuler_commande, name='annuler_commande'),
+    path('api/commandes/<int:commande_id>/reorder/', commande_views.reorder_commande, name='reorder_commande'),
 
     # Panier
     path('panier/', panier_views.panier_view, name='panier'),
