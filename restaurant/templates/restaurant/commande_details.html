@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails commande #{{ commande.id }} - {{ restaurant.nom }} - M'Lunch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #e74c3c;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .btn-retour {
+            background-color: #c0392b;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .btn-retour:hover {
+            background-color: #a93226;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .commande-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .commande-card h2 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+        .commande-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .info-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+        }
+        .info-card h4 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+        }
+        .info-card p {
+            margin: 0;
+            color: #666;
+        }
+        .plats-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .plats-section h3 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+        .plats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        .plats-table th,
+        .plats-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .plats-table th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: bold;
+        }
+        .plat-row:hover {
+            background-color: #f1f1f1;
+        }
+        .total-section {
+            text-align: right;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-top: 1rem;
+        }
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .statut-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .statut-section h3 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+        .statut-actuel {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .badge {
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            color: white;
+            font-weight: bold;
+        }
+        .badge-en-cours { background-color: #f39c12; }
+        .badge-en { background-color: #f39c12; }
+        .badge-cours { background-color: #f39c12; }
+        .badge-terminee { background-color: #27ae60; }
+        .badge-terminé { background-color: #27ae60; }
+        .badge-termine { background-color: #27ae60; }
+        .badge-annulee { background-color: #c0392b; }
+        .badge-annulé { background-color: #c0392b; }
+        .badge-annule { background-color: #c0392b; }
+        .badge-en-attente { background-color: #95a5a6; }
+        .badge-attente { background-color: #95a5a6; }
+        .badge-preparation { background-color: #e67e22; }
+        .badge-pret { background-color: #3498db; }
+        .badge-prêt { background-color: #3498db; }
+        .badge-livre { background-color: #2ecc71; }
+        .badge-livré { background-color: #2ecc71; }
+        .badge-default { background-color: #7f8c8d; color: white; }
+        .modifier-statut {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .select-statut {
+            padding: 0.5rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .btn-modifier {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        .btn-modifier:hover {
+            background-color: #2980b9;
+        }
+        .btn-modifier:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .messages {
+            margin-bottom: 1rem;
+        }
+        .messages .alert {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Détails commande #{{ commande.id }}</h1>
+        <a href="{% url 'restaurant_dashboard' %}" class="btn-retour">← Retour au tableau de bord</a>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Informations générales de la commande -->
+        <div class="commande-card">
+            <h2>Informations de la commande</h2>
+            <div class="commande-info">
+                <div class="info-card">
+                    <h4>Client</h4>
+                    <p>{{ commande.client.prenom }} {{ commande.client.nom }}</p>
+                    <p>{{ commande.client.email }}</p>
+                    {% if commande.client.contact %}
+                        <p>{{ commande.client.contact }}</p>
+                    {% endif %}
+                </div>
+                <div class="info-card">
+                    <h4>Date de commande</h4>
+                    <p>{{ commande.cree_le|date:"d/m/Y à H:i" }}</p>
+                </div>
+                <div class="info-card">
+                    <h4>Point de récupération</h4>
+                    <p>{{ commande.point_recup.nom }}</p>
+                </div>
+                {% if commande.mode_paiement %}
+                <div class="info-card">
+                    <h4>Mode de paiement</h4>
+                    <p>{{ commande.mode_paiement.nom }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Liste des plats commandés -->
+        <div class="plats-section">
+            <h3>Plats commandés ({{ restaurant.nom }})</h3>
+            <table class="plats-table">
+                <thead>
+                    <tr>
+                        <th>Plat</th>
+                        <th>Type</th>
+                        <th>Prix unitaire</th>
+                        <th>Quantité</th>
+                        <th>Sous-total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for repas_info in repas_enrichis %}
+                        <tr class="plat-row">
+                            <td>
+                                <strong>{{ repas_info.repas_cmd.repas.nom }}</strong>
+                                {% if repas_info.repas_cmd.repas.description %}
+                                    <br><small style="color: #666;">{{ repas_info.repas_cmd.repas.description|truncatewords:10 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ repas_info.repas_cmd.repas.type.nom }}</td>
+                            <td>{{ repas_info.repas_cmd.repas.prix }} Ar</td>
+                            <td>{{ repas_info.repas_cmd.quantite }}</td>
+                            <td><strong>{{ repas_info.sous_total }} Ar</strong></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="total-section">
+                <div class="total-amount">
+                    Total pour {{ restaurant.nom }} : {{ total_restaurant }} Ar
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestion du statut -->
+        <div class="statut-section">
+            <h3>Gestion du statut</h3>
+            <div class="statut-actuel">
+                <strong>Statut actuel :</strong>
+                {% if statut_actuel %}
+                    <span class="badge badge-{{ statut_actuel.appellation|lower|slugify }}">
+                        {{ statut_actuel.appellation }}
+                    </span>
+                {% else %}
+                    <span class="badge badge-en-attente">En attente</span>
+                {% endif %}
+            </div>
+
+            <div class="modifier-statut">
+                <label for="nouveau-statut"><strong>Changer le statut :</strong></label>
+                <select id="nouveau-statut" class="select-statut">
+                    <option value="">-- Sélectionner un statut --</option>
+                    {% for statut in statuts_disponibles %}
+                        <option value="{{ statut.id }}"
+                                {% if statut_actuel and statut.id == statut_actuel.id %}selected{% endif %}>
+                            {{ statut.appellation }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button id="btn-modifier-statut" class="btn-modifier" data-commande-id="{{ commande.id }}">
+                    Modifier le statut
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnModifier = document.getElementById('btn-modifier-statut');
+            const selectStatut = document.getElementById('nouveau-statut');
+
+            btnModifier.addEventListener('click', function() {
+                const commandeId = this.getAttribute('data-commande-id');
+                const nouveauStatutId = selectStatut.value;
+
+                if (!nouveauStatutId) {
+                    alert('Veuillez sélectionner un statut');
+                    return;
+                }
+
+                // Désactiver le bouton pendant la requête
+                btnModifier.disabled = true;
+                btnModifier.textContent = 'Modification...';
+
+                fetch('{% url "modifier_statut_commande" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        commande_id: commandeId,
+                        statut_id: nouveauStatutId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Erreur: ' + data.error);
+                    } else {
+                        // Recharger la page pour afficher le nouveau statut
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Erreur de connexion. Veuillez réessayer.');
+                })
+                .finally(() => {
+                    // Réactiver le bouton
+                    btnModifier.disabled = false;
+                    btnModifier.textContent = 'Modifier le statut';
+                });
+            });
+        });
+
+        // Fonction pour récupérer le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

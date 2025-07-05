@@ -67,6 +67,7 @@ class StatutRestaurant(models.Model):
 
 class Restaurant(models.Model):
     nom = models.CharField(max_length=150, unique=True)
+    mot_de_passe = models.CharField(max_length=128)
     adresse = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     image = models.TextField(blank=True, null=True)

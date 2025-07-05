@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'mlunch.core',
     'backoffice',
     'frontoffice',
+    'restaurant',
 ]
 
 MIDDLEWARE = [

@@ -1,23 +1,6 @@
-import pdb
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.core.validators import validate_email
-from shapely import wkt
-from shapely.geometry import Point
-from django.db import transaction
-from django.utils.timezone import now
-from datetime import datetime
-
 from ..models import (
-    Client, StatutCommande, Zone, ZoneClient, PointRecup,
-    Commande, HistoriqueStatutCommande,
-    StatutRestaurant, Restaurant, HistoriqueStatutRestaurant,
-    TypeRepas, Repas,
-    StatutLivreur, Livreur, HistoriqueStatutLivreur,
-    StatutZone, HistoriqueStatutZone,
-    StatutLivraison, Livraison, HistoriqueStatutLivraison,
-    CommandeRepas, RestaurantRepas, ZoneRestaurant,
-    Commission, Horaire, HoraireSpecial,
-    Promotion, LimiteCommandesJournalieres
+    Repas, DisponibiliteRepas,
+    RestaurantRepas
 )
 
 class RepasService:
@@ -106,4 +89,36 @@ class RepasService:
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des repas du restaurant : {str(e)}"}
 
+    @staticmethod
+    def switch_disponibilite(repas_id, restaurant_id):
+        """
+        Change la disponibilité d'un repas pour un restaurant donné
+        """
+        try:
+            # Vérifier que le repas appartient au restaurant
+            restaurant_repas = RestaurantRepas.objects.get(
+                repas_id=repas_id,
+                restaurant_id=restaurant_id
+            )
 
+            # Récupérer ou créer l'entrée de disponibilité
+            disponibilite, created = DisponibiliteRepas.objects.get_or_create(
+                repas=restaurant_repas.repas,
+                defaults={'est_dispo': True}
+            )
+
+            # Inverser la disponibilité
+            disponibilite.est_dispo = not disponibilite.est_dispo
+            disponibilite.save()
+
+            return {
+                "success": True,
+                "repas_id": repas_id,
+                "nouvelle_disponibilite": disponibilite.est_dispo,
+                "message": f"Repas {'activé' if disponibilite.est_dispo else 'désactivé'} avec succès"
+            }
+
+        except RestaurantRepas.DoesNotExist:
+            return {"error": "Ce repas n'appartient pas à votre restaurant"}
+        except Exception as e:
+            return {"error": f"Erreur lors du changement de disponibilité : {str(e)}"}

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - {{ restaurant.nom }} - M'Lunch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #e74c3c;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .logout-btn {
+            background-color: #c0392b;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .logout-btn:hover {
+            background-color: #a93226;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .welcome-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .welcome-card h2 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .action-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .action-card:hover {
+            transform: translateY(-5px);
+        }
+        .action-card h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .action-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        .action-btn:hover {
+            background-color: #c0392b;
+        }
+        .messages {
+            margin-bottom: 1rem;
+        }
+        .messages .alert {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .plats-section {
+            margin-bottom: 2rem;
+        }
+        .plats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .plat-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        .plat-card:hover {
+            transform: translateY(-5px);
+        }
+        .plat-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .plat-image-placeholder {
+            width: 100%;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-size: 2rem;
+        }
+        .plat-info {
+            padding: 1rem;
+        }
+        .plat-type {
+            font-size: 0.9rem;
+            color: #777;
+        }
+        .plat-description {
+            margin: 0.5rem 0;
+            color: #333;
+        }
+        .plat-prix {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .plat-actions {
+            margin-top: 1rem;
+        }
+        .btn-action {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-action:hover {
+            background-color: #c0392b;
+        }
+        .no-plats {
+            text-align: center;
+            padding: 2rem;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 10px;
+        }
+        /* Styles pour le toggle de disponibilité */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #e74c3c;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .plat-disponibilite {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .disponibilite-text {
+            margin-left: 0.5rem;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        /* Styles pour la section des commandes */
+        .commandes-section {
+            margin-top: 2rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .commandes-section h2 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+
+        .commandes-table-container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .commandes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        .commandes-table th,
+        .commandes-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .commandes-table th {
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        .commande-row:hover {
+            background-color: #f1f1f1;
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .badge-en-cours {
+            background-color: #f39c12;
+        }
+
+        .badge-terminee {
+            background-color: #27ae60;
+        }
+
+        .badge-annulee {
+            background-color: #c0392b;
+        }
+
+        .no-commandes {
+            text-align: center;
+            padding: 2rem;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 10px;
+        }
+
+        .btn-detail {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+
+        .btn-detail:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>M'Lunch - Espace Restaurant</h1>
+        <a href="{% url 'restaurant_logout' %}" class="logout-btn">Déconnexion</a>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="welcome-card">
+            <h2>Bienvenue, {{ restaurant.nom }} !</h2>
+            <p><strong>Adresse :</strong> {{ restaurant.adresse|default:"Non renseignée" }}</p>
+            <p><strong>Description :</strong> {{ restaurant.description|default:"Aucune description" }}</p>
+            <p><strong>Position géographique :</strong> {{ restaurant.geo_position }}</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Commandes du jour</h3>
+                <div class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Commandes en cours</h3>
+                <div class="stat-value">{{ nombre_commandes }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Revenus du jour</h3>
+                <div class="stat-value">0 Ar</div>
+            </div>
+            <div class="stat-card">
+                <h3>Plats disponibles</h3>
+                <div class="stat-value">{{ nombre_plats }}</div>
+            </div>
+        </div>
+
+        <!-- Section des plats du restaurant -->
+        <div class="plats-section">
+            <h2>Mes plats</h2>
+            {% if plats_avec_dispo %}
+                <div class="plats-grid">
+                    {% for plat_info in plats_avec_dispo %}
+                        <div class="plat-card" data-repas-id="{{ plat_info.repas.id }}">
+                            {% if plat_info.repas.image %}
+                                <img src="{{ plat_info.repas.image }}" alt="{{ plat_info.repas.nom }}" class="plat-image">
+                            {% else %}
+                                <div class="plat-image-placeholder">
+                                    <span>📸</span>
+                                </div>
+                            {% endif %}
+                            <div class="plat-info">
+                                <h4>{{ plat_info.repas.nom }}</h4>
+                                <p class="plat-type">{{ plat_info.repas.type.nom }}</p>
+                                <p class="plat-description">{{ plat_info.repas.description|default:"Aucune description"|truncatewords:15 }}</p>
+                                <div class="plat-prix">{{ plat_info.repas.prix }} Ar</div>
+
+                                <!-- Toggle de disponibilité -->
+                                <div class="plat-disponibilite">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox"
+                                               class="toggle-disponibilite"
+                                               data-repas-id="{{ plat_info.repas.id }}"
+                                               {% if plat_info.est_disponible %}checked{% endif %}>
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="disponibilite-text">
+                                        {% if plat_info.est_disponible %}
+                                            Disponible
+                                        {% else %}
+                                            Indisponible
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-plats">
+                    <p>Aucun plat configuré pour votre restaurant.</p>
+                    <a href="#" class="action-btn">Ajouter un plat</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Section des commandes du restaurant -->
+        <div class="commandes-section">
+            <h2>Commandes récentes</h2>
+            {% if commandes %}
+                <div class="commandes-table-container">
+                    <table class="commandes-table">
+                        <thead>
+                            <tr>
+                                <th>N° Commande</th>
+                                <th>Client</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande_info in commandes %}
+                                <tr class="commande-row">
+                                    <td class="commande-id">#{{ commande_info.commande.id }}</td>
+                                    <td class="client-info">
+                                        {{ commande_info.commande.client.prenom }} {{ commande_info.commande.client.nom }}
+                                    </td>
+                                    <td class="date-commande">
+                                        {{ commande_info.commande.cree_le|date:"d/m/Y H:i" }}
+                                    </td>
+                                    <td class="statut-commande">
+                                        <span class="badge badge-{{ commande_info.statut|lower }}">
+                                            {{ commande_info.statut }}
+                                        </span>
+                                    </td>
+                                    <td class="actions-commande">
+                                        <a href="{% url 'commande_details' commande_info.commande.id %}" class="btn-detail">
+                                            Voir détails
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-commandes">
+                    <p>Aucune commande récente.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Gestion des boutons toggle de disponibilité
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggles = document.querySelectorAll('.toggle-disponibilite');
+
+            toggles.forEach(toggle => {
+                toggle.addEventListener('change', function() {
+                    const repasId = this.getAttribute('data-repas-id');
+                    const isChecked = this.checked;
+
+                    // Envoyer la requête AJAX
+                    fetch('{% url "toggle_disponibilite_repas" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            repas_id: repasId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            // En cas d'erreur, remettre le toggle dans sa position précédente
+                            this.checked = !isChecked;
+                            alert('Erreur: ' + data.error);
+                        } else {
+                            // Mettre à jour le texte de disponibilité
+                            const platCard = this.closest('.plat-card');
+                            const disponibiliteText = platCard.querySelector('.disponibilite-text');
+
+                            if (data.nouvelle_disponibilite) {
+                                disponibiliteText.textContent = 'Disponible';
+                                disponibiliteText.style.color = '#155724';
+                            } else {
+                                disponibiliteText.textContent = 'Indisponible';
+                                disponibiliteText.style.color = '#721c24';
+                            }
+
+                            // Afficher un message de succès temporaire
+                            showTemporaryMessage(data.message, 'success');
+                        }
+                    })
+                    .catch(error => {
+                        // En cas d'erreur réseau, remettre le toggle dans sa position précédente
+                        this.checked = !isChecked;
+                        console.error('Erreur:', error);
+                        alert('Erreur de connexion. Veuillez réessayer.');
+                    });
+                });
+            });
+        });
+
+        // Fonction pour récupérer le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Fonction pour afficher un message temporaire
+        function showTemporaryMessage(message, type) {
+            const messagesContainer = document.querySelector('.messages') || createMessagesContainer();
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+
+            messagesContainer.appendChild(alertDiv);
+
+            // Supprimer le message après 3 secondes
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        // Créer le conteneur de messages s'il n'existe pas
+        function createMessagesContainer() {
+            const container = document.querySelector('.container');
+            const messagesDiv = document.createElement('div');
+            messagesDiv.className = 'messages';
+            container.insertBefore(messagesDiv, container.firstChild);
+            return messagesDiv;
+        }
+    </script>
+</body>
+</html>
