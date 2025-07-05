@@ -121,6 +121,7 @@ class CommandeService:
             # Prix total via la fonction utilitaire
             prix_total = CommandeService.get_total_commande(commande_id)
             return {
+                "id": commande_id,  # Ajouter l'ID de la commande
                 "client": f"{client.prenom} {client.nom}",
                 "secteur": secteur,
                 "restaurant": restaurant_nom,

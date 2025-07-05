@@ -19,6 +19,8 @@ urlpatterns = [
     path('commandes/', commande_views.commande_list, name='commande_list'),
     path('commandes/<int:commande_id>/', commande_views.commande_detail, name='commande_detail'),
     path('commandes/en-attente/', commande_views.commandes_en_attente, name='commandes_en_attente'),
+    path('commandes/<int:commande_id>/attribuer/', commande_views.commande_attribuer, name='commande_attribuer'),
+    path('commandes/<int:commande_id>/attribuer/confirmer/', commande_views.commande_attribuer_confirmer, name='commande_attribuer_confirmer'),
     path('api/commandes/<int:commande_id>/statut/', commande_views.commande_update_statut, name='commande_update_statut'),
 
     # Gestion des zones

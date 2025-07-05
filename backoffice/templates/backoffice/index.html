@@ -39,10 +39,9 @@
                     <td>{{ commande.nombre_repas }}</td>
                     <td>{{ commande.prix_total }}</td>
                     <td>
-                        <form method="post" action="#">
-                            {% csrf_token %}
-                            <button type="submit">Attribuer</button>
-                        </form>
+                        <a href="{% url 'commande_attribuer' commande.id %}" class="btn-attribuer">
+                            Attribuer
+                        </a>
                     </td>
                 </tr>
                 {% empty %}
