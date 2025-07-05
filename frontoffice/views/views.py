@@ -11,6 +11,17 @@ from mlunch.core.models import Zone, Client, ZoneClient  # Import du modèle de 
 from shapely import wkt
 from mlunch.core.services import ClientService  
 from mlunch.core.services import ZoneService    
+# randy
+from django.shortcuts import render, redirect
+
+from mlunch.core.models import Client
+
+
+def index(request):
+    return render(request, 'frontoffice/index.html')
+
+def accueil(request):
+    return render(request, 'frontoffice/accueil.html')
 
 def connexion_view(request):
     error_message = None
@@ -24,6 +35,8 @@ def connexion_view(request):
             if password == client.mot_de_passe:
                 request.session['client_id'] = client.id  # simple session login
                 return redirect('frontoffice_restaurant')  # change to your home URL name
+            #randy le eo ambany
+                return redirect('restaurant_list')  # change to your home URL name
             else:
                 error_message = "Mot de passe incorrect."
         except Client.DoesNotExist:

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des zones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Favicon pour éviter l'erreur 404 -->
+    <link rel="icon" href="data:,">
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6">Gestion des Zones</h1>
+        
+        <!-- Liste des zones -->
+        <div id="zones-list" class="mb-6">
+            <!-- Rempli dynamiquement par JavaScript -->
+        </div>
+
+        <!-- Bouton pour ajouter une zone -->
+        <button id="add-zone-btn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">Ajouter une zone</button>
+    </div>
+
+    <!-- Modale pour ajouter/modifier une zone -->
+    <div id="zone-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 id="modal-title" class="text-xl font-semibold mb-4">Ajouter une zone</h2>
+            <form id="zone-form">
+                <div class="mb-4">
+                    <label for="zone-nom" class="block text-sm font-medium text-gray-700">Nom du secteur</label>
+                    <input type="text" id="zone-nom" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="zone-entites" class="block text-sm font-medium text-gray-700">Entités de référence</label>
+                    <select id="zone-entites" multiple class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" size="5">
+                        <!-- Rempli dynamiquement -->
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="zone-description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="zone-description" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="4"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="zone-coordinates" class="block text-sm font-medium text-gray-700">Coordonnées (JSON)</label>
+                    <textarea id="zone-coordinates" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder='[[lon1, lat1], [lon2, lat2], [lon3, lat3]]' required></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="cancel-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Annuler</button>
+                    <button type="submit" id="save-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale pour les détails d'une zone -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+            <h2 class="text-xl font-semibold mb-4">Détails de la zone</h2>
+            <div id="detail-content" class="mb-4">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <!-- Formulaire de filtrage temporel -->
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold mb-2">Filtrer les données financières</h3>
+                <form id="financial-filter-form" class="flex flex-col space-y-2">
+                    <div class="flex space-x-2">
+                        <select id="period-select" class="border-gray-300 rounded-md">
+                            <option value="all">Toutes les périodes</option>
+                            <option value="day">Jour</option>
+                            <option value="month">Mois</option>
+                            <option value="year">Année</option>
+                            <option value="custom">Période personnalisée</option>
+                        </select>
+                        <input type="date" id="date-input" class="border-gray-300 rounded-md hidden" placeholder="YYYY-MM-DD">
+                        <input type="text" id="month-input" class="border-gray-300 rounded-md hidden" placeholder="YYYY-MM">
+                        <input type="number" id="year-input" class="border-gray-300 rounded-md hidden" placeholder="YYYY">
+                        <input type="date" id="start-date-input" class="border-gray-300 rounded-md hidden" placeholder="Début (YYYY-MM-DD)">
+                        <input type="date" id="end-date-input" class="border-gray-300 rounded-md hidden" placeholder="Fin (YYYY-MM-DD)">
+                    </div>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Appliquer le filtre</button>
+                </form>
+            </div>
+            <!-- Données financières -->
+            <div id="financial-content" class="mb-4">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <div class="flex justify-end">
+                <button id="close-detail-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale pour les détails d'un restaurant -->
+    <div id="restaurant-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 class="text-xl font-semibold mb-4">Détails du restaurant</h2>
+            <div id="restaurant-content" class="mb-4">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <div class="flex justify-end">
+                <button id="close-restaurant-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour convertir une chaîne WKT en liste de paires [lon, lat]
+        function parseWKTCoordinates(wkt) {
+            if (!wkt || !wkt.startsWith('POLYGON((')) return [];
+            const coordsStr = wkt.replace('POLYGON((', '').replace('))', '');
+            const coords = coordsStr.split(',').map(pair => {
+                const [lon, lat] = pair.trim().split(' ').map(Number);
+                return [lon, lat];
+            });
+            return coords;
+        }
+
+        // Charger les zones
+        async function loadZones() {
+            console.log('Tentative de chargement des zones depuis /staff/api/zones/');
+            try {
+                const response = await fetch('/staff/api/zones/');
+                console.log('Réponse reçue pour /staff/api/zones/:', response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                const zonesList = document.getElementById('zones-list');
+                zonesList.innerHTML = '';
+                data.zones.forEach(zone => {
+                    const zoneDiv = document.createElement('div');
+                    zoneDiv.className = 'border-b py-4 flex justify-between items-center';
+                    zoneDiv.innerHTML = `
+                        <div>
+                            <p><strong>📍 Secteur :</strong> ${zone.nom}</p>
+                            <p><strong>📌 Entités :</strong> ${
+                                zone.entites && zone.entites.length > 0 
+                                    ? zone.entites.map(e => `${e.nom} (${e.statut || 'Inconnu'})`).join(', ')
+                                    : 'Aucune'
+                            }</p>
+                            <p><strong>📝 Description :</strong> ${zone.description || 'Aucune'}</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button class="edit-btn bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600" data-id="${zone.id}">Modifier</button>
+                            <button class="delete-btn bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" data-id="${zone.id}">Supprimer</button>
+                            <button class="detail-btn bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" data-id="${zone.id}">Détails</button>
+                        </div>
+                    `;
+                    zonesList.appendChild(zoneDiv);
+                });
+                console.log('Zones chargées:', data.zones);
+            } catch (error) {
+                console.error('Erreur lors du chargement des zones:', error.message);
+                alert('Erreur lors du chargement des zones: ' + error.message);
+            }
+        }
+
+        // Charger les entités
+        async function loadEntites(selectElement) {
+            console.log('Tentative de chargement des entités depuis /staff/api/entites/');
+            try {
+                const response = await fetch('/staff/api/entites/');
+                console.log('Réponse reçue pour /staff/api/entites/:', response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                selectElement.innerHTML = '';
+                data.entites.forEach(entite => {
+                    const option = document.createElement('option');
+                    option.value = entite.id;
+                    option.textContent = `${entite.nom} (${entite.statut})`;
+                    selectElement.appendChild(option);
+                });
+                console.log('Entités chargées:', data.entites);
+            } catch (error) {
+                console.error('Erreur lors du chargement des entités:', error.message);
+                alert('Erreur lors du chargement des entités: ' + error.message);
+            }
+        }
+
+        // Afficher la modale pour ajouter/modifier
+        function showModal(title, zone = null) {
+            const modal = document.getElementById('zone-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const form = document.getElementById('zone-form');
+            const nomInput = document.getElementById('zone-nom');
+            const entitesSelect = document.getElementById('zone-entites');
+            const descriptionInput = document.getElementById('zone-description');
+            const coordinatesInput = document.getElementById('zone-coordinates');
+            
+            modalTitle.textContent = title;
+            nomInput.value = zone ? zone.nom : '';
+            descriptionInput.value = zone ? zone.description : '';
+            coordinatesInput.value = zone ? JSON.stringify(zone.coordinates || [], null, 2) : '[[2.3522, 48.8566], [2.3523, 48.8567], [2.3524, 48.8566], [2.3522, 48.8566]]';
+            form.dataset.zoneId = zone ? zone.id : '';
+            
+            loadEntites(entitesSelect).then(() => {
+                if (zone && zone.entites) {
+                    Array.from(entitesSelect.options).forEach(option => {
+                        option.selected = zone.entites.some(e => e.id == option.value);
+                    });
+                }
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        // Afficher la modale des détails d'une zone
+        async function showDetailModal(zoneId) {
+            console.log(`Tentative de chargement des détails de la zone ${zoneId} depuis /staff/api/zones/${zoneId}/`);
+            try {
+                const response = await fetch(`/staff/api/zones/${zoneId}/`);
+                console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/:`, response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                const detailContent = document.getElementById('detail-content');
+                detailContent.innerHTML = `
+                    <p><strong>📍 Secteur :</strong> ${data.zone.nom}</p>
+                    <p><strong>📌 Entités :</strong> ${
+                        data.entites && data.entites.length > 0 
+                            ? data.entites.map(e => `${e.nom} (${e.statut_actuel || 'Inconnu'})`).join(', ')
+                            : 'Aucune'
+                    }</p>
+                    <p><strong>📝 Description :</strong> ${data.zone.description || 'Aucune'}</p>
+                    <p><strong>🗺️ Coordonnées :</strong> ${data.zone.zone}</p>
+                    <p><strong>📊 Statut actuel :</strong> ${data.zone.statut_actuel || 'Inconnu'}</p>
+                    <h3 class="text-lg font-semibold mt-4">Historique des statuts</h3>
+                    <ul class="list-disc pl-5">
+                        ${data.statuts.map(statut => `<li>${statut.statut_nom} (Mis à jour le ${new Date(statut.mis_a_jour_le).toLocaleString('fr-FR')})</li>`).join('')}
+                    </ul>
+                `;
+                
+                // Charger les données financières
+                await loadFinancials(zoneId);
+                
+                document.getElementById('detail-modal').classList.remove('hidden');
+                document.getElementById('detail-modal').dataset.zoneId = zoneId;
+                console.log('Détails affichés:', data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des détails:', error.message);
+                alert('Erreur lors du chargement des détails: ' + error.message);
+            }
+        }
+
+        // Afficher la modale des détails d'un restaurant
+        async function showRestaurantModal(restaurantId) {
+            console.log(`Tentative de chargement des détails du restaurant ${restaurantId} depuis /staff/api/restaurants/${restaurantId}/`);
+            try {
+                const response = await fetch(`/staff/api/restaurants/${restaurantId}/`);
+                console.log(`Réponse reçue pour /staff/api/restaurants/${restaurantId}/:`, response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                const restaurantContent = document.getElementById('restaurant-content');
+                restaurantContent.innerHTML = `
+                    <p><strong>🏪 Nom :</strong> ${data.restaurant.nom}</p>
+                    <p><strong>📍 Adresse :</strong> ${data.restaurant.adresse || 'Non spécifiée'}</p>
+                    <p><strong>🗺️ Position :</strong> ${data.restaurant.geo_position || 'Non spécifiée'}</p>
+                    <p><strong>⏰ Statut :</strong> ${data.restaurant.statut_actuel}</p>
+                    <h3 class="text-lg font-semibold mt-4">Repas proposés</h3>
+                    <ul class="list-disc pl-5">
+                        ${data.repas.length > 0 ? data.repas.map(r => `
+                            <li>
+                                ${r.nom} (${r.type_repas}) - ${r.prix / 100} €<br>
+                                ${r.description || 'Aucune description'}
+                            </li>
+                        `).join('') : '<li>Aucun repas proposé</li>'}
+                    </ul>
+                    <h3 class="text-lg font-semibold mt-4">Horaires réguliers</h3>
+                    <ul class="list-disc pl-5">
+                        ${data.horaires.length > 0 ? data.horaires.map(h => `
+                            <li>
+                                Jour ${h.le_jour} (${['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][h.le_jour - 1]}): 
+                                ${h.horaire_debut.slice(0, 5)} - ${h.horaire_fin.slice(0, 5)}
+                            </li>
+                        `).join('') : '<li>Aucun horaire régulier</li>'}
+                    </ul>
+                    <h3 class="text-lg font-semibold mt-4">Horaires exceptionnels</h3>
+                    <ul class="list-disc pl-5">
+                        ${data.horaires_special.length > 0 ? data.horaires_special.map(h => `
+                            <li>
+                                ${new Date(h.date_concerne).toLocaleDateString('fr-FR')}: 
+                                ${h.horaire_debut.slice(0, 5)} - ${h.horaire_fin.slice(0, 5)}
+                            </li>
+                        `).join('') : '<li>Aucun horaire exceptionnel</li>'}
+                    </ul>
+                `;
+                
+                document.getElementById('restaurant-modal').classList.remove('hidden');
+                console.log('Détails du restaurant affichés:', data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des détails du restaurant:', error.message);
+                alert('Erreur lors du chargement des détails du restaurant: ' + error.message);
+            }
+        }
+
+        // Charger les données financières
+        async function loadFinancials(zoneId, params = {}) {
+            console.log(`Tentative de chargement des données financières pour la zone ${zoneId}`);
+            try {
+                const url = new URL(`/staff/api/zones/${zoneId}/financials/`, window.location.origin);
+                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+                const response = await fetch(url);
+                console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/financials/:`, response.status, response.statusText);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                const financialContent = document.getElementById('financial-content');
+                financialContent.innerHTML = `
+                    <h3 class="text-lg font-semibold mt-4">Restaurants dans la zone</h3>
+                    <ul class="list-disc pl-5 mb-4">
+                        ${data.restaurants.length > 0 ? data.restaurants.map(r => `
+                            <li>
+                                <strong>🏪 ${r.nom}</strong><br>
+                                📍 ${r.adresse || 'Non spécifiée'}<br>
+                                ⏰ Statut: ${r.statut_actuel || 'Inconnu'}<br>
+                                <button class="restaurant-detail-btn bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 mt-1" data-id="${r.id}">Voir détail</button>
+                            </li>
+                        `).join('') : '<li>Aucun restaurant associé</li>'}
+                    </ul>
+                    <h3 class="text-lg font-semibold mt-4">Données financières</h3>
+                    <p><strong>💵 Chiffre d'affaires total :</strong> ${data.financials.total_chiffre_affaires.toFixed(2)} €</p>
+                    <p><strong>💸 Frais totaux (commissions) :</strong> ${data.financials.total_frais.toFixed(2)} €</p>
+                    <p><strong>📈 Bénéfice net estimé :</strong> ${data.financials.benefice_net.toFixed(2)} €</p>
+                    <h4 class="text-md font-semibold mt-2">Chiffre d'affaires par restaurant :</h4>
+                    <ul class="list-disc pl-5">
+                        ${data.financials.restaurants.length > 0 ? data.financials.restaurants.map(r => `
+                            <li>
+                                ${r.nom}: ${r.chiffre_affaires.toFixed(2)} € (Commission: ${r.commission.toFixed(2)} %)
+                            </li>
+                        `).join('') : '<li>Aucune donnée financière</li>'}
+                    </ul>
+                `;
+                console.log('Données financières affichées:', data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des données financières:', error.message);
+                alert('Erreur lors du chargement des données financières: ' + error.message);
+            }
+        }
+
+        // Gérer les filtres temporels
+        document.getElementById('financial-filter-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const period = document.getElementById('period-select').value;
+            const params = { period };
+            if (period === 'day') {
+                params.date = document.getElementById('date-input').value;
+            } else if (period === 'month') {
+                params.month = document.getElementById('month-input').value;
+            } else if (period === 'year') {
+                params.year = document.getElementById('year-input').value;
+            } else if (period === 'custom') {
+                params.start_date = document.getElementById('start-date-input').value;
+                params.end_date = document.getElementById('end-date-input').value;
+            }
+            const zoneId = document.getElementById('detail-modal').dataset.zoneId;
+            await loadFinancials(zoneId, params);
+        });
+
+        // Gérer l'affichage des champs de filtrage
+        document.getElementById('period-select').addEventListener('change', (e) => {
+            const period = e.target.value;
+            document.getElementById('date-input').classList.add('hidden');
+            document.getElementById('month-input').classList.add('hidden');
+            document.getElementById('year-input').classList.add('hidden');
+            document.getElementById('start-date-input').classList.add('hidden');
+            document.getElementById('end-date-input').classList.add('hidden');
+            if (period === 'day') {
+                document.getElementById('date-input').classList.remove('hidden');
+            } else if (period === 'month') {
+                document.getElementById('month-input').classList.remove('hidden');
+            } else if (period === 'year') {
+                document.getElementById('year-input').classList.remove('hidden');
+            } else if (period === 'custom') {
+                document.getElementById('start-date-input').classList.remove('hidden');
+                document.getElementById('end-date-input').classList.remove('hidden');
+            }
+        });
+
+        // Fermer les modales
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Événements pour la liste des zones
+        document.getElementById('zones-list').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit-btn')) {
+                const zoneId = e.target.dataset.id;
+                console.log(`Tentative de chargement des détails pour modification de la zone ${zoneId}`);
+                try {
+                    const response = await fetch(`/staff/api/zones/${zoneId}/`);
+                    console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/:`, response.status, response.statusText);
+                    if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    showModal('Modifier la zone', {
+                        id: data.zone.id,
+                        nom: data.zone.nom,
+                        description: data.zone.description,
+                        coordinates: parseWKTCoordinates(data.zone.zone),
+                        entites: data.entites || []
+                    });
+                } catch (error) {
+                    console.error('Erreur lors du chargement pour modification:', error.message);
+                    alert('Erreur lors du chargement pour modification: ' + error.message);
+                }
+            } else if (e.target.classList.contains('delete-btn')) {
+                if (confirm('Voulez-vous vraiment supprimer cette zone ?')) {
+                    const zoneId = e.target.dataset.id;
+                    console.log(`Tentative de suppression de la zone ${zoneId}`);
+                    try {
+                        const response = await fetch(`/staff/api/zones/${zoneId}/delete/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        console.log(`Réponse reçue pour /staff/api/zones/${zoneId}/delete/:`, response.status, response.statusText);
+                        const result = await response.json();
+                        if (result.error) throw new Error(result.error);
+                        alert('Zone supprimée avec succès');
+                        loadZones();
+                    } catch (error) {
+                        console.error('Erreur lors de la suppression:', error.message);
+                        alert('Erreur lors de la suppression: ' + error.message);
+                    }
+                }
+            } else if (e.target.classList.contains('detail-btn')) {
+                const zoneId = e.target.dataset.id;
+                document.getElementById('detail-modal').dataset.zoneId = zoneId;
+                showDetailModal(zoneId);
+            }
+        });
+
+        // Événements pour la modale de détails
+        document.getElementById('detail-modal').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('restaurant-detail-btn')) {
+                const restaurantId = e.target.dataset.id;
+                await showRestaurantModal(restaurantId);
+            }
+        });
+
+        // Événements pour les boutons
+        document.getElementById('add-zone-btn').addEventListener('click', () => {
+            showModal('Ajouter une zone');
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            closeModal('zone-modal');
+        });
+
+        document.getElementById('close-detail-btn').addEventListener('click', () => {
+            closeModal('detail-modal');
+        });
+
+        document.getElementById('close-restaurant-btn').addEventListener('click', () => {
+            closeModal('restaurant-modal');
+        });
+
+        document.getElementById('zone-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nom = document.getElementById('zone-nom').value;
+            const entiteIds = Array.from(document.getElementById('zone-entites').selectedOptions).map(opt => parseInt(opt.value));
+            const description = document.getElementById('zone-description').value;
+            let coordinates;
+            
+            try {
+                coordinates = JSON.parse(document.getElementById('zone-coordinates').value || '[]');
+                if (!Array.isArray(coordinates) || coordinates.length < 3 || !coordinates.every(coord => Array.isArray(coord) && coord.length === 2 && coord.every(n => typeof n === 'number'))) {
+                    throw new Error('Les coordonnées doivent être une liste d\'au moins 3 paires [lon, lat]');
+                }
+            } catch (error) {
+                console.error('Erreur de validation des coordonnées:', error.message);
+                alert('Erreur: ' + error.message);
+                return;
+            }
+
+            if (!nom.trim()) {
+                console.error('Erreur: Nom de zone manquant');
+                alert('Erreur: Le nom de la zone est requis');
+                return;
+            }
+
+            if (description.length > 100) {
+                console.error('Erreur: Description trop longue');
+                alert('Erreur: La description ne doit pas dépasser 100 caractères');
+                return;
+            }
+
+            const data = {
+                nom,
+                entite_ids: entiteIds,
+                description,
+                coordinates,
+                statut_id: 1 // Statut "Active" par défaut
+            };
+
+            try {
+                const url = e.target.dataset.zoneId ? `/staff/api/zones/${e.target.dataset.zoneId}/update/` : '/staff/api/zones/create/';
+                const method = 'POST';
+                console.log(`Envoi de la requête à ${url}:`, data);
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                console.log(`Réponse reçue pour ${url}:`, response.status, response.statusText);
+                const result = await response.json();
+                if (result.error) throw new Error(result.error);
+
+                alert(e.target.dataset.zoneId ? 'Zone mise à jour avec succès' : 'Zone créée avec succès');
+                closeModal('zone-modal');
+                loadZones();
+            } catch (error) {
+                console.error('Erreur lors de l\'enregistrement:', error.message);
+                alert('Erreur lors de l\'enregistrement: ' + error.message);
+            }
+        });
+
+        // Charger les zones initiales
+        loadZones();
+    </script>
+</body>
+</html>
