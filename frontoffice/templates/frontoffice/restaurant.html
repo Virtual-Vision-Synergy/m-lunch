@@ -29,7 +29,7 @@ fetch('/api/restaurants/')
           <strong>${props.nom}</strong><br/>
           ⭐ Note: ${props.note}<br/>
           <img src="${props.image_url}" alt="${props.nom}" style="width:100px; height:auto;"><br/>
-          <a href="/menu/${props.id}/"><button>Voir le menu</button></a>
+          <a href="/restaurants/${props.id}/"><button>Voir le menu</button></a>
         `;
         layer.bindPopup(popupContent);
         layer.bindTooltip(props.nom);
