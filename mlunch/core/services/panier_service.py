@@ -1,9 +1,10 @@
 from django.db.models import Sum, F
 from django.utils.timezone import now
 from ..models import (
-    Client, Repas, RestaurantRepas, PointRecup, DisponibiliteRepas,
-    Restaurant, ZoneClient, ZoneRestaurant
+    Repas, RestaurantRepas, PointRecup, DisponibiliteRepas,
+    Commande, CommandeRepas, HistoriqueStatutCommande, StatutCommande, ModePaiement
 )
+
 
 class PanierService:
     """
@@ -13,42 +14,44 @@ class PanierService:
     @staticmethod
     def get_panier_items(client_id):
         """
-        Récupère les articles du panier depuis la session
-        En production, cela pourrait être stocké en base de données
+        Récupère les articles du panier (commande en cours) depuis la base de données.
         """
         try:
-            # Pour l'instant, nous simulons des données de panier
-            # En réalité, cela devrait venir de la session ou d'une table panier temporaire
+            # Chercher la commande en cours (statut_id=1)
+            commande = None
+            commandes = Commande.objects.filter(client_id=client_id)
+            for c in commandes:
+                last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                if last_statut and last_statut.statut_id == 1:
+                    commande = c
+                    break
 
-            # Exemple de données simulées - à remplacer par la logique réelle
-            items = [
-                {
-                    'item_id': 1,
-                    'repas_id': 1,
-                    'nom': 'Pizza Margherita',
-                    'prix': 12000,
-                    'quantite': 2,
-                    'restaurant_nom': 'Chez Mario',
-                    'image': '/static/images/pizza.jpg',
-                    'total': 24000
-                },
-                {
-                    'item_id': 2,
-                    'repas_id': 2,
-                    'nom': 'Burger Deluxe',
-                    'prix': 15000,
-                    'quantite': 1,
-                    'restaurant_nom': 'Fast Food Plus',
-                    'image': '/static/images/burger.jpg',
-                    'total': 15000
-                }
-            ]
+            if not commande:
+                return []
+
+            items = []
+            commande_repas = CommandeRepas.objects.filter(commande=commande).select_related('repas')
+            for cr in commande_repas:
+                repas = cr.repas
+                # On récupère le premier restaurant associé au repas (si plusieurs)
+                restaurant_repas = RestaurantRepas.objects.filter(repas=repas).select_related('restaurant').first()
+                restaurant_nom = restaurant_repas.restaurant.nom if restaurant_repas else ""
+                items.append({
+                    'item_id': cr.id,
+                    'repas_id': repas.id,
+                    'nom': repas.nom,
+                    'prix': repas.prix,
+                    'quantite': cr.quantite,
+                    'restaurant_nom': restaurant_nom,
+                    'image': repas.image,
+                    'total': cr.quantite * repas.prix
+                })
 
             return items
 
         except Exception as e:
             return {"error": f"Erreur lors de la récupération du panier : {str(e)}"}
-
+        
     @staticmethod
     def calculate_totals(client_id):
         """
@@ -61,7 +64,7 @@ class PanierService:
                 return items
 
             sous_total = sum(item.get('total', 0) for item in items)
-            frais_livraison = 2000  # Frais fixes pour l'exemple
+            frais_livraison = 3000  # Frais fixes pour l'exemple
             total = sous_total + frais_livraison
 
             return {
@@ -73,18 +76,6 @@ class PanierService:
 
         except Exception as e:
             return {"error": f"Erreur lors du calcul des totaux : {str(e)}"}
-
-    @staticmethod
-    def get_points_recuperation():
-        """
-        Récupère tous les points de récupération disponibles
-        """
-        try:
-            points = PointRecup.objects.all().values('id', 'nom', 'geo_position')
-            return list(points)
-
-        except Exception as e:
-            return {"error": f"Erreur lors de la récupération des points de récupération : {str(e)}"}
 
     @staticmethod
     def add_to_panier(client_id, repas_id, quantite=1):
@@ -111,15 +102,32 @@ class PanierService:
 
             restaurant = restaurant_repas.restaurant
 
-            # Vérifier si le client peut commander dans ce restaurant (même zone)
-            client_zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
-            restaurant_zones = ZoneRestaurant.objects.filter(restaurant=restaurant).values_list('zone_id', flat=True)
-
-            if not set(client_zones).intersection(set(restaurant_zones)):
-                return {"error": "Ce restaurant ne livre pas dans votre zone"}
-
-            # Logique d'ajout au panier (à implémenter selon votre choix : session, DB temporaire, etc.)
-            # Pour l'instant, on retourne un succès
+            # --- Nouvelle logique pour commande/statut ---
+            from django.db import transaction
+            
+            with transaction.atomic():
+                # Chercher une commande existante avec statut_id=1 (dernier statut)
+                commande = None
+                commandes = Commande.objects.filter(client_id=client_id)
+                for c in commandes:
+                    last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                    if last_statut and last_statut.statut_id == 1:
+                        commande = c
+                        break
+                if not commande:
+                    # Créer une nouvelle commande
+                    commande = Commande.objects.create(client_id=client_id, point_recup_id=None)
+                    # Ajouter le statut initial (id=1)
+                    HistoriqueStatutCommande.objects.create(commande=commande, statut_id=1)
+                # Ajouter ou mettre à jour le repas dans commande_repas
+                cr, created = CommandeRepas.objects.get_or_create(
+                    commande=commande,
+                    repas=repas,
+                    defaults={'quantite': quantite}
+                )
+                if not created:
+                    cr.quantite += quantite
+                    cr.save()
 
             return {
                 "success": True,
@@ -136,16 +144,45 @@ class PanierService:
             return {"error": "Repas non trouvé"}
         except Exception as e:
             return {"error": f"Erreur lors de l'ajout au panier : {str(e)}"}
+        
+    @staticmethod
+    def get_points_recuperation():
+        """
+        Récupère tous les points de récupération disponibles
+        """
+        try:
+            points = PointRecup.objects.all().values('id', 'nom', 'geo_position')
+            return list(points)
 
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des points de récupération : {str(e)}"}
+
+    
     @staticmethod
     def remove_from_panier(client_id, item_id):
         """
-        Supprime un article du panier
+        Supprime un article du panier (commande en cours) pour le client donné.
         """
         try:
-            # Logique de suppression à implémenter selon votre système de stockage
+            # Trouver la commande en cours (statut_id=1)
+            commande = None
+            commandes = Commande.objects.filter(client_id=client_id)
+            for c in commandes:
+                last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                if last_statut and last_statut.statut_id == 1:
+                    commande = c
+                    break
+    
+            if not commande:
+                return {"error": "Aucune commande en cours trouvée."}
+    
+            # Supprimer l'article CommandeRepas correspondant
+            deleted, _ = CommandeRepas.objects.filter(id=item_id, commande=commande).delete()
+            if deleted == 0:
+                return {"error": "Article non trouvé dans le panier."}
+    
             return {"success": True, "message": "Article supprimé du panier"}
-
+    
         except Exception as e:
             return {"error": f"Erreur lors de la suppression : {str(e)}"}
 
@@ -170,7 +207,27 @@ class PanierService:
             if nouvelle_quantite <= 0:
                 return PanierService.remove_from_panier(client_id, item_id)
 
-            # Logique de mise à jour à implémenter
+            # Trouver la commande en cours (statut_id=1)
+            commande = None
+            commandes = Commande.objects.filter(client_id=client_id)
+            for c in commandes:
+                last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                if last_statut and last_statut.statut_id == 1:
+                    commande = c
+                    break
+
+            if not commande:
+                return {"error": "Aucune commande en cours trouvée."}
+
+            # Trouver l'article à mettre à jour
+            try:
+                cr = CommandeRepas.objects.get(id=item_id, commande=commande)
+            except CommandeRepas.DoesNotExist:
+                return {"error": "Article non trouvé dans le panier."}
+
+            cr.quantite = nouvelle_quantite
+            cr.save()
+
             return {"success": True, "message": "Quantité mise à jour"}
 
         except Exception as e:
@@ -266,12 +323,19 @@ class PanierService:
 
             # Créer la commande
             with transaction.atomic():
-                # Créer la commande
-                commande = Commande.objects.create(
-                    client_id=client_id,
-                    point_recup=point_recup,
-                    mode_paiement=mode_paiement_obj
-                )
+                # Chercher une commande existante avec statut_id=1 (dernier statut)
+                commande = None
+                commandes = Commande.objects.filter(client_id=client_id)
+                for c in commandes:
+                    last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                    if last_statut and last_statut.statut_id == 1:
+                        commande = c
+                        break
+                if not commande:
+                    # Créer une nouvelle commande
+                    commande = Commande.objects.create(client_id=client_id, point_recup_id=None)
+                    # Ajouter le statut initial (id=1)
+                    HistoriqueStatutCommande.objects.create(commande=commande, statut_id=1)
 
                 # Ajouter les repas à la commande
                 for item in items:
@@ -305,3 +369,55 @@ class PanierService:
 
         except Exception as e:
             return False, f"Erreur lors de la validation de la commande : {str(e)}"
+
+    @staticmethod
+    def finalize_commande(client_id, point_recup_id, mode_paiement_id):
+        """
+        Met à jour le statut de la commande à 3 (par exemple : 'validée'),
+        et met à jour le point de récupération et le mode de paiement.
+        """
+        try:
+            
+            from django.db import transaction
+
+            with transaction.atomic():
+                commande = None
+                commandes = Commande.objects.filter(client_id=client_id)
+                for c in commandes:
+                    last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                    if last_statut and last_statut.statut_id == 1:
+                        commande = c
+                        break
+            
+                # Mettre à jour le point de récupération et le mode de paiement
+                commande.point_recup_id = point_recup_id
+                if hasattr(commande, 'mode_paiement_id'):
+                    commande.mode_paiement_id = mode_paiement_id
+                commande.save()
+
+                # Mettre à jour le statut à 3
+                statut = StatutCommande.objects.get(id=3)
+                HistoriqueStatutCommande.objects.create(
+                    commande=commande,
+                    statut=statut
+                )
+
+            return {"success": True, "message": "Commande finalisée avec succès."}
+
+        except Commande.DoesNotExist:
+            return {"error": "Commande non trouvée."}
+        except StatutCommande.DoesNotExist:
+            return {"error": "Statut de commande non trouvé."}
+        except Exception as e:
+            return {"error": f"Erreur lors de la finalisation de la commande : {str(e)}"}
+        
+    @staticmethod
+    def get_all_modes_paiement():
+        """
+        Récupère tous les modes de paiement disponibles.
+        """
+        try:
+            modes = ModePaiement.objects.all().values('id', 'nom')
+            return list(modes)
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des modes de paiement : {str(e)}"}

@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET
+import json
 
 from mlunch.core.services import PanierService
 
@@ -12,23 +14,15 @@ def panier_view(request):
     """
     Vue principale du panier
     """
-    # Récupérer l'ID du client depuis la session
     client_id = request.session.get('client_id')
 
-    # Si pas connecté, utiliser un ID par défaut pour les tests
     if not client_id:
         client_id = 1  # ID de test - à remplacer par une redirection vers la connexion
 
-    # Récupérer les articles du panier via le service
     items = PanierService.get_panier_items(client_id)
-
-    # Calculer les totaux via le service
     totals = PanierService.calculate_totals(client_id)
 
-    # Récupérer les points de récupération via le service
     points_recuperation = PanierService.get_points_recuperation()
-
-    # Gérer les erreurs
     if isinstance(items, dict) and 'error' in items:
         items = []
 
@@ -38,6 +32,7 @@ def panier_view(request):
     if isinstance(points_recuperation, dict) and 'error' in points_recuperation:
         points_recuperation = []
 
+    
     context = {
         'items': items,
         'totals': totals,
@@ -47,12 +42,11 @@ def panier_view(request):
 
     return render(request, 'frontoffice/panier.html', context)
 
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def add_to_panier(request):
     """
-    Ajouter un article au panier via AJAX
+    Ajouter un repas au panier (commande en cours ou nouvelle commande).
     """
     try:
         data = json.loads(request.body)
@@ -67,7 +61,7 @@ def add_to_panier(request):
                 'message': 'Vous devez être connecté pour ajouter au panier'
             })
 
-        # Ajouter au panier via le service
+        # Appel du service
         result = PanierService.add_to_panier(client_id, repas_id, quantite)
 
         if 'error' in result:
@@ -76,15 +70,9 @@ def add_to_panier(request):
                 'message': result['error']
             })
 
-        # Récalculer les totaux
-        totals = PanierService.calculate_totals(client_id)
-        if isinstance(totals, dict) and 'error' in totals:
-            totals = {'sous_total': 0, 'frais_livraison': 0, 'total': 0, 'nb_items': 0}
-
         return JsonResponse({
             'success': True,
-            'message': result.get('message', 'Article ajouté au panier'),
-            'totals': totals
+            'message': result.get('message', 'Article ajouté au panier')
         })
 
     except Exception as e:
@@ -92,17 +80,15 @@ def add_to_panier(request):
             'success': False,
             'message': f'Erreur: {str(e)}'
         })
-
-
+        
 @csrf_exempt
 @require_http_methods(["POST"])
-def update_quantity(request):
+def update_quantity(request, item_id):
     """
     Mettre à jour la quantité d'un article
     """
     try:
         data = json.loads(request.body)
-        item_id = data.get('item_id')
         nouvelle_quantite = data.get('quantite')
 
         # Récupérer l'ID du client depuis la session
@@ -139,17 +125,13 @@ def update_quantity(request):
             'message': f'Erreur: {str(e)}'
         })
 
-
 @csrf_exempt
 @require_http_methods(["POST"])
-def remove_from_panier(request):
+def remove_from_panier(request, item_id):
     """
     Supprimer un article du panier
     """
     try:
-        data = json.loads(request.body)
-        item_id = data.get('item_id')
-
         # Récupérer l'ID du client depuis la session
         client_id = request.session.get('client_id')
         if not client_id:
@@ -183,7 +165,6 @@ def remove_from_panier(request):
             'success': False,
             'message': f'Erreur: {str(e)}'
         })
-
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -307,3 +288,56 @@ def get_panier_count(request):
         return JsonResponse({
             'count': 0
         })
+        
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def finalize_commande(request):
+    """
+    Finalise la commande : met à jour le statut à 3, le point de récupération et le mode de paiement.
+    """
+    try:
+        data = json.loads(request.body)
+        point_recup_id = data.get('point_recup_id')
+        mode_paiement_id = data.get('mode_paiement_id')
+
+        # Récupérer l'ID du client depuis la session
+        client_id = request.session.get('client_id')
+        if not client_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Vous devez être connecté pour finaliser la commande'
+            })
+
+        result = PanierService.finalize_commande(client_id, point_recup_id, mode_paiement_id)
+
+        if 'error' in result:
+            return JsonResponse({
+                'success': False,
+                'message': result['error']
+            })
+
+        return JsonResponse({
+            'success': True,
+            'message': result.get('message', 'Commande finalisée avec succès')
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erreur: {str(e)}'
+        })
+
+
+@require_GET
+def get_modes_paiement(request):
+    """
+    Récupère tous les modes de paiement disponibles.
+    """
+    try:
+        modes = PanierService.get_all_modes_paiement()
+        if isinstance(modes, dict) and 'error' in modes:
+            return JsonResponse({'success': False, 'error': modes['error']})
+        return JsonResponse({'success': True, 'modes': list(modes)})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

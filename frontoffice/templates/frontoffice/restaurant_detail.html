@@ -35,7 +35,7 @@
           </div>
           <div class="icons-right">
             <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
-            <a href="panier.html" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
             <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
 
             <nav id="hamburger-menu" class="hamburger-menu">
@@ -125,11 +125,28 @@
             });
         });
 
-        // Add to cart function
+        // Add to cart function using add_to_panier endpoint
         function addToCart(mealId) {
-            // Implement your cart functionality here
-            console.log('Added to cart:', mealId);
-            // Example: fetch('/add_to_cart/', { method: 'POST', body: JSON.stringify({id: mealId}) });
+            fetch("{% url 'add_to_panier' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ repas_id: mealId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Ajouté au panier !");
+                } else {
+                    alert(data.message || "Erreur lors de l'ajout au panier.");
+                }
+            })
+            .catch(error => {
+                alert("Erreur réseau lors de l'ajout au panier.");
+                console.error(error);
+            });
         }
 
         // Hamburger menu toggle
