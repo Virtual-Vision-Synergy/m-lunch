@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import restaurant_views, commande_views, zone_views, stats_views, livraison_views
+from .views import restaurant_views, commande_views, zone_views, stats_views, livraison_views, livreur_views
 
 urlpatterns = [
     # Dashboard principal
@@ -41,21 +41,12 @@ urlpatterns = [
     path('api/zones/', stats_views.zones_api, name='zones_api'),
     path('api/restaurants/', stats_views.restaurants_api, name='restaurants_api'),
 
-    #Livraison
-
-    path('livreurs/', livraison_views.livreurs_list, name='livreurs_list'),
-    path('livreurs/add/', livraison_views.livreur_add, name='livreur_add'),
-    path('livreurs/<int:livreur_id>/', livraison_views.livreur_detail, name='livreur_detail'),
-
-    path('livreurs/<int:livreur_id>/edit/', livraison_views.livreur_edit, name='livreur_edit'),
-    path('livreurs/<int:livreur_id>/delete/', livraison_views.livreur_delete, name='livreur_delete'),
-
-    # routes pour les livraisons
-    path('livraisons/', livraison_views.livraisons_list, name='livraisons_list'),
-
-    path('livraisons/<int:livraison_id>/', livraison_views.livraison_detail, name='livraison_detail'),
-
-    path('livraisons/<int:livraison_id>/edit/', livraison_views.livraison_edit, name='livraison_edit'),
-
-    path('livraisons/<int:livraison_id>/delete/', livraison_views.livraison_delete, name='livraison_delete'),
+    # Gestion des livreurs
+    path('livreurs/', livreur_views.livreurs_list, name='livreurs_list'),
+    path('livreurs/add/', livreur_views.livreur_add, name='livreur_add'),
+    path('livreurs/<int:livreur_id>/', livreur_views.livreur_detail, name='livreur_detail'),
+    path('livreurs/<int:livreur_id>/edit/', livreur_views.livreur_edit, name='livreur_edit'),
+    path('livreurs/<int:livreur_id>/delete/', livreur_views.livreur_delete, name='livreur_delete'),
+    path('livreurs/<int:livreur_id>/assigner-commande/', livreur_views.livreur_assigner_commande, name='livreur_assigner_commande'),
+    path('livreurs/<int:livreur_id>/assigner-commande/confirmer/', livreur_views.livreur_assigner_commande_confirmer, name='livreur_assigner_commande_confirmer'),
 ]

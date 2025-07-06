@@ -4,4 +4,4 @@ from .restaurant_views import *
 from .zone_views import *
 from .stats_views import *
 from .commande_views import *
-
+from .livreur_views import *

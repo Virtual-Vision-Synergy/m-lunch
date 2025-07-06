@@ -83,6 +83,11 @@
                                             <div class="btn-group btn-group-sm">
                                                 <a href="{% url 'livreur_detail' livreur.id %}" class="btn btn-outline-info">Voir</a>
                                                 <a href="{% url 'livreur_edit' livreur.id %}" class="btn btn-outline-warning">Modifier</a>
+                                                {% if livreur.est_disponible %}
+                                                    <a href="{% url 'livreur_assigner_commande' livreur.id %}" class="btn btn-outline-success">
+                                                        <i class="fas fa-truck"></i> Assigner commande
+                                                    </a>
+                                                {% endif %}
                                                 {% if livreur.statut != 'Inactif' %}
                                                     <a href="{% url 'livreur_delete' livreur.id %}" class="btn btn-outline-danger">Désactiver</a>
                                                 {% endif %}
