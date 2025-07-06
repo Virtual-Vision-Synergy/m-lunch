@@ -7,7 +7,7 @@ import json
 
 def login_view(request):
     """Affiche la page de connexion pour les restaurants"""
-    return render(request, 'restaurant/login.html')
+    return render(request, 'login.html')
 
 def login(request):
     """Traite la connexion d'un restaurant"""
@@ -17,7 +17,7 @@ def login(request):
 
         if not nom or not mot_de_passe:
             messages.error(request, 'Veuillez remplir tous les champs')
-            return render(request, 'restaurant/login.html')
+            return render(request, 'login.html')
 
         try:
             restaurant = Restaurant.objects.get(nom=nom)
@@ -36,7 +36,7 @@ def login(request):
         except Exception as e:
             messages.error(request, f'Erreur lors de la connexion: {str(e)}')
 
-    return render(request, 'restaurant/login.html')
+    return render(request, 'login.html')
 
 def logout(request):
     """Déconnecte le restaurant"""
@@ -116,7 +116,7 @@ def dashboard_view(request):
             'commandes': commandes_enrichies,
             'nombre_commandes': len(commandes_enrichies)
         }
-        return render(request, 'restaurant/dashboard.html', context)
+        return render(request, 'dashboard.html', context)
     except Restaurant.DoesNotExist:
         # Si le restaurant n'existe plus, déconnecter
         del request.session['restaurant_id']
@@ -205,7 +205,7 @@ def commande_details_view(request, commande_id):
             'statut_actuel': statut_actuel,
             'statuts_disponibles': statuts_disponibles
         }
-        return render(request, 'restaurant/commande_details.html', context)
+        return render(request, 'commande_details.html', context)
 
     except (Restaurant.DoesNotExist, Commande.DoesNotExist):
         messages.error(request, 'Commande ou restaurant introuvable')
