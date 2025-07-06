@@ -88,7 +88,7 @@ def dashboard_view(request):
         # Obtenir le statut "En attente"
         from mlunch.core.models import StatutCommande
         try:
-            statut_en_attente = StatutCommande.objects.get(appellation="En attente")
+            statut_en_attente = StatutCommande.objects.filter(appellation__in=["en preparation", "en cours"]).first()
         except StatutCommande.DoesNotExist:
             # Si le statut n'existe pas, on récupère le premier statut (probablement "En attente")
             statut_en_attente = StatutCommande.objects.first()

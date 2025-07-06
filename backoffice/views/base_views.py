@@ -69,7 +69,7 @@ def accueil(request):
             })
 
     # Récupérer tous les statuts disponibles pour remplir le filtre
-    statuts = StatutCommande.objects.all().order_by('appellation')
+    statuts = StatutCommande.objects.all().order_by('id')
 
     # Renvoyer le template avec les données
     return render(request, 'backoffice/accueil.html', {

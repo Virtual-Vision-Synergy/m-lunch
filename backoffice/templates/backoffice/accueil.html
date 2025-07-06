@@ -50,7 +50,7 @@
                     <td>{{ commande.cree_le }}</td>
                     <td>{{ commande.statut }}</td>
                     <td>
-                        {% if commande.statut == "Prête" %}
+                        {% if commande.statut == "prete" %}
                         <a href="{% url 'commande_attribuer' commande.id %}" class="btn-attribuer">
                             Attribuer
                         </a>
