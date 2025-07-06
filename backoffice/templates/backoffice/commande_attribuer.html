@@ -163,12 +163,29 @@
                 <span class="info-label">Date de commande :</span>
                 <span>{{ commande.cree_le|date:"d/m/Y H:i" }}</span>
             </div>
-            {% if zone %}
+
+            {% if zones_couvertes %}
             <div class="zone-info">
-                <strong>Zone de livraison :</strong> {{ zone.nom }}
-                {% if zone.description %}
-                <br><small>{{ zone.description }}</small>
+                <strong>Zone(s) de couverture :</strong>
+                {% if nombre_zones == 1 %}
+                    {{ zones_couvertes.0.nom }}
+                    {% if zones_couvertes.0.distance > 0 %}
+                        <small>({{ zones_couvertes.0.distance|floatformat:0 }}m du centre)</small>
+                    {% endif %}
+                {% else %}
+                    <ul style="margin: 5px 0 0 20px;">
+                    {% for zone in zones_couvertes %}
+                        <li>{{ zone.nom }}
+                            {% if zone.distance > 0 %}
+                                <small>({{ zone.distance|floatformat:0 }}m du centre)</small>
+                            {% else %}
+                                <small>(dans la zone)</small>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    </ul>
                 {% endif %}
+                <br><small><strong>{{ nombre_livreurs }}</strong> livreur(s) disponible(s) dans {{ nombre_zones }} zone(s)</small>
             </div>
             {% endif %}
         </div>
@@ -184,10 +201,27 @@
                         <div class="livreur-card" onclick="selectLivreur({{ livreur_data.livreur.id }})">
                             <input type="radio" name="livreur_id" value="{{ livreur_data.livreur.id }}" id="livreur_{{ livreur_data.livreur.id }}" class="radio-input">
                             <div class="livreur-name">{{ livreur_data.livreur.nom }}</div>
+
+                            <!-- Affichage des zones du livreur -->
+                            {% if livreur_data.zones %}
+                            <div class="livreur-contact">
+                                <strong>Zone(s):</strong>
+                                {% for zone_nom in livreur_data.zones %}
+                                    <span class="badge" style="background-color: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 12px; font-size: 11px; margin-right: 4px;">{{ zone_nom }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
                             {% if livreur_data.livreur.contact %}
                             <div class="livreur-contact">Contact: {{ livreur_data.livreur.contact }}</div>
                             {% endif %}
-                            {% if livreur_data.livreur.position %}
+
+                            {% if livreur_data.livreur.geo_position and livreur_data.livreur.geo_position != "0,0" %}
+                            <div class="livreur-contact">
+                                <i class="fas fa-map-marker-alt" style="color: #28a745;"></i>
+                                Position GPS: {{ livreur_data.livreur.geo_position }}
+                            </div>
+                            {% elif livreur_data.livreur.position %}
                             <div class="livreur-contact">Position: {{ livreur_data.livreur.position }}</div>
                             {% endif %}
 
@@ -202,10 +236,26 @@
                                 <div class="temps-estime">
                                     <small>Temps estimé: {{ livreur_data.temps_estime }} min</small>
                                 </div>
+                                {% if livreur_data.calcul_type %}
+                                <div class="calcul-type" style="margin-top: 5px;">
+                                    <small style="color: #6c757d; font-style: italic;">
+                                        {% if livreur_data.calcul_type == 'géographique' %}
+                                            <i class="fas fa-satellite" style="color: #28a745;"></i> Calcul GPS
+                                        {% elif livreur_data.calcul_type == 'ancien système' %}
+                                            <i class="fas fa-calculator" style="color: #ffc107;"></i> Calcul estimé
+                                        {% else %}
+                                            <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> {{ livreur_data.calcul_type }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% endif %}
                             </div>
                             {% else %}
                             <div class="distance-error">
                                 <small style="color: #dc3545;">{{ livreur_data.error }}</small>
+                                {% if livreur_data.calcul_type %}
+                                <br><small style="color: #6c757d; font-style: italic;">{{ livreur_data.calcul_type }}</small>
+                                {% endif %}
                             </div>
                             {% endif %}
                         </div>
