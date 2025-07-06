@@ -7,8 +7,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     
     # Gestion des restaurants
-    path('restaurants/', restaurant_views.restaurant, name='restaurant_list'),
-    path('restaurants/<int:restaurant_id>/', restaurant_views.restaurant_detail, name='restaurant_detail'),
+    path('restaurants/', restaurant_views.restaurant, name='backoffice_restaurant_list'),
     path('restaurants/<int:restaurant_id>/commandes/', restaurant_views.restaurant_commandes, name='restaurant_commandes'),
     path('restaurants/ajouter/', restaurant_views.restaurant_ajouter, name='restaurant_add_form'),
     path('restaurants/nouveau/', restaurant_views.ajouter_restaurant, name='restaurant_create'),
@@ -42,7 +41,7 @@ urlpatterns = [
     path('api/restaurants/', stats_views.restaurants_api, name='restaurants_api'),
 
     # Gestion des livreurs
-    path('livreurs/', livreur_views.livreurs_list, name='livreurs_list'),
+    path('livreurs/', livreur_views.livreurs_list, name='livreur_list'),
     path('livreurs/add/', livreur_views.livreur_add, name='livreur_add'),
     path('livreurs/<int:livreur_id>/', livreur_views.livreur_detail, name='livreur_detail'),
     path('livreurs/<int:livreur_id>/edit/', livreur_views.livreur_edit, name='livreur_edit'),

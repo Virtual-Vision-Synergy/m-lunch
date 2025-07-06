@@ -9,10 +9,10 @@
     <header>
         <ul>
             <li><a href="{% url 'index' %}">Logo</a></li>
-            <li><a href="{% url 'index' %}">Statistiques</a></li>
-            <li><a href="{% url 'restaurant_list' %}">Restaurant</a></li>
+            <li><a href="{% url 'stats_dashboard' %}">Statistiques</a></li>
+            <li><a href="{% url 'backoffice_restaurant_list' %}">Restaurant</a></li>
             <li><a href="{% url 'zone_list' %}">Secteur</a></li>
-            {% comment %} <li><a href="{% url 'livraison_list' %}">Livraison</a></li> {% endcomment %}
+            <li><a href="{% url 'livreur_list' %}">Livreurs</a></li>
         </ul>
     </header>
     <section>
