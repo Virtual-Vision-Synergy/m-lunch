@@ -11,14 +11,13 @@ def restaurant_list(request):
     """Liste des restaurants pour les clients"""
     zone_id = request.GET.get('zone')
     search_query = request.GET.get('q')
-
     if zone_id:
         restaurants = RestaurantService.list_restaurants_by_zone(zone_id)
     elif search_query:
         restaurants = RestaurantService.search_restaurants(search_query)
     else:
         restaurants = RestaurantService.list_restaurants_actifs()
-
+        print(restaurants)
     zones = ZoneService.get_all_zones()
 
     return render(request, 'frontoffice/restaurant.html', {
@@ -28,23 +27,6 @@ def restaurant_list(request):
         'search_query': search_query
     })
 
-
-# def restaurant_detail(request, restaurant_id):
-#     """Détail d'un restaurant avec ses repas"""
-#     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
-#     repas_disponibles = RepasService.list_repas_by_restaurant(restaurant_id)
-
-#     repas_par_type = {}
-#     for repas in repas_disponibles:
-#         type_nom = repas.type.nom if repas.type else 'Autres'
-#         if type_nom not in repas_par_type:
-#             repas_par_type[type_nom] = []
-#         repas_par_type[type_nom].append(repas)
-
-#     return render(request, 'frontoffice/restaurant_detail.html', {
-#         'restaurant': restaurant,
-#         'repas_par_type': repas_par_type
-#     })
 
 def restaurant_detail(request, restaurant_id):
     selected_type = request.GET.get('type')

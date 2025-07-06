@@ -4,7 +4,7 @@ from datetime import datetime
 from django.db import transaction
 from ..models import (
     Restaurant, StatutRestaurant, HistoriqueStatutRestaurant, HistoriqueStatutCommande, Commission, Horaire, Zone,
-    ZoneRestaurant, ZoneClient, Repas, Commande, StatutCommande, RestaurantRepas, DisponibiliteRepas, TypeRepas
+    ZoneRestaurant, ZoneClient, Repas, Commande, StatutCommande, RestaurantRepas, DisponibiliteRepas, TypeRepas, HoraireSpecial
 )
 
 class RestaurantService:
@@ -152,27 +152,25 @@ class RestaurantService:
         except Exception as e:
             return f"Erreur : {str(e)}"
 
-    @staticmethod
     def list_restaurants_actifs():
-        # pdb.set_trace()
-        """Liste tous les restaurants actifs (dernier statut = actif)."""
-        try:
-            actifs = []
-            for r in Restaurant.objects.all():
-                dernier_statut = r.historiques.order_by('-mis_a_jour_le').first()
-                if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
-                    actifs.append({
-                        "id": r.id,
-                        "nom": r.nom,
-                        "adresse": r.adresse,
-                        "description": r.description,
-                        "image": r.image,
-                        "geo_position": r.geo_position
-                    })
-            return actifs
-        except Exception as e:
-            return {"error": f"Erreur lors de la récupération des restaurants actifs : {str(e)}"}
-
+            # pdb.set_trace()
+            """Liste tous les restaurants actifs (dernier statut = actif)."""
+            try:
+                actifs = []
+                for r in Restaurant.objects.all():
+                    dernier_statut = r.historiques.order_by('-mis_a_jour_le').first()
+                    if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
+                        actifs.append({
+                            "id": r.id,
+                            "nom": r.nom,
+                            "adresse": r.adresse,
+                            "description": r.description,
+                            "image": r.image,
+                            "geo_position": r.geo_position
+                        })
+                return actifs
+            except Exception as e:
+                return {"error": f"Erreur lors de la récupération des restaurants actifs : {str(e)}"}
     @staticmethod
     def list_repas_by_restaurant(restaurant_id):
         # pdb.set_trace()
@@ -346,7 +344,10 @@ class RestaurantService:
         zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
         zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
 
+        from datetime import datetime, date
         features = []
+        today = datetime.now().weekday()
+        today_date = date.today()
         for zr in zone_restaurants:
             r = zr.restaurant
             if not r.geo_position:
@@ -359,6 +360,25 @@ class RestaurantService:
             except Exception:
                 continue
 
+            # Get today's horaires (special or normal)
+            horaires = []
+            special_qs = HoraireSpecial.objects.filter(restaurant=r, date_concerne=today_date)
+            if special_qs.exists():
+                for hs in special_qs:
+                    horaires.append({
+                        "horaire_debut": hs.horaire_debut.strftime("%H:%M"),
+                        "horaire_fin": hs.horaire_fin.strftime("%H:%M"),
+                        "special": True
+                    })
+            else:
+                horaires_qs = r.horaire.filter(le_jour=today)
+                for h in horaires_qs:
+                    horaires.append({
+                        "horaire_debut": h.horaire_debut.strftime("%H:%M"),
+                        "horaire_fin": h.horaire_fin.strftime("%H:%M"),
+                        "special": False
+                    })
+
             features.append({
                 "type": "Feature",
                 "geometry": {
@@ -370,6 +390,7 @@ class RestaurantService:
                     "nom": r.nom,
                     "note": "N/A",
                     "image_url": r.image,
+                    "horaires": horaires
                 }
             })
 
