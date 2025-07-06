@@ -152,39 +152,101 @@ class CommandeService:
     def list_commandes_by_statut(statut_id):
         # pdb.set_trace()
         """Liste toutes les commandes ayant un statut donné (dernier statut)."""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.info(f"=== list_commandes_by_statut pour statut_id: {statut_id} ===")
+
         try:
-            commandes_ids = HistoriqueStatutCommande.objects.filter(
-                statut_id=statut_id
-            ).order_by('commande_id', '-mis_a_jour_le').distinct('commande_id').values_list('commande_id', flat=True)
-            commandes = Commande.objects.filter(id__in=commandes_ids)
-            return [{
+            # Récupérer les IDs des commandes qui ont ce statut comme dernier statut
+            from django.db import connection
+
+            # Requête SQL pour récupérer les commandes ayant le statut donné comme dernier statut
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT DISTINCT h1.commande_id
+                    FROM core_historiquestatutcommande h1
+                    WHERE h1.statut_id = %s
+                    AND h1.mis_a_jour_le = (
+                        SELECT MAX(h2.mis_a_jour_le)
+                        FROM core_historiquestatutcommande h2
+                        WHERE h2.commande_id = h1.commande_id
+                    )
+                """, [statut_id])
+
+                commandes_ids = [row[0] for row in cursor.fetchall()]
+
+            logger.info(f"Commandes avec statut {statut_id} comme dernier statut: {commandes_ids}")
+
+            commandes = Commande.objects.filter(id__in=commandes_ids).select_related('client', 'point_recup')
+
+            result = [{
                 "id": c.id,
                 "client": f"{c.client.prenom} {c.client.nom}",
                 "point_recup": c.point_recup.nom,
                 "cree_le": c.cree_le
             } for c in commandes]
+
+            logger.info(f"Nombre de commandes retournées: {len(result)}")
+            return result
+
         except Exception as e:
+            logger.error(f"Erreur dans list_commandes_by_statut: {str(e)}")
             return {"error": f"Erreur lors de la récupération des commandes par statut : {str(e)}"}
 
     @staticmethod
     def get_commandes_en_attente():
         # pdb.set_trace()
         """
-        Retourne la liste détaillée des commandes ayant le statut 'En attente'
+        Retourne la liste détaillée des commandes ayant le statut 'Prête'
         Utilise list_commandes_by_statut et get_commande_details.
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.info("=== DÉBUT get_commandes_en_attente (PRÊTES) ===")
+
         try:
-            statut = StatutCommande.objects.filter(appellation__iexact="En attente").first()
+            logger.info("Recherche du statut 'Prête'...")
+            statut = StatutCommande.objects.filter(appellation__iexact="Prête").first()
+
             if not statut:
-                return {"error": "Statut 'En attente' non trouvé"}
+                logger.error("Statut 'Prête' non trouvé dans la base de données")
+                # Afficher tous les statuts disponibles
+                all_statuts = StatutCommande.objects.all()
+                logger.info(f"Statuts disponibles: {[s.appellation for s in all_statuts]}")
+                return {"error": "Statut 'Prête' non trouvé"}
+
+            logger.info(f"Statut 'Prête' trouvé avec ID: {statut.id}")
+
+            logger.info("Récupération des commandes avec ce statut...")
             commandes = CommandeService.list_commandes_by_statut(statut.id)
+
             # Si une erreur est retournée par list_commandes_by_statut
             if isinstance(commandes, dict) and "error" in commandes:
+                logger.error(f"Erreur dans list_commandes_by_statut: {commandes['error']}")
                 return commandes
+
+            logger.info(f"Nombre de commandes trouvées: {len(commandes)}")
+
             # Retourne les détails pour chaque commande
-            return [CommandeService.get_commande_details(c["id"]) for c in commandes]
+            logger.info("Récupération des détails pour chaque commande...")
+            result = []
+            for i, c in enumerate(commandes):
+                logger.info(f"Traitement commande {i+1}: ID={c['id']}")
+                details = CommandeService.get_commande_details(c["id"])
+                if isinstance(details, dict) and "error" not in details:
+                    result.append(details)
+                    logger.info(f"Détails récupérés pour commande {c['id']}: {details.get('client', 'N/A')}")
+                else:
+                    logger.error(f"Erreur détails commande {c['id']}: {details}")
+
+            logger.info(f"=== FIN get_commandes_en_attente - {len(result)} commandes prêtes ===")
+            return result
+
         except Exception as e:
-            return {"error": f"Erreur lors de la récupération des commandes en attente : {str(e)}"}
+            logger.error(f"Exception dans get_commandes_en_attente: {str(e)}")
+            return {"error": f"Erreur lors de la récupération des commandes prêtes : {str(e)}"}
 
     @staticmethod
     def get_total_commande(commande_id):
