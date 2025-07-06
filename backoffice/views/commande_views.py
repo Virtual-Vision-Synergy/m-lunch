@@ -4,6 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from mlunch.core.services.commande_service import CommandeService
 from mlunch.core.models import Commande, StatutCommande
+from mlunch.core.models import Livreur, ZoneLivreur, ZoneClient
+from mlunch.core.services.distance_service import DistanceService
 import json
 
 def commande_list(request):
@@ -55,8 +57,6 @@ def commandes_en_attente(request):
 
 def commande_attribuer(request, commande_id):
     """Page d'attribution d'une commande à un livreur"""
-    from mlunch.core.models import Livreur, ZoneLivreur, ZoneClient
-    from mlunch.core.services.distance_service import DistanceService
 
     commande = get_object_or_404(Commande, id=commande_id)
 
