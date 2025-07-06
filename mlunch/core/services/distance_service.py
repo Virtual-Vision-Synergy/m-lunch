@@ -1,6 +1,6 @@
 import math
 from typing import List, Tuple
-from mlunch.core.models import Livreur, Commande, Restaurant, PointRecup, CommandeRepas, RestaurantRepas
+from mlunch.core.models import Livreur, Commande, Restaurant, PointRecup, CommandeRepas, RestaurantRepas, ZoneLivreur
 
 class DistanceService:
     @staticmethod
@@ -14,6 +14,32 @@ class DistanceService:
                 return (0.0, 0.0)
             return (float(parts[0].strip()), float(parts[1].strip()))
         except (ValueError, AttributeError):
+            return (0.0, 0.0)
+
+    @staticmethod
+    def get_livreur_coordinates(livreur_id: int) -> Tuple[float, float]:
+        """
+        Récupère les coordonnées d'un livreur depuis sa zone via ZoneLivreur.
+        Si aucune zone n'est assignée, utilise la position par défaut.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            # Chercher la zone du livreur via ZoneLivreur
+            zone_livreur = ZoneLivreur.objects.select_related('zone').filter(livreur_id=livreur_id).first()
+
+            if zone_livreur and zone_livreur.zone.zone:
+                logger.info(f"Zone trouvée pour livreur {livreur_id}: {zone_livreur.zone.nom} - {zone_livreur.zone.zone}")
+                return DistanceService.parse_coordinates(zone_livreur.zone.zone)
+            else:
+                # Fallback sur la position du livreur si pas de zone
+                livreur = Livreur.objects.get(id=livreur_id)
+                logger.warning(f"Aucune zone trouvée pour livreur {livreur_id}, utilisation position: {livreur.position}")
+                return DistanceService.parse_coordinates(livreur.position)
+
+        except Exception as e:
+            logger.error(f"Erreur récupération coordonnées livreur {livreur_id}: {str(e)}")
             return (0.0, 0.0)
 
     @staticmethod
@@ -79,19 +105,35 @@ class DistanceService:
 
         Retourne un dictionnaire avec les détails du parcours et la distance totale.
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.info(f"=== CALCUL DISTANCE - Livreur {livreur_id}, Commande {commande_id} ===")
+
         try:
-            # Récupérer le livreur
+            # Récupérer le livreur et ses coordonnées
             livreur = Livreur.objects.get(id=livreur_id)
-            livreur_lat, livreur_lng = DistanceService.parse_coordinates(livreur.position)
+            logger.info(f"Livreur trouvé: {livreur.nom}")
+
+            # Utiliser la nouvelle méthode pour récupérer les coordonnées
+            livreur_lat, livreur_lng = DistanceService.get_livreur_coordinates(livreur_id)
+            logger.info(f"Coordonnées finales du livreur: lat={livreur_lat}, lng={livreur_lng}")
 
             # Récupérer la commande
             commande = Commande.objects.select_related('point_recup').get(id=commande_id)
+            logger.info(f"Commande trouvée: {commande.id}")
+            logger.info(f"Point de récupération: {commande.point_recup.nom}")
+            logger.info(f"Position brute du point de récup: '{commande.point_recup.geo_position}'")
+
             point_recup_lat, point_recup_lng = DistanceService.parse_coordinates(commande.point_recup.geo_position)
+            logger.info(f"Position parsée du point de récup: lat={point_recup_lat}, lng={point_recup_lng}")
 
             # Récupérer tous les restaurants concernés par la commande
             restaurants = DistanceService.get_restaurants_for_commande(commande_id)
+            logger.info(f"Nombre de restaurants trouvés: {len(restaurants)}")
 
             if not restaurants:
+                logger.warning("Aucun restaurant trouvé pour cette commande")
                 return {
                     'error': 'Aucun restaurant trouvé pour cette commande',
                     'distance_totale': 0,
@@ -103,12 +145,20 @@ class DistanceService:
             distance_totale = 0
             current_lat, current_lng = livreur_lat, livreur_lng
 
+            logger.info(f"Position de départ: lat={current_lat}, lng={current_lng}")
+
             # Étape 1: Aller vers chaque restaurant
             for i, restaurant in enumerate(restaurants):
+                logger.info(f"\n--- RESTAURANT {i+1}: {restaurant.nom} ---")
+                logger.info(f"Position brute du restaurant: '{restaurant.geo_position}'")
+
                 rest_lat, rest_lng = DistanceService.parse_coordinates(restaurant.geo_position)
+                logger.info(f"Position parsée du restaurant: lat={rest_lat}, lng={rest_lng}")
 
                 # Calculer la distance depuis la position actuelle
+                logger.info(f"Calcul distance de ({current_lat}, {current_lng}) vers ({rest_lat}, {rest_lng})")
                 distance = DistanceService.haversine_distance(current_lat, current_lng, rest_lat, rest_lng)
+                logger.info(f"Distance calculée: {distance} km")
 
                 parcours.append({
                     'etape': i + 1,
@@ -122,9 +172,13 @@ class DistanceService:
 
                 distance_totale += distance
                 current_lat, current_lng = rest_lat, rest_lng
+                logger.info(f"Distance totale cumulée: {distance_totale} km")
 
             # Étape 2: Aller vers le point de récupération
+            logger.info(f"\n--- VERS POINT DE RÉCUPÉRATION ---")
+            logger.info(f"Calcul distance de ({current_lat}, {current_lng}) vers ({point_recup_lat}, {point_recup_lng})")
             distance_finale = DistanceService.haversine_distance(current_lat, current_lng, point_recup_lat, point_recup_lng)
+            logger.info(f"Distance finale calculée: {distance_finale} km")
 
             parcours.append({
                 'etape': len(restaurants) + 1,
@@ -137,6 +191,8 @@ class DistanceService:
             })
 
             distance_totale += distance_finale
+            logger.info(f"DISTANCE TOTALE FINALE: {distance_totale} km")
+            logger.info(f"=== FIN CALCUL DISTANCE ===")
 
             return {
                 'livreur': livreur.nom,
@@ -148,18 +204,21 @@ class DistanceService:
             }
 
         except Livreur.DoesNotExist:
+            logger.error(f"Livreur {livreur_id} non trouvé")
             return {
                 'error': 'Livreur non trouvé',
                 'distance_totale': 0,
                 'parcours': []
             }
         except Commande.DoesNotExist:
+            logger.error(f"Commande {commande_id} non trouvée")
             return {
                 'error': 'Commande non trouvée',
                 'distance_totale': 0,
                 'parcours': []
             }
         except Exception as e:
+            logger.error(f"Erreur lors du calcul: {str(e)}")
             return {
                 'error': f'Erreur lors du calcul: {str(e)}',
                 'distance_totale': 0,

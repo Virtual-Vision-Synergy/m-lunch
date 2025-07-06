@@ -56,7 +56,6 @@ def commandes_en_attente(request):
 def commande_attribuer(request, commande_id):
     """Page d'attribution d'une commande à un livreur"""
     from mlunch.core.models import Livreur, ZoneLivreur, ZoneClient
-    from mlunch.core.services.livreur_service import LivreurService
     from mlunch.core.services.distance_service import DistanceService
 
     commande = get_object_or_404(Commande, id=commande_id)
@@ -99,38 +98,44 @@ def commande_attribuer(request, commande_id):
 
 def commande_attribuer_confirmer(request, commande_id):
     """Confirme l'attribution d'une commande à un livreur"""
-    from mlunch.core.models import Livraison, Livreur
     from mlunch.core.services.livraison_service import LivraisonService
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Début de commande_attribuer_confirmer pour commande {commande_id}")
 
     if request.method == 'POST':
         commande = get_object_or_404(Commande, id=commande_id)
         livreur_id = request.POST.get('livreur_id')
 
+        logger.info(f"POST reçu - commande: {commande_id}, livreur_id: {livreur_id}")
+
         if not livreur_id:
+            logger.warning("Aucun livreur sélectionné")
             messages.error(request, 'Veuillez sélectionner un livreur.')
             return redirect('commande_attribuer', commande_id=commande_id)
 
         try:
-            livreur = get_object_or_404(Livreur, id=livreur_id)
+            logger.info(f"Tentative de création de livraison - livreur: {livreur_id}, commande: {commande_id}")
+            # Utiliser le service de livraison pour créer la livraison
+            result = LivraisonService.create_livraison(livreur_id, commande_id)
 
-            # Créer la livraison
-            livraison = Livraison.objects.create(
-                livreur=livreur,
-                commande=commande
-            )
+            logger.info(f"Résultat du service: {result}")
 
-            # Mettre à jour le statut de la commande (supposons que le statut "En livraison" existe)
-            try:
-                statut_en_livraison = StatutCommande.objects.get(appellation="En livraison")
-                CommandeService.update_statut_commande(commande, statut_en_livraison.id)
-            except StatutCommande.DoesNotExist:
-                pass  # Si le statut n'existe pas, on continue sans mettre à jour
+            if "error" in result:
+                logger.error(f"Erreur du service: {result['error']}")
+                messages.error(request, result["error"])
+                return redirect('commande_attribuer', commande_id=commande_id)
 
-            messages.success(request, f'Commande #{commande.id} attribuée avec succès à {livreur.nom}.')
+            # Succès
+            logger.info(f"Attribution réussie, redirection vers index")
+            messages.success(request, f'Commande #{commande.id} attribuée avec succès à {result["livraison"]["livreur"]}.')
             return redirect('index')
 
         except Exception as e:
+            logger.error(f"Exception lors de l'attribution: {str(e)}")
             messages.error(request, f'Erreur lors de l\'attribution : {str(e)}')
             return redirect('commande_attribuer', commande_id=commande_id)
 
+    logger.info("Méthode non POST, redirection vers commande_attribuer")
     return redirect('commande_attribuer', commande_id=commande_id)
