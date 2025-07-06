@@ -191,3 +191,76 @@
     .inscription-container, .map-container {
       flex: 1 1 auto;
     }
+
+
+        .max-container {
+      display: flex;
+      min-height: 50vh;
+    }
+    
+    .inscription-container {
+      flex: 1;
+      padding: 40px;
+      max-width: 500px;
+    }
+    
+    .map-container {
+      flex: 1;
+      padding: 40px;
+      background: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #map {
+      flex: 1;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      min-height: 400px;
+    }
+    
+    .map-title {
+      margin-bottom: 20px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    /* Toast and error messages */
+    .toast-message {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      background: #fff;
+      padding: 12px 24px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      border-left: 4px solid #007bff;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border: 1px solid #f5c6cb;
+    }
+    
+    /* Sector input styling */
+    .sector-input {
+      background-color: #f8f9fa;
+      cursor: not-allowed;
+    }
+
+     .already-account a {
+      color: #6257DB !important;
+      text-decoration: none !important;
+      transition: text-decoration 0.2s;
+      font-weight: 500;
+    }
+    .already-account a:hover {
+      color: #6257DB !important;
+      text-decoration: underline !important;
+    }
