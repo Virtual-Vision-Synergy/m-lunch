@@ -357,8 +357,8 @@
                 <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item {% if 'livra' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-truck"></i>Livreurs
                 </a>
-                <a href="#" class="sidebar-item">
-                    <i class="fas fa-map-marker-alt"></i>Secteurs
+                <a href="{% url 'zone_list' %}" class="sidebar-item {% if 'zone' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-map-marked-alt"></i>Zones
                 </a>
             </div>
             <div class="sidebar-section">

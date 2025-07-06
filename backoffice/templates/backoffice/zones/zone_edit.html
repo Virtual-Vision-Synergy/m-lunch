@@ -1,0 +1,330 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Modifier Zone {{ zone.nom }} - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-edit me-2"></i>Modifier la zone : {{ zone.nom }}</h2>
+    <div>
+        <a href="{% url 'zone_detail' zone.id %}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>Retour aux détails
+        </a>
+        <a href="{% url 'zone_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-1"></i>Liste des zones
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-form me-2"></i>Modifier les informations</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="zoneForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nom" class="form-label">Nom de la zone *</label>
+                        <input type="text" class="form-control" id="nom" name="nom" value="{{ zone.nom }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Description optionnelle de la zone">{{ zone.description|default:"" }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Coordonnées</label>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Modifiez la zone sur la carte (minimum 3 points)
+                        </div>
+                        <div id="coordinates-info" class="mt-2">
+                            <span class="badge bg-secondary" id="points-count">0 points</span>
+                            <span class="badge bg-info" id="zone-status">Zone existante chargée</span>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="coordinates" name="coordinates">
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save me-1"></i>Sauvegarder les modifications
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" id="clearBtn">
+                            <i class="fas fa-eraser me-1"></i>Effacer le dessin
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="resetBtn">
+                            <i class="fas fa-undo me-1"></i>Restaurer la zone originale
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Instructions</h6>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li>La zone actuelle est affichée en vert</li>
+                    <li>Cliquez pour ajouter de nouveaux points</li>
+                    <li>Minimum 3 points requis</li>
+                    <li>Double-cliquez pour terminer le polygone</li>
+                    <li>Le rayon de couverture reste de 3.5km</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map me-2"></i>Modifier la zone sur la carte</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" style="height: 500px; width: 100%;"></div>
+            </div>
+            <div class="card-footer">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 20px; height: 20px; background: #6c757d; opacity: 0.3; border: 2px solid #6c757d; margin-right: 8px;"></div>
+                            <small>Zone originale</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 20px; height: 20px; background: #28a745; opacity: 0.3; border: 2px solid #28a745; margin-right: 8px;"></div>
+                            <small>Nouvelle zone</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 8px;"></div>
+                            <small>Centre</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 20px; height: 2px; background: #ffc107; margin-right: 8px;"></div>
+                            <small>Rayon 3.5km</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .zone-polygon-original {
+        stroke: #6c757d;
+        stroke-width: 2;
+        stroke-opacity: 0.8;
+        fill: #6c757d;
+        fill-opacity: 0.2;
+    }
+    .zone-polygon {
+        stroke: #28a745;
+        stroke-width: 3;
+        stroke-opacity: 0.8;
+        fill: #28a745;
+        fill-opacity: 0.3;
+    }
+    .coverage-circle {
+        stroke: #ffc107;
+        stroke-width: 2;
+        stroke-dasharray: 5, 5;
+        fill: none;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialisation de la carte
+    const map = L.map('map').setView([-18.8792, 47.5079], 12); // Antananarivo
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Données de la zone existante
+    const originalZoneWKT = '{{ zone.zone|escapejs }}';
+    let originalPolygon = null;
+    let originalCoords = [];
+
+    // Variables pour la nouvelle zone
+    let currentPolygon = null;
+    let currentPoints = [];
+    let centerMarker = null;
+    let coverageCircle = null;
+
+    // Fonction pour parser les coordonnées WKT
+    function parseWKT(wkt) {
+        if (!wkt || !wkt.startsWith('POLYGON')) return null;
+
+        const coordsString = wkt.match(/\(\(([^)]+)\)\)/);
+        if (!coordsString) return null;
+
+        const coords = coordsString[1].split(', ').map(pair => {
+            const [lng, lat] = pair.split(' ').map(Number);
+            return { lat: lat, lng: lng };
+        });
+
+        return coords.slice(0, -1); // Enlever le dernier point qui duplique le premier
+    }
+
+    // Fonction pour calculer le centre d'un polygone
+    function calculateCenter(points) {
+        let latSum = 0, lngSum = 0;
+        points.forEach(point => {
+            latSum += point.lat;
+            lngSum += point.lng;
+        });
+        return {
+            lat: latSum / points.length,
+            lng: lngSum / points.length
+        };
+    }
+
+    // Charger la zone originale
+    if (originalZoneWKT) {
+        originalCoords = parseWKT(originalZoneWKT);
+        if (originalCoords && originalCoords.length > 0) {
+            // Afficher la zone originale en gris
+            const originalLatLngs = originalCoords.map(p => [p.lat, p.lng]);
+            originalPolygon = L.polygon(originalLatLngs, {
+                className: 'zone-polygon-original',
+                color: '#6c757d',
+                fillOpacity: 0.2
+            }).addTo(map);
+
+            // Centrer la carte sur la zone
+            map.fitBounds(originalPolygon.getBounds(), { padding: [20, 20] });
+
+            // Initialiser la nouvelle zone avec les coordonnées originales
+            currentPoints = [...originalCoords];
+            updateDisplay();
+        }
+    }
+
+    // Fonction pour mettre à jour l'affichage
+    function updateDisplay() {
+        const pointsCount = currentPoints.length;
+        document.getElementById('points-count').textContent = `${pointsCount} point${pointsCount > 1 ? 's' : ''}`;
+
+        // Mettre à jour le champ caché
+        document.getElementById('coordinates').value = JSON.stringify(currentPoints);
+
+        // Redessiner le polygone actuel
+        if (currentPolygon) {
+            map.removeLayer(currentPolygon);
+        }
+
+        if (currentPoints.length >= 3) {
+            currentPolygon = L.polygon(currentPoints.map(p => [p.lat, p.lng]), {
+                className: 'zone-polygon',
+                color: '#28a745'
+            }).addTo(map);
+
+            // Calculer et afficher le centre + rayon de 3.5km
+            const center = calculateCenter(currentPoints);
+
+            // Marker pour le centre
+            if (centerMarker) {
+                map.removeLayer(centerMarker);
+            }
+            centerMarker = L.marker([center.lat, center.lng], {
+                icon: L.divIcon({
+                    className: 'center-marker',
+                    html: '<div style="background: #dc3545; border: 2px solid white; border-radius: 50%; width: 12px; height: 12px;"></div>',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                })
+            }).addTo(map);
+
+            // Cercle de couverture de 3.5km
+            if (coverageCircle) {
+                map.removeLayer(coverageCircle);
+            }
+            coverageCircle = L.circle([center.lat, center.lng], {
+                radius: 3500, // 3.5km
+                className: 'coverage-circle',
+                color: '#ffc107',
+                fillOpacity: 0
+            }).addTo(map);
+        }
+    }
+
+    // Gestion des clics sur la carte
+    map.on('click', function(e) {
+        const point = {
+            lat: e.latlng.lat,
+            lng: e.latlng.lng
+        };
+
+        currentPoints.push(point);
+        updateDisplay();
+
+        // Mettre à jour le statut
+        document.getElementById('zone-status').textContent = 'Zone modifiée';
+        document.getElementById('zone-status').className = 'badge bg-warning';
+    });
+
+    // Bouton pour effacer
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        currentPoints = [];
+        if (currentPolygon) {
+            map.removeLayer(currentPolygon);
+            currentPolygon = null;
+        }
+        if (centerMarker) {
+            map.removeLayer(centerMarker);
+            centerMarker = null;
+        }
+        if (coverageCircle) {
+            map.removeLayer(coverageCircle);
+            coverageCircle = null;
+        }
+        updateDisplay();
+
+        document.getElementById('zone-status').textContent = 'Zone effacée';
+        document.getElementById('zone-status').className = 'badge bg-danger';
+    });
+
+    // Bouton pour restaurer
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        if (originalCoords && originalCoords.length > 0) {
+            currentPoints = [...originalCoords];
+            updateDisplay();
+
+            document.getElementById('zone-status').textContent = 'Zone originale restaurée';
+            document.getElementById('zone-status').className = 'badge bg-info';
+        }
+    });
+
+    // Validation du formulaire
+    document.getElementById('zoneForm').addEventListener('submit', function(e) {
+        if (currentPoints.length < 3) {
+            e.preventDefault();
+            alert('Vous devez définir au minimum 3 points pour créer une zone.');
+            return false;
+        }
+
+        const nom = document.getElementById('nom').value.trim();
+        if (!nom) {
+            e.preventDefault();
+            alert('Le nom de la zone est requis.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import restaurant_views, commande_views, stats_views, livraison_views
+from .views import restaurant_views, commande_views, stats_views, livraison_views, zone_views
 
 urlpatterns = [
     # Dashboard principal
@@ -22,6 +22,14 @@ urlpatterns = [
     path('commandes/<int:commande_id>/attribuer/', commande_views.commande_attribuer, name='commande_attribuer'),
     path('commandes/<int:commande_id>/attribuer/confirmer/', commande_views.commande_attribuer_confirmer, name='commande_attribuer_confirmer'),
     path('api/commandes/<int:commande_id>/statut/', commande_views.commande_update_statut, name='commande_update_statut'),
+
+    # Gestion des zones
+    path('zones/', zone_views.zone_list, name='zone_list'),
+    path('zones/creer/', zone_views.zone_create, name='zone_create'),
+    path('zones/<int:zone_id>/', zone_views.zone_detail, name='zone_detail'),
+    path('zones/<int:zone_id>/edit/', zone_views.zone_edit, name='zone_edit'),
+    path('zones/<int:zone_id>/delete/', zone_views.zone_delete, name='zone_delete'),
+    path('api/zones/by-coordinates/', zone_views.get_zone_by_coordinates, name='get_zone_by_coordinates'),
 
     # Statistiques et tableaux de bord
     path('stats/', stats_views.stats_dashboard, name='stats_dashboard'),
