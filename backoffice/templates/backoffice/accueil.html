@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>statistique</title>
+    <title>Statistique</title>
 </head>
 <body>
     <h1>Bienvenue Admin</h1>
@@ -15,38 +15,53 @@
             <li><a href="{% url 'livreur_list' %}">Livreurs</a></li>
         </ul>
     </header>
+
     <section>
-        <h2>Liste des commandes prêtes</h2>
+        <h2>Filtrer par statut</h2>
+        <form method="get">
+            <select name="statut" onchange="this.form.submit()">
+                <option value="">-- Tous les statuts --</option>
+                {% for statut in statuts %}
+                    <option value="{{ statut.appellation }}" {% if request.GET.statut == statut.appellation %}selected{% endif %}>
+                        {{ statut.appellation }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </section>
+
+    <section>
+        <h2>Liste des commandes</h2>
         <table border="1">
             <thead>
                 <tr>
                     <th>Client</th>
-                    <th>Secteur</th>
-                    <th>Restaurant</th>
+                    <th>Point de récupération</th>
                     <th>Date/Heure</th>
-                    <th>Nombre de repas</th>
-                    <th>Prix total</th>
+                    <th>Statut</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for commande in commandes_en_attente %}
+                {% for commande in commandes %}
                 <tr>
                     <td>{{ commande.client }}</td>
-                    <td>{{ commande.secteur }}</td>
-                    <td>{{ commande.restaurant }}</td>
-                    <td>{{ commande.date_heure_commande }}</td>
-                    <td>{{ commande.nombre_repas }}</td>
-                    <td>{{ commande.prix_total }}</td>
+                    <td>{{ commande.point_recup }}</td>
+                    <td>{{ commande.cree_le }}</td>
+                    <td>{{ commande.statut }}</td>
                     <td>
+                        {% if commande.statut == "Prête" %}
                         <a href="{% url 'commande_attribuer' commande.id %}" class="btn-attribuer">
                             Attribuer
                         </a>
+                        {% else %}
+                        <!-- Rien à afficher -->
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7">Aucune commande trouvée.</td>
+                    <td colspan="5">Aucune commande trouvée.</td>
                 </tr>
                 {% endfor %}
             </tbody>

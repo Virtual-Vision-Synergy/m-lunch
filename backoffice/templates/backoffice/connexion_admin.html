@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Connexion Admin</title>
+</head>
+<body>
+    <h1>Connexion Admin</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <label for="nom">Nom :</label><br>
+        <input type="text" id="nom" name="nom" required autocomplete="username" /><br><br>
+
+        <label for="mot_de_passe">Mot de passe :</label><br>
+        <input type="password" id="mot_de_passe" name="mot_de_passe" required autocomplete="current-password" /><br><br>
+
+        <button type="submit">Se connecter</button>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: red; margin-top: 1em;">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+</body>
+</html>

@@ -5,6 +5,8 @@ from .views import restaurant_views, commande_views, zone_views, stats_views, li
 urlpatterns = [
     # Dashboard principal
     path('', views.index, name='index'),
+    path('admin/login/', views.connexion_admin, name='admin_login'),
+    path('accueil/', views.accueil, name='accueil'),
     
     # Gestion des restaurants
     path('restaurants/', restaurant_views.restaurant, name='backoffice_restaurant_list'),

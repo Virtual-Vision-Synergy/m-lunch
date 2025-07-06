@@ -259,3 +259,10 @@ class SuivisCommande(models.Model):
     def __str__(self):
         return f"Commande {self.commande.id} - {self.restaurant.nom} : {self.statut} ({self.mis_a_jour_le})"
 
+class Admin(models.Model):
+    nom = models.CharField(max_length=100, unique=True)
+    mot_de_passe = models.CharField(max_length=128)
+    date_inscri = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.nom
