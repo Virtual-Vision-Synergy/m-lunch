@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Commandes en cours - M'Lunch</title>
+  <link rel="stylesheet" href="en_cours.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400&family=REM:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="panier.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="overlap-wrapper">
+      <div class="overlap-2">
+        <div class="group-8">
+          <div class="overlap-group-3">
+            <img class="rectangle-4" src="assets/img/icones/logo.png" alt="Logo" />
+            <div class="group-11">
+              <a href="accueil.html" class="text-wrapper-10">Accueil</a>
+              <a href="map.html" class="text-wrapper-11">Livraison</a>
+              <a href="restaurant.html" class="text-wrapper-12">Restaurant</a>
+              <a href="#about" class="text-wrapper-12">A propos</a>
+            </div>
+            <div class="icons-right">
+              <a href="login.html" class="icon-button"><img src="assets/img/icones/user.svg" alt="Profil" /></a>
+              <a href="panier.html" class="icon-button"><img src="assets/img/icones/panier.svg" alt="Panier" /></a>
+              <button class="icon-button" id="menu-toggle"><img src="assets/img/icones/menu.svg" alt="Menu" /></button>
+
+              <nav id="hamburger-menu" class="hamburger-menu">
+                <ul>
+                  <li class="has-submenu">
+                    <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                    <ul class="submenu">
+                      <li><a href="en_cours.html">En Cours</a></li>
+                      <li><a href="historique.html">Historique</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="panier.html">Panier</a></li>
+                  <li><a href="#about">A propos</a></li>
+                  <li><a href="login.html">Connexion</a></li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</header>
+    
+<!-- Contenu général sous le header -->
+<div class="main-content">
+   
+
+
+  <!-- Table -->
+
+  <!-- Conteneur flex pour commandes et rectangle à droite -->
+<div class="conteneur-commandes">
+  <div class="commandes-container">
+    <h2 class="commandes-title">Vos Commandes :</h2>
+    <table class="commande-table">
+      <thead>
+        <tr>
+          <th>Commande</th>
+          <th>Image</th>
+          <th>Quantité</th>
+          <th>Prix</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="pizza">Pizza</td>
+          <td>
+            <img class="rectangle-124" src="assets/img/resto/p.jpeg" alt="Pizza" />
+          </td>
+          <td>
+            <div class="quantity-control">
+              <div class="group-78">
+                <div class="rectangle-100">
+                  <img class="jam-minus" src="assets/img/icones/jam-minus0.svg" alt="Diminuer" />
+                </div>
+              </div>
+              <div class="group-80">
+                <div class="rectangle-101">
+                  <div class="_2">2</div>
+                </div>
+              </div>
+              <div class="group-79">
+                <div class="rectangle-102">
+                  <img class="jam-plus" src="assets/img/icones/jam-plus0.svg" alt="Augmenter" />
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="_20000-ar">20000 Ar</td>
+          <td>
+            <button class="btn-supprimer" type="button">
+              <img src="assets/img/icones/vector.svg" alt="Supprimer" />
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="cost-summary">
+      <p><strong>Somme :</strong> <span class="_40000-ar">40000 Ar</span></p>
+      <p><strong>Livraison :</strong> <span class="_3000-ar">3000 Ar</span></p>
+      <div class="line-4"></div>
+      <p><strong>Total :</strong> <span class="_43000-ar">43000 Ar</span></p>
+    </div>
+  </div>
+  <div class="rectangle-droite">
+    <div class="payement-info">Payement Info</div>
+    <div class="methoses-de-payements">Méthodes de paiement</div>
+    <!-- Formulaire de choix de paiement -->
+    <form class="payment-options">
+      <div class="payment-option">
+        <input type="radio" id="mobile-money" name="payment-method" value="mobile-money" checked>
+        <label for="mobile-money">
+          <span class="mobile-money">Mobile money</span>
+        </label>
+      </div>
+      <div class="payment-option">
+        <input type="radio" id="espece" name="payment-method" value="espece">
+        <label for="espece">
+          <span class="espece">Espece</span>
+        </label>
+      </div>
+      
+      <!-- Section pour choisir le point de récupération -->
+      <div class="pickup-section">
+        <div class="pickup-title">Point de récupération</div>
+        <select class="pickup-dropdown" name="pickup-point" required>
+          <option value="">Choisir un point de récupération</option>
+          <option value="saint-joseph">Saint Joseph</option>
+          <option value="iscam">ISCAM</option>
+          <option value="aceem">ACEEM</option>
+        </select>
+      </div>
+      
+      <button type="submit" class="btn-valider-paiement">Valider</button>
+    </form>
+  </div>
+</div>
+
+<script>
+    // Menu hamburger
+    document.getElementById('menu-toggle').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('hamburger-menu');
+      menu.classList.toggle('active');
+    });
+
+    // Sous-menus
+    document.querySelectorAll('.has-submenu').forEach(item => {
+      item.addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('arrow')) {
+          this.classList.toggle('open');
+          e.preventDefault();
+        }
+      });
+    });
+  </script>
+  <script>
+    // Fermer le sous-menu si on clique ailleurs
+    document.addEventListener('click', function(e) {
+      // Ferme le menu hamburger si ouvert
+      const menu = document.getElementById('hamburger-menu');
+      if (menu && menu.classList.contains('active')) {
+        if (!menu.contains(e.target) && e.target.id !== 'menu-toggle') {
+          menu.classList.remove('active');
+        }
+      }
+      // Ferme les sous-menus ouverts
+      document.querySelectorAll('.has-submenu.open').forEach(function(item) {
+        if (!item.contains(e.target)) {
+          item.classList.remove('open');
+        }
+      });
+    });
+  </script>
+  <script src="panier.js"></script>
+</body>
+</html>
