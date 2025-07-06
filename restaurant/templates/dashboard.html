@@ -78,22 +78,112 @@
             margin-bottom: 2.5rem;
         }
 
+        .welcome-card > div:first-child {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
         .welcome-card h2 {
             color: var(--primary-color);
             font-size: 1.8rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
             font-weight: 600;
         }
 
-        .welcome-card p {
-            margin-bottom: 0.8rem;
-            font-size: 1.1rem;
+        /* Nouveau conteneur flex pour boutons Modifier et Désactiver */
+        .welcome-card > div:first-child > div {
+            display: flex;
+            gap: 0.8rem;
         }
 
-        .welcome-card strong {
+        /* Bouton modifier en contour */
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary-color);
+            padding: 0.8rem 1.8rem;
+            text-decoration: none;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            font-size: 1rem;
             font-weight: 500;
-            color: var(--text-color);
+            transition: all 0.3s ease;
+            display: inline-block;
+            cursor: pointer;
         }
+
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Bouton désactiver */
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+            padding: 0.8rem 1.8rem;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.8rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary.secondary {
+            background-color: #777;
+        }
+
+        /* Bouton secondaire dans tableau */
+        .btn-secondary {
+            background-color: #3478f6; /* Bleu moyen */
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(52, 120, 246, 0.4);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2a62c4; /* Bleu un peu plus foncé */
+            box-shadow: 0 6px 12px rgba(42, 98, 196, 0.6);
+            transform: translateY(-2px);
+        }
+
 
         .stats-grid {
             display: grid;
@@ -284,6 +374,12 @@
             color: var(--error-color);
         }
 
+        /* Bouton Ajouter un plat sous la liste */
+        .btn-ajouter-plat-container {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
         /* Section des commandes */
         .commandes-section {
             background: var(--white);
@@ -291,6 +387,7 @@
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             margin-bottom: 3rem;
+            width:120%
         }
 
         .commandes-table-container {
@@ -349,7 +446,7 @@
             background-color: var(--info-color);
         }
 
-        /* Boutons */
+        /* Boutons dans tableau */
         .btn-detail {
             background-color: var(--primary-color);
             color: white;
@@ -360,6 +457,9 @@
             font-weight: 500;
             transition: all 0.3s ease;
             display: inline-block;
+            cursor: pointer;
+            border: none;
+            margin-right: 0.5rem;
         }
 
         .btn-detail:hover {
@@ -408,24 +508,6 @@
             margin-bottom: 1.5rem;
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.8rem 1.8rem;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .header {
@@ -454,6 +536,7 @@
                 font-size: 0.9rem;
             }
         }
+        
     </style>
 </head>
 <body>
@@ -474,7 +557,13 @@
         {% endif %}
 
         <div class="welcome-card">
-            <h2>Bienvenue, {{ restaurant.nom }} !</h2>
+            <div>
+                <h2>Bienvenue, {{ restaurant.nom }} !</h2>
+                <div>
+                    <a href="#" class="btn-outline">Modifier</a>
+                    <a href="#" class="btn-danger">Désactiver</a>
+                </div>
+            </div>
             <p><strong>Adresse :</strong> {{ restaurant.adresse|default:"Non renseignée" }}</p>
             <p><strong>Description :</strong> {{ restaurant.description|default:"Aucune description" }}</p>
             <p><strong>Position géographique :</strong> {{ restaurant.geo_position }}</p>
@@ -524,23 +613,19 @@
                                 <!-- Toggle de disponibilité -->
                                 <div class="plat-disponibilite">
                                     <label class="toggle-switch">
-                                        <input type="checkbox"
-                                               class="toggle-disponibilite"
-                                               data-repas-id="{{ plat_info.repas.id }}"
-                                               {% if plat_info.est_disponible %}checked{% endif %}>
+                                        <input type="checkbox" {% if plat_info.disponibilite %}checked{% endif %} disabled>
                                         <span class="slider"></span>
                                     </label>
-                                    <span class="disponibilite-text {% if plat_info.est_disponible %}disponible{% else %}indisponible{% endif %}">
-                                        {% if plat_info.est_disponible %}
-                                            Disponible
-                                        {% else %}
-                                            Indisponible
-                                        {% endif %}
+                                    <span class="disponibilite-text {% if plat_info.disponibilite %}disponible{% else %}indisponible{% endif %}">
+                                        {% if plat_info.disponibilite %}Disponible{% else %}Indisponible{% endif %}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
+                </div>
+                <div class="btn-ajouter-plat-container">
+                    <a href="#" class="btn-primary">Ajouter un plat</a>
                 </div>
             {% else %}
                 <div class="empty-state">
@@ -558,9 +643,10 @@
                     <table class="commandes-table">
                         <thead>
                             <tr>
-                                <th>N° Commande</th>
+                                <th>ID</th>
                                 <th>Client</th>
                                 <th>Date</th>
+                                <th>Montant</th>
                                 <th>Statut</th>
                                 <th>Actions</th>
                             </tr>
@@ -568,18 +654,21 @@
                         <tbody>
                             {% for commande_info in commandes %}
                                 <tr>
-                                    <td>#{{ commande_info.commande.id }}</td>
-                                    <td>{{ commande_info.commande.client.prenom }} {{ commande_info.commande.client.nom }}</td>
-                                    <td>{{ commande_info.commande.cree_le|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ commande_info.commande.id }}</td>
+                                    <td>{{ commande_info.commande.client.email }}</td>
+                                    <td>{{ commande_info.commande.date_commande|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ commande_info.commande.montant_total }} Ar</td>
                                     <td>
-                                        <span class="badge badge-{{ commande_info.statut|lower }}">
-                                            {{ commande_info.statut }}
-                                        </span>
+                                        <span class="badge badge-en-cours">{{ commande_info.statut }}</span>
                                     </td>
                                     <td>
-                                        <a href="{% url 'commande_details' commande_info.commande.id %}" class="btn-detail">
-                                            Détails
-                                        </a>
+                                        <a href="{% url 'commande_details' commande_info.commande.id %}" class="btn-detail">Détails</a>
+                                        {% if commande_info.statut|lower == 'en cours' %}
+                                            <form method="POST" action="{% url 'mettre_en_preparation' commande_info.commande.id %}" style="display:inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-secondary">Mettre en préparation</button>
+                                            </form>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -593,122 +682,5 @@
             {% endif %}
         </div>
     </div>
-
-    <script>
-        // Gestion des boutons toggle de disponibilité
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggles = document.querySelectorAll('.toggle-disponibilite');
-
-            toggles.forEach(toggle => {
-                toggle.addEventListener('change', function() {
-                    const repasId = this.getAttribute('data-repas-id');
-                    const isChecked = this.checked;
-                    const platCard = this.closest('.plat-card');
-                    const disponibiliteText = platCard.querySelector('.disponibilite-text');
-
-                    // Changement visuel immédiat
-                    if (isChecked) {
-                        disponibiliteText.textContent = 'Disponible';
-                        disponibiliteText.classList.remove('indisponible');
-                        disponibiliteText.classList.add('disponible');
-                    } else {
-                        disponibiliteText.textContent = 'Indisponible';
-                        disponibiliteText.classList.remove('disponible');
-                        disponibiliteText.classList.add('indisponible');
-                    }
-
-                    // Envoyer la requête AJAX
-                    fetch('{% url "toggle_disponibilite_repas" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': getCookie('csrftoken')
-                        },
-                        body: JSON.stringify({
-                            repas_id: repasId
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            // En cas d'erreur, annuler le changement visuel
-                            this.checked = !isChecked;
-                            if (isChecked) {
-                                disponibiliteText.textContent = 'Indisponible';
-                                disponibiliteText.classList.remove('disponible');
-                                disponibiliteText.classList.add('indisponible');
-                            } else {
-                                disponibiliteText.textContent = 'Disponible';
-                                disponibiliteText.classList.remove('indisponible');
-                                disponibiliteText.classList.add('disponible');
-                            }
-                            showTemporaryMessage(data.error, 'error');
-                        } else {
-                            showTemporaryMessage(data.message, 'success');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erreur:', error);
-                        // Annuler le changement visuel en cas d'erreur réseau
-                        this.checked = !isChecked;
-                        if (isChecked) {
-                            disponibiliteText.textContent = 'Indisponible';
-                            disponibiliteText.classList.remove('disponible');
-                            disponibiliteText.classList.add('indisponible');
-                        } else {
-                            disponibiliteText.textContent = 'Disponible';
-                            disponibiliteText.classList.remove('indisponible');
-                            disponibiliteText.classList.add('disponible');
-                        }
-                        showTemporaryMessage('Erreur de connexion. Veuillez réessayer.', 'error');
-                    });
-                });
-            });
-        });
-
-        // Fonction pour récupérer le token CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
-        // Fonction pour afficher un message temporaire
-        function showTemporaryMessage(message, type) {
-            const messagesContainer = document.querySelector('.messages') || createMessagesContainer();
-
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-
-            messagesContainer.appendChild(alertDiv);
-
-            // Supprimer le message après 5 secondes
-            setTimeout(() => {
-                alertDiv.style.opacity = '0';
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 300);
-            }, 5000);
-        }
-
-        // Créer le conteneur de messages s'il n'existe pas
-        function createMessagesContainer() {
-            const container = document.querySelector('.container');
-            const messagesDiv = document.createElement('div');
-            messagesDiv.className = 'messages';
-            container.insertBefore(messagesDiv, container.firstChild);
-            return messagesDiv;
-        }
-    </script>
 </body>
 </html>

@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Détails commande - M'Lunch</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    />
     <style>
         :root {
-            --primary-color: #C64304;
-            --primary-dark: #A53703;
-            --success-color: #2ECC71;
-            --error-color: #E74C3C;
-            --warning-color: #F39C12;
-            --info-color: #3498DB;
-            --light-gray: #F5F5F5;
-            --text-color: #2E2E2E;
-            --white: #FFFFFF;
+            --primary-color: #c64304;
+            --primary-dark: #a53703;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --light-gray: #f5f5f5;
+            --text-color: #2e2e2e;
+            --white: #ffffff;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: "Poppins", sans-serif;
             background-color: var(--light-gray);
             color: var(--text-color);
             margin: 0;
@@ -27,17 +30,19 @@
         }
 
         .header {
-            background-color: var(--primary-color);
+           background-color: var(--primary-color);
             color: var(--white);
             padding: 1.5rem 3rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .header h1 {
             font-size: 1.8rem;
             font-weight: 600;
+            margin: 0;
         }
 
         .btn-retour {
@@ -46,12 +51,13 @@
             padding: 0.7rem 1.5rem;
             text-decoration: none;
             border-radius: 8px;
+            font-size: 1rem;
             font-weight: 500;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
         }
 
         .btn-retour:hover {
-            background-color: #8C2B0E;
+            background-color: #8c2b0e;
         }
 
         .container {
@@ -68,7 +74,8 @@
             margin-bottom: 2rem;
         }
 
-        .card h2, .card h3 {
+        .card h2,
+        .card h3 {
             color: var(--primary-color);
             margin-bottom: 1rem;
         }
@@ -119,10 +126,18 @@
             display: inline-block;
         }
 
-        .badge-en-cours { background-color: var(--warning-color); }
-        .badge-terminee { background-color: var(--success-color); }
-        .badge-annulee { background-color: var(--error-color); }
-        .badge-prete { background-color: var(--info-color); }
+        .badge-en-cours {
+            background-color: var(--warning-color);
+        }
+        .badge-terminee {
+            background-color: var(--success-color);
+        }
+        .badge-annulee {
+            background-color: var(--error-color);
+        }
+        .badge-prete {
+            background-color: var(--info-color);
+        }
 
         .btn-action {
             background-color: var(--info-color);
@@ -135,8 +150,13 @@
             transition: background-color 0.3s;
         }
 
-        .btn-action:hover {
+        .btn-action:hover:not([disabled]) {
             background-color: #217dbb;
+        }
+
+        .btn-action:disabled {
+            background-color: #a0cfee;
+            cursor: not-allowed;
         }
 
         .total-section {
@@ -153,85 +173,113 @@
             margin-bottom: 1rem;
         }
 
-        .alert-success { background-color: rgba(46, 204, 113, 0.15); color: var(--success-color); }
-        .alert-error { background-color: rgba(231, 76, 60, 0.15); color: var(--error-color); }
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.15);
+            color: var(--success-color);
+        }
+        .alert-error {
+            background-color: rgba(231, 76, 60, 0.15);
+            color: var(--error-color);
+        }
     </style>
 </head>
 <body>
-<div class="header">
-    <h1>Détails commande #{{ commande.id }}</h1>
-    <a href="{% url 'restaurant_dashboard' %}" class="btn-retour">Retour</a>
-</div>
+    <div class="header">
+        <h1>Détails commande #{{ commande.id }}</h1>
+        <a href="{% url 'restaurant_dashboard' %}" class="btn-retour">Retour</a>
+    </div>
 
-<div class="container">
-    <!-- Messages -->
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
+    <div class="container">
+        <!-- Messages -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Infos commande -->
+        <div class="card">
+            <h2>Informations</h2>
+            <div class="commande-info">
+                <div class="info-block">
+                    <strong>Client:</strong><br />
+                    {{ commande.client.prenom }} {{ commande.client.nom }}<br />
+                    {{ commande.client.email }}
+                </div>
+                <div class="info-block">
+                    <strong>Date:</strong><br />
+                    {{ commande.cree_le|date:"d/m/Y H:i" }}
+                </div>
+                <div class="info-block">
+                    <strong>Point de récup:</strong><br />
+                    {{ commande.point_recup.nom }}
+                </div>
+                <div class="info-block">
+                    <strong>Paiement:</strong><br />
+                    {{ commande.mode_paiement.nom|default:"-" }}
+                </div>
+            </div>
         </div>
-    {% endif %}
 
-    <!-- Infos commande -->
-    <div class="card">
-        <h2>Informations</h2>
-        <div class="commande-info">
-            <div class="info-block">
-                <strong>Client:</strong><br>{{ commande.client.prenom }} {{ commande.client.nom }}<br>{{ commande.client.email }}
-            </div>
-            <div class="info-block">
-                <strong>Date:</strong><br>{{ commande.cree_le|date:"d/m/Y H:i" }}
-            </div>
-            <div class="info-block">
-                <strong>Point de récup:</strong><br>{{ commande.point_recup.nom }}
-            </div>
-            <div class="info-block">
-                <strong>Paiement:</strong><br>{{ commande.mode_paiement.nom|default:"-" }}
-            </div>
+        <!-- Plats -->
+        <div class="card">
+            <h3>Plats commandés</h3>
+            <table class="plats-table">
+                <thead>
+                    <tr>
+                        <th>Plat</th>
+                        <th>Type</th>
+                        <th>Prix</th>
+                        <th>Quantité</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for repas_info in repas_enrichis %}
+                        <tr>
+                            <td>{{ repas_info.repas_cmd.repas.nom }}</td>
+                            <td>{{ repas_info.repas_cmd.repas.type.nom }}</td>
+                            <td>{{ repas_info.repas_cmd.repas.prix }} Ar</td>
+                            <td>{{ repas_info.repas_cmd.quantite }}</td>
+                            <td>{{ repas_info.sous_total }} Ar</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="total-section">Total: {{ total_restaurant }} Ar</div>
+        </div>
+
+        <!-- Statut -->
+        <div class="card">
+            <h3>Statut</h3>
+            <p>
+                Statut actuel: <br />
+                <span style="color: gray">
+                    {% if suivi_statut %}
+                        préparation finie
+                    {% else %}
+                        préparation non finie
+                    {% endif %}
+                </span>
+            </p>
+            <form method="POST" action="{% url 'modifier_statut_suivis' %}">
+                {% csrf_token %}
+                <input type="hidden" name="commande_id" value="{{ commande.id }}">
+                <button 
+                    type="submit" 
+                    class="btn-action" 
+                    {% if suivi_statut %}disabled{% endif %}
+                >
+                    préparation effectuée
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Plats -->
-    <div class="card">
-        <h3>Plats commandés</h3>
-        <table class="plats-table">
-            <thead>
-            <tr>
-                <th>Plat</th>
-                <th>Type</th>
-                <th>Prix</th>
-                <th>Quantité</th>
-                <th>Total</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for repas_info in repas_enrichis %}
-                <tr>
-                    <td>{{ repas_info.repas_cmd.repas.nom }}</td>
-                    <td>{{ repas_info.repas_cmd.repas.type.nom }}</td>
-                    <td>{{ repas_info.repas_cmd.repas.prix }} Ar</td>
-                    <td>{{ repas_info.repas_cmd.quantite }}</td>
-                    <td>{{ repas_info.sous_total }} Ar</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        <div class="total-section">Total: {{ total_restaurant }} Ar</div>
-    </div>
-
-    <!-- Statut -->
-    <div class="card">
-        <h3>Statut</h3>
-        <p>Statut actuel: <span class="badge badge-{{ statut_actuel.appellation|lower|slugify }}">{{ statut_actuel.appellation|default:"En attente" }}</span></p>
-        <button class="btn-action" id="btn-modifier-statut" data-commande-id="{{ commande.id }}" data-restaurant-id="{{ restaurant.id }}">
-            préparation effectuée
-        </button>
-    </div>
-</div>
-
-<script>
-    // Ton script JS (par exemple pour modifier le statut) sera à placer ici
-</script>
+    <script>
+        
+    </script>
 </body>
 </html>

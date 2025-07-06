@@ -12,7 +12,9 @@ urlpatterns = [
     path('api/repas/toggle-disponibilite/', auth_views.toggle_disponibilite_repas, name='toggle_disponibilite_repas'),
 
     # Gestion des commandes
-    path('commande/<int:commande_id>/', auth_views.commande_details_view, name='commande_details'),
+    path('commande/<int:commande_id>/', auth_views.commande_details_view, name='commande_details'), 
+    path('commande/<int:commande_id>/modification/', auth_views.modifier_statut_commande, name='mettre_en_preparation'),
+    
     # path('api/commande/modifier-statut/', auth_views.modifier_statut_commande, name='modifier_statut_commande'),
     path('api/commande/modifier-statut/', auth_views.modifier_statut_suivis, name='modifier_statut_suivis'),
     

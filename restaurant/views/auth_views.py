@@ -5,8 +5,12 @@ from mlunch.core.models import Restaurant, RestaurantRepas, Repas, Disponibilite
 from mlunch.core.services.commande_service import CommandeService
 from mlunch.core.services.repas_service import RepasService
 import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 from mlunch.core.services.suivisCommande_service import SuivisCommandeService
+from mlunch.core.models import StatutCommande, HistoriqueStatutCommande
+
 
 def login_view(request):
     """Affiche la page de connexion pour les restaurants"""
@@ -81,55 +85,41 @@ def dashboard_view(request):
                 'est_disponible': est_disponible
             })
 
-        # Récupérer les commandes du restaurant
-        # Une commande concerne le restaurant si elle contient des repas du restaurant
         repas_ids = [rr.repas.id for rr in restaurant_repas]
 
-        # Obtenir le statut "En attente"
-        from mlunch.core.models import StatutCommande
-        try:
-            statut_en_attente = StatutCommande.objects.filter(appellation__in=["en preparation", "en cours"]).first()
-        except StatutCommande.DoesNotExist:
-            # Si le statut n'existe pas, on récupère le premier statut (probablement "En attente")
-            statut_en_attente = StatutCommande.objects.first()
+        # Import des modèles et fonctions nécessaires
+        from django.db.models import OuterRef, Subquery
+        from mlunch.core.models import StatutCommande, HistoriqueStatutCommande, Commande
 
-        # Récupérer uniquement les commandes en attente
-        # On récupère d'abord les ID des commandes dont le dernier historique a le statut "En attente"
-        from django.db.models import Max, OuterRef, Subquery
-        from mlunch.core.models import HistoriqueStatutCommande
+        # Récupérer tous les statuts "en preparation" et "en cours"
+        statuts_cibles = StatutCommande.objects.filter(appellation__in=["en preparation", "en cours"])
 
-        # Sous-requête pour récupérer le dernier historique de statut pour chaque commande
-        derniers_historiques = HistoriqueStatutCommande.objects.filter(
+        # Sous-requête : statut du dernier historique pour chaque commande
+        dernier_historique_statut = HistoriqueStatutCommande.objects.filter(
             commande=OuterRef('pk')
         ).order_by('-mis_a_jour_le').values('statut')[:1]
 
-        # Filtrer les commandes dont le dernier historique a le statut "En attente"
         commandes_en_attente = Commande.objects.filter(
             repas_commandes__repas__id__in=repas_ids,
-            historiques__statut=statut_en_attente,
-            historiques__mis_a_jour_le=Subquery(
-                HistoriqueStatutCommande.objects.filter(
-                    commande=OuterRef('pk')
-                ).order_by('-mis_a_jour_le').values('mis_a_jour_le')[:1]
-            )
+        ).annotate(
+            dernier_statut=Subquery(dernier_historique_statut)
+        ).filter(
+            dernier_statut__in=statuts_cibles.values_list('id', flat=True)
         ).distinct().select_related('client', 'point_recup').prefetch_related(
             'repas_commandes__repas',
             'historiques__statut'
-        ).order_by('-cree_le')[:10]  # Les 10 dernières commandes en attente
+        ).order_by('-cree_le')[:10]
 
         # Enrichir les commandes avec les détails
         commandes_enrichies = []
         for commande in commandes_en_attente:
-            # Récupérer les repas de cette commande qui appartiennent à ce restaurant
             repas_commande = CommandeRepas.objects.filter(
                 commande=commande,
                 repas__id__in=repas_ids
             ).select_related('repas')
 
-            # Calculer le total pour ce restaurant
             total_restaurant = sum(cr.repas.prix * cr.quantite for cr in repas_commande)
 
-            # Récupérer le statut actuel de la commande
             dernier_historique = commande.historiques.order_by('-mis_a_jour_le').first()
             statut_actuel = dernier_historique.statut.appellation if dernier_historique else "En attente"
 
@@ -148,12 +138,13 @@ def dashboard_view(request):
             'nombre_commandes': len(commandes_enrichies)
         }
         return render(request, 'dashboard.html', context)
+
     except Restaurant.DoesNotExist:
-        # Si le restaurant n'existe plus, déconnecter
         del request.session['restaurant_id']
         del request.session['restaurant_nom']
         messages.error(request, 'Restaurant introuvable')
         return redirect('restaurant_login')
+
 
 def toggle_disponibilite_repas(request):
     """API pour changer la disponibilité d'un repas"""
@@ -239,25 +230,19 @@ def commande_details_view(request, commande_id):
         messages.error(request, 'Commande ou restaurant introuvable')
         return redirect('restaurant_dashboard')
 
-def modifier_statut_commande(request):
-    """API pour modifier le statut d'une commande"""
+def modifier_statut_commande(request, commande_id):
+    """Modifier le statut d'une commande et rediriger vers dashboard"""
+
     if request.method == 'POST':
         if 'restaurant_id' not in request.session:
-            return JsonResponse({'error': 'Non authentifié'}, status=401)
+            messages.error(request, "Non authentifié")
+            return redirect('restaurant_login')
 
         try:
-            data = json.loads(request.body)
-            commande_id = data.get('commande_id')
-            nouveau_statut_id = data.get('statut_id')
-
-            if not commande_id or not nouveau_statut_id:
-                return JsonResponse({'error': 'Paramètres manquants'}, status=400)
-
-            # Vérifications de sécurité
             restaurant = Restaurant.objects.get(id=request.session['restaurant_id'])
             commande = Commande.objects.get(id=commande_id)
 
-            # Vérifier que cette commande concerne ce restaurant
+            # Vérifier que la commande appartient bien à ce restaurant
             restaurant_repas = RestaurantRepas.objects.filter(restaurant=restaurant)
             repas_ids = [rr.repas.id for rr in restaurant_repas]
             repas_commande = CommandeRepas.objects.filter(
@@ -266,60 +251,52 @@ def modifier_statut_commande(request):
             )
 
             if not repas_commande.exists():
-                return JsonResponse({'error': 'Cette commande ne concerne pas votre restaurant'}, status=403)
+                messages.error(request, "Cette commande ne concerne pas votre restaurant")
+                return redirect('restaurant_dashboard')
 
-            # Créer un nouvel historique de statut
-            from mlunch.core.models import StatutCommande, HistoriqueStatutCommande
-            nouveau_statut = StatutCommande.objects.get(id=nouveau_statut_id)
+            # Mettre à jour le statut
+            nouveau_statut = StatutCommande.objects.get(appellation="en preparation")
 
             HistoriqueStatutCommande.objects.create(
                 commande=commande,
                 statut=nouveau_statut
             )
 
-            return JsonResponse({
-                'success': True,
-                'message': f'Statut mis à jour vers "{nouveau_statut.appellation}"',
-                'nouveau_statut': nouveau_statut.appellation
-            })
+            messages.success(request, f'Statut mis à jour vers "{nouveau_statut.appellation}"')
+            return redirect('restaurant_dashboard')
 
         except (Restaurant.DoesNotExist, Commande.DoesNotExist, StatutCommande.DoesNotExist):
-            return JsonResponse({'error': 'Ressource introuvable'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Données JSON invalides'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            messages.error(request, "Ressource introuvable")
+            return redirect('restaurant_dashboard')
 
-    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+    # Pour GET ou autre méthode, on redirige vers dashboard
+    return redirect('restaurant_dashboard')
 
+@csrf_exempt
 def modifier_statut_suivis(request):
-    """API pour modifier le statut d'un suivi de commande"""
     if request.method == 'POST':
         if 'restaurant_id' not in request.session:
             return JsonResponse({'error': 'Non authentifié'}, status=401)
 
         try:
-            data = json.loads(request.body)
-            commande_id = data.get('commande_id')
+            # Récupérer directement dans request.POST
+            commande_id = request.POST.get('commande_id')
             restaurant_id = request.session['restaurant_id']
 
             if not commande_id:
                 return JsonResponse({'error': 'ID de la commande manquant'}, status=400)
 
-            # Changer le statut du suivi
             result = SuivisCommandeService.changer_statut(commande_id, restaurant_id)
 
             if 'error' in result:
                 return JsonResponse({'error': result['error']}, status=400)
 
-            # Appeler la fonction pour changer automatiquement le statut de la commande
             CommandeService.change_state_auto(commande_id)
 
             return JsonResponse(result)
 
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Données JSON invalides'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+
