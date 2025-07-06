@@ -10,12 +10,12 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <style>
-        .menu-item.unavailable {
-            opacity: 0.7;
-        }
         .menu-item.unavailable .add-to-cart {
-            background-color: #ccc !important;
             cursor: not-allowed;
+        }
+        /* Remove rating-related styles if any existed */
+        .rating, .rating-wrapper, #stars-container {
+            display: none !important;
         }
     </style>
 </head>
@@ -68,9 +68,6 @@
             <p><span class="location"><img src="{% static 'img/icones/group-420.svg' %}" alt="Location Icon">{{ restaurant.adresse }}</span></p>
         </div>
         <div class="details">
-            <div class="rating">{{ note }}
-                <div class="rating-wrapper" id="stars-container" aria-label="note"></div>
-            </div>
             <div class="status">Ouvert {{ restaurant.horaire_debut }} - {{ restaurant.horaire_fin }}</div>
             <a href="tel:{{ restaurant.telephone }}" class="contact">{{ restaurant.telephone }}</a>
         </div>
@@ -119,40 +116,6 @@
     </div>
 
     <script>
-        // Generate star ratings
-        function generateStars(note, containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = "";
-
-            const fullStars = Math.floor(note);
-            const halfStar = (note - fullStars >= 0.25 && note - fullStars < 0.75);
-            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
-            // Full stars
-            for (let i = 0; i < fullStars; i++) {
-                const star = document.createElement("ion-icon");
-                star.setAttribute("name", "star");
-                container.appendChild(star);
-            }
-
-            // Half star
-            if (halfStar) {
-                const half = document.createElement("ion-icon");
-                half.setAttribute("name", "star-half");
-                container.appendChild(half);
-            }
-
-            // Empty stars
-            for (let i = 0; i < emptyStars; i++) {
-                const empty = document.createElement("ion-icon");
-                empty.setAttribute("name", "star-outline");
-                container.appendChild(empty);
-            }
-        }
-
-        // Initialize with the restaurant's rating
-        generateStars({{ note }}, "stars-container");
-
         // Category filter buttons
         const buttons = document.querySelectorAll('.category-btn');
         buttons.forEach(button => {
