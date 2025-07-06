@@ -3,7 +3,7 @@ from .views import auth_views
 
 urlpatterns = [
     # Authentification
-    path('login/', auth_views.login_view, name='restaurant_login'),
+    path('', auth_views.login_view, name='restaurant_login'),
     path('connexion/', auth_views.login, name='restaurant_connexion'),
     path('logout/', auth_views.logout, name='restaurant_logout'),
     path('dashboard/', auth_views.dashboard_view, name='restaurant_dashboard'),
