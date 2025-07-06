@@ -1,234 +1,424 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M'Lunch</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accueil M'Lunch</title>
+  <link rel="stylesheet" href="{% static 'css/accueil.css' %}" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
-    <header>
-        <div>
-            <a href="/">Accueil</a>
-            {% if request.session.client_id %}
-                <a href="/mes-commandes/">Historiques des commandes</a>
-                <a href="/restaurants/">Restaurants</a>
-                <a href="/logout/">Déconnexion</a>
-                <a href="/panier/">Pannier</a>
+  <!-- Quart d'ellipse -->
+  <div class="ellipse-deco">
+    <div class="ellipse-orange"></div>
+    <div class="ellipse-blanche"></div>
+  </div>
 
-            {% else %}
-                <a href="/connexion/">Historiques des commandes</a>
-                <a href="/connexion/">Restaurants</a>
-                <a href="/connexion/">Pannier</a>
-            {% endif %}
-        </div>
-    </header>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="overlap-wrapper">
+      <div class="overlap-2">
+        <div class="group-8">
+          <div class="overlap-group-3">
+            <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+            <div class="group-11">
+              {% if request.session.client_id %}
+                <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
+                <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
+                <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
+                <a href="#about" class="text-wrapper-12">A propos</a>
+              {% else %}
+                <a href="{% url 'connexion' %}" class="text-wrapper-10">Accueil</a>
+                <a href="{% url 'connexion' %}" class="text-wrapper-11">Commandes</a>
+                <a href="{% url 'connexion' %}" class="text-wrapper-12">Restaurant</a>
+                <a href="{% url 'connexion' %}" class="text-wrapper-12">A propos</a>
+              {% endif %}
+            </div>
+            <div class="icons-right">
+              <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+              <a href="panier.html" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+              <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
 
-    <main>``
-        <section>
-            <h2>Bienvenue chez M'Lunch ! Un délicieux repas vous attend.</h2>
-            <p>Rapide, simple, délicieux.</p>
-            
-            <hr>
-            {% if not request.session.client_id %}
-                <a href="{% url 'connexion' %}" style="display: inline-block; padding: 10px 20px; background-color: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;">Commencer →</a>
-            {% else %}
-                <h2>Vous pouvez commencer a naviguer dans les restaurants pour voir leurs menus et passer une commande.</h2>
-            {% endif %}
-            <div id="restaurants-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                <!-- Restaurant images will be loaded here -->
-            </div>
-
-            <!-- Delivery Zone Selector -->
-            <div>
-                <select id="view-selector">
-                    <option value="">Choisir une option de livraison</option>
-                    <option value="restaurants">Voir les restaurants sur la carte</option>
-                    <option value="pickup-points">Voir les points de récupération</option>
-                </select>
-            </div>
-            
-            <!-- Map Container -->
-            <div id="map-container" style="height: 400px;">
-                <!-- Leaflet map will be loaded here -->
-            </div>
-            
-            <!-- Delivery Zones Info -->
-            <div>
-                <h1>Nos zones de livraison :</h1>
+              <nav id="hamburger-menu" class="hamburger-menu">
                 <ul>
-                    <li>Point de recuperation</li>
-                    <li>Faites-vous livrer votre envie du moment en un rien de temps.</li>
+                  <li class="has-submenu">
+                    <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                    <ul class="submenu">
+                      <li><a href="en_cours.html">En Cours</a></li>
+                      <li><a href="historique.html">Historique</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="panier.html">Panier</a></li>
+                  <li><a href="#about">A propos</a></li>
+                  <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
                 </ul>
+              </nav>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
-            <!-- Partner Restaurants Section -->
-            <div>
-                <h1>Nos restaurants partenaires</h1>
-                <div id="partner-restaurants">
-                    <!-- Partner restaurants will be loaded here -->
-                </div>
-            </div>
+  <!-- ACCUEIL -->
+  <main class="contenu-principal">
+    <div class="texte-gauche">
+      <h1>Bienvenue chez <span>M'Lunch</span> Un délicieux repas vous attend !</h1>
+      <p>Rapide, simple, délicieux.</p>
+      {% if not request.session.client_id %}
+      <a href="{% url 'connexion' %}" class="btn-commencer" style="display: inline-flex; align-items: center; text-decoration: none;">
+        <span>Commencer</span>
+        <img src="{% static 'img/icones/fleche.svg' %}" alt="Aide" style="margin-left: 6px; vertical-align: middle;" />
+      </a>
+      {% endif %}
+    </div>
+    <div class="image-droite">
+      <img src="{% static 'img/Humans/bi.png' %}" alt="Repas délicieux" />
+    </div>
+  </main>
 
-        </section>
-    </main>
+  <!-- CAROUSEL INFINI -->
+  <section class="carousel-infini">
+    <div class="slider">
+      <div class="slide-track" id="carousel-track">
+        <!-- Images will be loaded dynamically from restaurants API -->
+      </div>
+    </div>
+  </section>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize map (centered on a default location)
-           const map = L.map('map-container').setView([-18.8792, 47.5079], 13);
-            
-            // Add tile layer (OpenStreetMap)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
+  <!-- ZONES DE LIVRAISON -->
+  <section class="zones-livraison">
+    <div class="container">
+      <div class="content">
+        <h2>Nos zones de livraison :</h2>
+        <select id="view-selector" class="pickup-point-select">
+          <option value="pickup-points" selected>Point de récupération</option>
+          <option value="restaurants">Voir les restaurants sur la carte</option>
+        </select>
+        <p class="livraison-texte">Faites-vous livrer votre envie du moment en un rien de temps.</p>
+      </div>
+      <div class="illustration">
+        <div id="map-container" style="height: 400px; width: 100%; border-radius: 15px;"></div>
+      </div>
+    </div>
+  </section>
 
-            // Immediately load pickup points by default
-            loadPickupPoints();
+  <!-- SECTION RESTAURANTS PARTENAIRES -->
+  <section class="restaurants-section">
+    <div class="restaurants-container">
+      <h1 class="restaurants-main-title">Nos restaurants partenaires</h1>
 
-            // Load restaurant images and partner restaurants
-            fetch('/api/all_restaurants/')
-                .then(response => response.json())
-                .then(data => {
-                    // Load restaurant images grid
-                    const gridContainer = document.getElementById('restaurants-grid');
-                    
-                    data.features.forEach(restaurant => {
-                        if (restaurant.properties.image_url) {
-                            const img = document.createElement('img');
-                            img.src = restaurant.properties.image_url;
-                            img.alt = restaurant.properties.nom;
-                            img.style.maxWidth = '200px';
-                            img.style.margin = '5px';
-                            gridContainer.appendChild(img);
-                        }
-                    });
+      <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+          <!-- Slides will be loaded dynamically from API -->
+        </div>
+        <!-- Swiper pagination -->
+        <div class="swiper-pagination"></div>
+        <!-- Swiper navigation buttons -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+      </div>
+    </div>
+  </section>
 
-                    // Load partner restaurants section
-                    const partnerContainer = document.getElementById('partner-restaurants');
-                    data.features.forEach(restaurant => {
-                        const restaurantElement = document.createElement('div');
-                        restaurantElement.innerHTML = `
-                            <h2>${restaurant.properties.nom}</h2>
-                            ${restaurant.properties.image_url ? `<img src="${restaurant.properties.image_url}" alt="${restaurant.properties.nom}" style="max-width: 300px;">` : ''}
-                            <p>${restaurant.properties.description}</p>
-                            <hr>
-                        `;
-                        partnerContainer.appendChild(restaurantElement);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching restaurants:', error);
-                    const gridContainer = document.getElementById('restaurants-grid');
-                    for (let i = 0; i < 3; i++) {
-                        const placeholder = document.createElement('div');
-                        placeholder.textContent = 'LE MANGO';
-                        gridContainer.appendChild(placeholder);
-                    }
-                });
+  <!-- SECTION À PROPOS -->
+  <section class="about-section" id="about">
+    <h2 class="about-title">À propos de M'Lunch</h2>
+    <p class="about-description">
+      M'Lunch est une plateforme de livraison de repas qui met en relation les restaurants locaux avec des clients affamés. Nous nous engageons à offrir une expérience rapide, savoureuse et pratique pour tous.
+    </p>
+  </section>
 
-            // Map selector functionality
-            const viewSelector = document.getElementById('view-selector');
-            
-            viewSelector.addEventListener('change', function() {
-                const selectedOption = this.value;
-                
-                if (selectedOption === 'restaurants') {
-                    loadRestaurants();
-                } else if (selectedOption === 'pickup-points') {
-                    loadPickupPoints();
-                }
-            });
+  <!-- NEWSLETTER -->
+  <section class="newsletter-section">
+    <div class="newsletter-container">
+      <form class="newsletter-form">
+        <input type="email" class="newsletter-input" placeholder="Votre adresse email" required />
+        <button type="submit" class="newsletter-button">S'abonner</button>
+      </form>
+    </div>
+  </section>
 
-            function loadRestaurants() {
-                // DEBUG: Start loading restaurants
-                console.debug('DEBUG: loadRestaurants called');
-                // Clear existing markers
-                map.eachLayer(layer => {
-                    if (layer instanceof L.Marker) {
-                        map.removeLayer(layer);
-                    }
-                });
+  <!-- FOOTER -->
+  <footer class="footer-wrapper">
+    <div class="footer">
+      <div class="brand-section">
+        <div class="logo-container">
+          <img class="logo-img" src="{% static 'img/icones/logo.png' %}" alt="Logo M'Lunch" />
+          <span>M'Lunch</span>
+        </div>
+        <p class="brand-description">
+          Une livraison de repas rapide et délicieuse, pour tous vos moments gourmands.
+        </p>
+        <p class="copyright">© 2025 M'Lunch – Tous droits réservés.</p>
+      </div>
 
-                fetch('/api/all_restaurants/')
-                    .then(response => response.json())
-                    .then(data => {
-                        console.debug('DEBUG: Data received from /api/all_restaurants/:', data);
-                        if (!data.features || !Array.isArray(data.features)) {
-                            console.warn('DEBUG: No features array in data:', data);
-                        }
-                        const bounds = [];
-                        console.debug('DEBUG: Number of features:', data.features ? data.features.length : 0);
-                        data.features && data.features.forEach(restaurant => {
-                            if (restaurant.geometry?.coordinates) {
-                                const [lng, lat] = restaurant.geometry.coordinates;
-                                const marker = L.marker([lat, lng]).addTo(map);
-                                marker.bindPopup(`<b>${restaurant.properties.nom}</b><br>${restaurant.properties.description}`);
-                                bounds.push([lat, lng]);
-                            } else {
-                                console.warn('DEBUG: Skipping restaurant, missing geometry.coordinates:', restaurant);
-                            }
-                        });
-                        console.debug('DEBUG: Final bounds array:', bounds);
-                        if (bounds.length > 0) {
-                            map.fitBounds(bounds, {padding: [50, 50]});
-                        } else {
-                            console.warn('DEBUG: No bounds to fit.');
-                        }
-                    });
+      <div class="support-section">
+        <h4 class="section-title">Support</h4>
+        <div class="support-links">
+          <a href="#">Aide</a>
+          <a href="#">Contact</a>
+          <a href="#">Conditions d'utilisation</a>
+          <a href="#">Confidentialité</a>
+        </div>
+      </div>
+
+      <div class="social-section">
+        <div class="social-header">
+          <h4 class="section-title">Réseaux sociaux:</h4>
+          <div class="social-icons">
+            <a href="#" class="social-icon" title="Facebook"><img src="{% static 'img/icones/fb.svg' %}" alt="Facebook" /></a>
+            <a href="#" class="social-icon" title="Instagram"><img src="{% static 'img/icones/inst.svg' %}" alt="Instagram" /></a>
+          </div>
+        </div>
+        <div class="contact-info">
+          <div class="contact-item">
+            <img class="contact-icon" src="{% static 'img/icones/mail.svg' %}" alt="Mail" />
+            <span>contact@mlunch.com</span>
+          </div>
+          <div class="contact-item">
+            <img class="contact-icon" src="{% static 'img/icones/phone.svg' %}" alt="Téléphone" />
+            <span>+261 34 00 000 00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JS Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load restaurant images for infinite carousel
+      function loadCarouselImages() {
+        fetch('/api/all_restaurants/')
+          .then(response => response.json())
+          .then(data => {
+            const carouselTrack = document.getElementById('carousel-track');
+
+            // Clear existing slides
+            carouselTrack.innerHTML = '';
+
+            // Filter restaurants that have images
+            const restaurantsWithImages = data.features.filter(restaurant =>
+              restaurant.properties.image_url
+            );
+
+            if (restaurantsWithImages.length > 0) {
+              // Create slides from restaurant images (duplicate for infinite effect)
+              const slides = [];
+              restaurantsWithImages.forEach(restaurant => {
+                slides.push(`
+                  <div class="slide">
+                    <img src="${restaurant.properties.image_url}" alt="${restaurant.properties.nom}" />
+                  </div>
+                `);
+              });
+
+              // Duplicate slides for infinite scroll effect
+              carouselTrack.innerHTML = slides.join('') + slides.join('');
+            } else {
+              // Fallback to default images if no restaurant images available
+              const defaultSlides = [
+                '<div class="slide"><img src="assets/img/img1.jpg" alt="" /></div>',
+                '<div class="slide"><img src="assets/img/img2.jpg" alt="" /></div>',
+                '<div class="slide"><img src="assets/img/img3.jpg" alt="" /></div>',
+                '<div class="slide"><img src="assets/img/img4.jpg" alt="" /></div>',
+                '<div class="slide"><img src="assets/img/img5.jpg" alt="" /></div>',
+                '<div class="slide"><img src="assets/img/img6.jpg" alt="" /></div>'
+              ];
+              carouselTrack.innerHTML = defaultSlides.join('') + defaultSlides.join('');
             }
+          })
+          .catch(error => {
+            console.error('Error loading carousel images:', error);
+            // Fallback to default images on error
+            const carouselTrack = document.getElementById('carousel-track');
+            const defaultSlides = [
+              '<div class="slide"><img src="assets/img/img1.jpg" alt="" /></div>',
+              '<div class="slide"><img src="assets/img/img2.jpg" alt="" /></div>',
+              '<div class="slide"><img src="assets/img/img3.jpg" alt="" /></div>',
+              '<div class="slide"><img src="assets/img/img4.jpg" alt="" /></div>',
+              '<div class="slide"><img src="assets/img/img5.jpg" alt="" /></div>',
+              '<div class="slide"><img src="assets/img/img6.jpg" alt="" /></div>'
+            ];
+            carouselTrack.innerHTML = defaultSlides.join('') + defaultSlides.join('');
+          });
+      }
 
-            function loadPickupPoints() {
-                // DEBUG: Start loading pickup points
-                console.debug('DEBUG: loadPickupPoints called');
-                // Clear existing markers
-                map.eachLayer(layer => {
-                    if (layer instanceof L.Marker) {
-                        map.removeLayer(layer);
-                    }
-                });
+      // Load carousel images first
+      loadCarouselImages();
 
-                fetch('/api/points_de_recuperation/')
-                .then(response => {
-                    console.debug('DEBUG: Response received from /api/points_de_recuperation/', response);
-                    return response.json();
-                })
-                .then(data => {
-                    console.debug('DEBUG: Data received:', data);
-                    if (!data.features || !Array.isArray(data.features)) {
-                        console.warn('DEBUG: No features array in data:', data);
-                    }
-                    const bounds = [];
-                    console.debug('DEBUG: Number of features:', data.features ? data.features.length : 0);
-                    data.features && data.features.forEach(point => {
-                        console.debug('DEBUG: Processing point:', point);
-                        if (point.geometry?.coordinates) {
-                            const [lng, lat] = point.geometry.coordinates;
-                            const marker = L.marker([lat, lng]).addTo(map);
-                            marker.bindPopup(`<b>${point.properties.nom}</b>`);
-                            bounds.push([lat, lng]);
-                        } else {
-                            console.warn('DEBUG: Skipping point, missing geometry.coordinates:', point);
-                        }
-                    });
-                    console.debug('DEBUG: Final bounds array:', bounds);
-                    if (bounds.length > 0) {
-                        console.debug('DEBUG: Fitting map to bounds:', bounds);
-                        map.fitBounds(bounds, {padding: [50, 50]});
-                    } else {
-                        console.warn('DEBUG: No bounds to fit.');
-                    }
-                })
-                .catch(error => {
-                    console.error('DEBUG: Error fetching pickup points:', error);
-                });
-            }
-            
+      // Initialize Swiper
+      const swiper = new Swiper('.mySwiper', {
+        loop: true,
+        slidesPerView: 3,
+        spaceBetween: 30,
+        centeredSlides: true,
+        autoplay: {
+          delay: 3000,
+          disableOnInteraction: false,
+        },
+        pagination: {
+          el: '.swiper-pagination',
+          clickable: true,
+        },
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+          320: {
+            slidesPerView: 1,
+            spaceBetween: 20
+          },
+          768: {
+            slidesPerView: 2,
+            spaceBetween: 30
+          },
+          1024: {
+            slidesPerView: 3,
+            spaceBetween: 40
+          }
+        }
+      });
+
+      // Hamburger menu toggle
+      const menuToggle = document.getElementById('menu-toggle');
+      const hamburgerMenu = document.getElementById('hamburger-menu');
+      const submenuParents = document.querySelectorAll('.has-submenu');
+
+      menuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hamburgerMenu.classList.toggle('active');
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
+          hamburgerMenu.classList.remove('active');
+        }
+      });
+
+      submenuParents.forEach(function(parent) {
+        parent.addEventListener('click', function(e) {
+          e.stopPropagation();
+          parent.classList.toggle('open');
         });
-    </script>
+      });
+
+      // Map and API functionality from accueil.html
+      const map = L.map('map-container').setView([-18.8792, 47.5079], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Load restaurants for Swiper
+      fetch('/api/all_restaurants/')
+        .then(response => response.json())
+        .then(data => {
+          const swiperWrapper = document.querySelector('.swiper-wrapper');
+
+          data.features.forEach(restaurant => {
+            const slide = document.createElement('div');
+            slide.className = 'swiper-slide';
+
+            slide.innerHTML = `
+              <div class="restaurant-item">
+                ${restaurant.properties.image_url ?
+                  `<img src="${restaurant.properties.image_url}" alt="${restaurant.properties.nom}" class="restaurant-image" />` :
+                  '<div class="restaurant-image placeholder"></div>'}
+                <h2 class="restaurant-name">${restaurant.properties.nom}</h2>
+                <p class="restaurant-description">${restaurant.properties.description}</p>
+              </div>
+            `;
+
+            swiperWrapper.appendChild(slide);
+          });
+
+          // Update Swiper after adding slides
+          swiper.update();
+        })
+        .catch(error => {
+          console.error('Error fetching restaurants:', error);
+        });
+
+      // Map selector functionality
+      const viewSelector = document.getElementById('view-selector');
+
+      viewSelector.addEventListener('change', function() {
+        const selectedOption = this.value;
+
+        if (selectedOption === 'restaurants') {
+          loadRestaurants();
+        } else if (selectedOption === 'pickup-points') {
+          loadPickupPoints();
+        }
+      });
+
+      function loadRestaurants() {
+        map.eachLayer(layer => {
+          if (layer instanceof L.Marker) {
+            map.removeLayer(layer);
+          }
+        });
+
+        fetch('/api/all_restaurants/')
+          .then(response => response.json())
+          .then(data => {
+            const bounds = [];
+            data.features && data.features.forEach(restaurant => {
+              if (restaurant.geometry?.coordinates) {
+                const [lng, lat] = restaurant.geometry.coordinates;
+                const marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup(`<b>${restaurant.properties.nom}</b><br>${restaurant.properties.description}`);
+                bounds.push([lat, lng]);
+              }
+            });
+            if (bounds.length > 0) {
+              map.fitBounds(bounds, {padding: [50, 50]});
+            }
+          });
+      }
+
+      function loadPickupPoints() {
+        map.eachLayer(layer => {
+          if (layer instanceof L.Marker) {
+            map.removeLayer(layer);
+          }
+        });
+
+        fetch('/api/points_de_recuperation/')
+          .then(response => response.json())
+          .then(data => {
+            const bounds = [];
+            data.features && data.features.forEach(point => {
+              if (point.geometry?.coordinates) {
+                const [lng, lat] = point.geometry.coordinates;
+                const marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup(`<b>${point.properties.nom}</b>`);
+                bounds.push([lat, lng]);
+              }
+            });
+            if (bounds.length > 0) {
+              map.fitBounds(bounds, {padding: [50, 50]});
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching pickup points:', error);
+          });
+      }
+
+      // Load pickup points by default
+      loadPickupPoints();
+    });
+  </script>
 </body>
 </html>

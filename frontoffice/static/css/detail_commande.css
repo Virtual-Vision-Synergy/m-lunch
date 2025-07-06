@@ -1,0 +1,80 @@
+.commande-detail-container {
+        max-width: 1100px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        padding: 32px 40px 40px 40px;
+      }
+      .commande-detail-container h2 {
+        text-align: center;
+        color: #C64304;
+        font-size: 1.6rem;
+        margin-bottom: 18px;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        font-weight: 400;
+      }
+      .commande-detail-container .commande-info {
+        text-align: center;
+        margin-bottom: 18px;
+        color: #444;
+      }
+      .commande-detail-container .commande-info span {
+        display: inline-block;
+        margin: 0 10px;
+        font-size: 1rem;
+      }
+     
+      .commande-detail-container table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+        background: #fff;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border-radius: 12px;
+        overflow: hidden;
+        font-size: 1.18rem;
+      }
+      .commande-detail-container th, .commande-detail-container td {
+        padding: 22px 18px;
+        text-align: center;
+        font-size: 1.13rem;
+      }
+      .commande-detail-container th {
+        background: #f8f9fa;
+        color: #333;
+        font-weight: 600;
+        font-size: 1rem;
+        border-bottom: 2px solid #e9ecef;
+      }
+      .commande-detail-container td {
+        color: #444;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.98rem;
+      }
+      .commande-detail-container tr:last-child td {
+        border-bottom: none;
+      }
+      .commande-detail-container tr:hover {
+        background: #f6f6fa;
+      }
+      .commande-detail-container .plat-nom {
+        font-weight: 500;
+        color: #1e1e1e;
+      }
+      .commande-detail-container .plat-quantite {
+        color: #C64304;
+        font-weight: 600;
+      }
+      .commande-detail-container .plat-prix {
+        color: #28a745;
+        font-weight: 400;
+      }
+      .commande-detail-container .total {
+        text-align: right;
+        font-size: 1.1rem;
+        color: #C64304;
+        font-weight: 700;
+        margin-top: 18px;
+      }

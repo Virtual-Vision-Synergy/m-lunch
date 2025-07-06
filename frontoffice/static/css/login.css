@@ -1,0 +1,445 @@
+/* Reset et styles de base */
+:root {
+  --primary-color: #C64304;
+  --black: #2E2E2E;
+  --gray-light: #EBEBEB;
+  --gray-border: #D9D9D9;
+  --gray-bg: #F9F9F9;
+  --link-color: #6257DB;
+  --white: #FFFFFF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--white);
+  color: var(--black);
+  line-height: 1.4;
+}
+
+/* Conteneur principal */
+.main-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Conteneur du formulaire */
+.login-container {
+  background-color: var(--gray-bg);
+  border-radius: 8px;
+  padding: 25px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-left: 20%;
+}
+
+/* Flex container */
+.login-flex-container {
+  display: flex;
+  align-items: center; /* Centre verticalement */
+  justify-content: center; /* Centre horizontalement */
+  min-height: 100vh;
+  padding: 0;
+  background: var(--white);
+  /* margin-top supprimé */
+}
+
+/* Illustration image */
+.illustration {
+  width: 350px; /* 165px + 20% = 198px */
+  height: auto;
+  /* margin-right: 5px; */
+  margin-top: 280px;
+  object-fit: contain;
+  align-self: center; /* Aligné au centre du login */
+}
+
+/* Titres */
+.login-title {
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.login-subtitle {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 25px;
+  text-align: left; /* M'Lunch reste avec la typo originale */
+}
+
+/* Groupes de formulaire */
+.form-group {
+  margin-bottom: 18px;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 5px;
+  font-weight: 400;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--gray-light);
+  border-radius: 5px;
+  padding: 7px 10px;
+  border: 1px solid var(--gray-border);
+  width: 100%;
+}
+
+.input-wrapper img {
+  margin-right: 7px;
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.input-wrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  padding: 3px 0;
+}
+
+.input-wrapper input::placeholder {
+  color: #999;
+  font-size: 12px;
+}
+
+/* Icône afficher/masquer mot de passe */
+.password-toggle {
+  position: absolute;
+  right: 35px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+}
+
+.password-toggle img {
+  width: 18px;
+  height: 18px;
+}
+
+/* Options du formulaire */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  font-size: 12px;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form-options label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.form-options input[type="checkbox"] {
+  margin-right: 5px;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--gray-border);
+  border-radius: 3px;
+  appearance: none;
+  background-color: var(--gray-light);
+  cursor: pointer;
+}
+
+.form-options input[type="checkbox"]:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px;
+}
+
+.form-options a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.form-options a:hover {
+  text-decoration: underline;
+}
+
+/* Bouton de connexion */
+.btn-login {
+  width: 90%;
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-family: 'Righteous', cursive; /* Nouvelle typo pour le bouton */
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  margin-bottom: 18px;
+  transition: background-color 0.2s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  letter-spacing: 0.5px;
+}
+
+.btn-login:hover {
+  background-color: #a53703;
+}
+
+/* Lien d'inscription */
+.register-link {
+  text-align: center;
+  font-size: 12px;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.register-link a {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+/* Ligne de séparation */
+.divider {
+  height: 1px;
+  background-color: var(--gray-border);
+  margin: 15px auto;
+  opacity: 0.5;
+  width: 90%;
+}
+
+/* POPUP */
+/* Styles du Popup (Modifiés) */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Fond semi-transparent */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0; /* Caché par défaut */
+  visibility: hidden; /* Caché par défaut */
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  z-index: 1000; /* Assure que le popup est au-dessus du reste du contenu */
+}
+
+.popup-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.popup-content {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 550px; /* Augmenter la largeur maximale pour le contenu */
+  position: relative;
+  transform: translateY(-20px); /* Animation d'entrée */
+  opacity: 0;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Espace entre les éléments du popup */
+  border: 1px solid #e0e0e0; /* Légère bordure pour un look plus doux */
+}
+
+.popup-overlay.active .popup-content {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.close-popup {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #888; /* Couleur plus douce pour la croix */
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.close-popup:hover {
+  color: #ff4d4d; /* Couleur de fermeture au survol */
+}
+
+.popup-header {
+  text-align: center;
+  margin-bottom: 20px; /* Espace après le titre */
+}
+
+.popup-header h2 {
+  font-size: 28px;
+  color: #043C4E; /* Nouvelle couleur pour le titre */
+  margin-bottom: 0;
+  font-weight: 600; /* Ajustement du poids de la police */
+}
+
+/* Styles spécifiques au contenu des conditions de livraison */
+.delivery-conditions-content {
+  font-size: 16px;
+  color: #444;
+  line-height: 1.6;
+}
+
+.delivery-conditions-content p {
+  margin-bottom: 15px;
+}
+
+.delivery-conditions-content p:last-of-type {
+  margin-bottom: 25px; /* Plus d'espace avant la checkbox */
+}
+
+.delivery-conditions-content strong {
+  color: #333;
+}
+
+/* Custom Checkbox */
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 25px; /* Espacement avant le bouton */
+  cursor: pointer;
+  font-size: 16px;
+  color: #555;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 22px;
+  width: 22px;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+  background-color: #ddd;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #043C4E; /* Couleur de la checkbox cochée */
+  border-color: #043C4E;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkbox-container .checkmark:after {
+  left: 8px;
+  top: 4px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.btn-delivery-continue {
+  background-color: #043C4E; /* Nouvelle couleur pour le bouton */
+  color: #ffffff;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  width: 100%;
+  margin-top: 5px; /* Ajustement de la marge supérieure */
+}
+
+.btn-delivery-continue:hover:not(:disabled) {
+  background-color: #03303d; /* Légèrement plus foncé au survol */
+  transform: translateY(-2px);
+}
+
+.btn-delivery-continue:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-delivery-continue:disabled {
+  background-color: #165c6f; /* Couleur pour le bouton désactivé */
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Supprimer les styles non utilisés du formulaire d'inscription précédent */
+.popup-form,
+.popup-footer,
+.popup-form .form-group,
+.popup-form .input-wrapper,
+.popup-form input[type="email"],
+.popup-form input[type="password"] {
+  /* Assurez-vous que ces règles ne s'appliquent pas si vous n'avez plus de formulaire d'inscription dans le popup */
+  /* Si vous avez encore un formulaire d'inscription ailleurs, gardez ces règles spécifiques à ce formulaire */
+  display: none; /* Ou supprimez-les si vous ne les utilisez plus du tout dans ce popup */
+}

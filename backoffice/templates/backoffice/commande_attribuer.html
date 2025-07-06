@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attribuer une commande</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        .commande-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .commande-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        .livreur-selection {
+            margin-bottom: 30px;
+        }
+        .livreur-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .livreur-card {
+            border: 2px solid #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .livreur-card:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+        }
+        .livreur-card.selected {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        .livreur-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #212529;
+        }
+        .livreur-contact {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .radio-input {
+            display: none;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .zone-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .no-livreurs {
+            text-align: center;
+            color: #dc3545;
+            font-style: italic;
+            padding: 20px;
+        }
+        .distance-info {
+            margin-top: 10px;
+            padding: 10px;
+            border-top: 1px solid #e9ecef;
+        }
+        .distance-total {
+            font-weight: bold;
+            color: #212529;
+        }
+        .distance-details, .temps-estime {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .distance-error {
+            margin-top: 10px;
+            color: #dc3545;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Attribution de commande</h1>
+            <p>Sélectionnez un livreur pour la commande #{{ commande.id }}</p>
+        </div>
+
+        <div class="commande-info">
+            <h3>Détails de la commande</h3>
+            <div class="info-row">
+                <span class="info-label">Client :</span>
+                <span>{{ commande.client }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Point de récupération :</span>
+                <span>{{ commande.point_recup }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Date de commande :</span>
+                <span>{{ commande.cree_le|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% if zone %}
+            <div class="zone-info">
+                <strong>Zone de livraison :</strong> {{ zone.nom }}
+                {% if zone.description %}
+                <br><small>{{ zone.description }}</small>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="livreur-selection">
+            <h3>Sélectionner un livreur</h3>
+
+            {% if livreurs_avec_distance %}
+                <form method="post" action="{% url 'commande_attribuer_confirmer' commande.id %}">
+                    {% csrf_token %}
+                    <div class="livreur-list">
+                        {% for livreur_data in livreurs_avec_distance %}
+                        <div class="livreur-card" onclick="selectLivreur({{ livreur_data.livreur.id }})">
+                            <input type="radio" name="livreur_id" value="{{ livreur_data.livreur.id }}" id="livreur_{{ livreur_data.livreur.id }}" class="radio-input">
+                            <div class="livreur-name">{{ livreur_data.livreur.nom }}</div>
+                            {% if livreur_data.livreur.contact %}
+                            <div class="livreur-contact">Contact: {{ livreur_data.livreur.contact }}</div>
+                            {% endif %}
+                            {% if livreur_data.livreur.position %}
+                            <div class="livreur-contact">Position: {{ livreur_data.livreur.position }}</div>
+                            {% endif %}
+
+                            {% if not livreur_data.error %}
+                            <div class="distance-info">
+                                <div class="distance-total">
+                                    <strong>Distance totale: {{ livreur_data.distance_totale }} km</strong>
+                                </div>
+                                <div class="distance-details">
+                                    <small>{{ livreur_data.nombre_restaurants }} restaurant(s) à visiter</small>
+                                </div>
+                                <div class="temps-estime">
+                                    <small>Temps estimé: {{ livreur_data.temps_estime }} min</small>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="distance-error">
+                                <small style="color: #dc3545;">{{ livreur_data.error }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="buttons">
+                        <button type="submit" class="btn btn-primary">Confirmer l'attribution</button>
+                        <a href="{% url 'index' %}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
+            {% else %}
+                <div class="no-livreurs">
+                    <p>Aucun livreur disponible pour cette zone.</p>
+                    <a href="{% url 'index' %}" class="btn btn-secondary">Retour</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function selectLivreur(livreurId) {
+            // Désélectionner toutes les cartes
+            document.querySelectorAll('.livreur-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Sélectionner la carte cliquée
+            event.currentTarget.classList.add('selected');
+
+            // Cocher le radio button correspondant
+            document.getElementById('livreur_' + livreurId).checked = true;
+        }
+    </script>
+</body>
+</html>

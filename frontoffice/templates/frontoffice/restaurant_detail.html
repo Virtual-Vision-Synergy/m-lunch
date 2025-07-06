@@ -1,39 +1,198 @@
-<h2>{{ restaurant.nom }}</h2>
-<p>📍 {{ restaurant.adresse }}</p>
-<p>⭐ Note: {{ note }} / 5</p>
-<p>⏰ {{ restaurant.horaire_debut }} - {{ restaurant.horaire_fin }}</p>
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.nom }} - M'Lunch</title>
+    <link rel="stylesheet" href="{% static 'css/header.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/resto.css' %}" />
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <style>
+        .menu-item.unavailable {
+            opacity: 0.7;
+        }
+        .menu-item.unavailable .add-to-cart {
+            background-color: #ccc !important;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<!-- HEADER -->  
+<header class="site-header">
+  <div class="overlap-wrapper">
+    <div class="overlap-2">
+      <div class="group-8">
+        <div class="overlap-group-3">
+          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <div class="group-11">
+            <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
+            <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
+            <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
+            <a href="#about" class="text-wrapper-12">A propos</a>
+          </div>
+          <div class="icons-right">
+            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="panier.html" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
 
-<h3>Filtrer par type</h3>
-<ul>
-  {% for type in types %}
-    <li>
-      <a href="?type={{ type.id }}"
-         {% if selected_type == type.id %}style="font-weight:bold"{% endif %}>
-         {{ type.nom }}
-      </a>
-    </li>
-  {% endfor %}
-  <li><a href="{% url 'restaurant_detail' restaurant.id %}">Afficher tout</a></li>
-</ul>
+            <nav id="hamburger-menu" class="hamburger-menu">
+              <ul>
+                <li class="has-submenu">
+                  <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                  <ul class="submenu">
+                    <li><a href="en_cours.html">En Cours</a></li>
+                    <li><a href="historique.html">Historique</a></li>
+                  </ul>
+                </li>
+                <li><a href="panier.html">Panier</a></li>
+                <li><a href="#about">A propos</a></li>
+                <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+    
+    <div class="restaurant-info">
+        <div class="image-container">
+            <img src="{{ restaurant.image }}" alt="{{ restaurant.nom }}">
+        </div>
+        <div class="name-location">
+            <h2>{{ restaurant.nom }}</h2>
+            <p><span class="location"><img src="{% static 'img/icones/group-420.svg' %}" alt="Location Icon">{{ restaurant.adresse }}</span></p>
+        </div>
+        <div class="details">
+            <div class="rating">{{ note }}
+                <div class="rating-wrapper" id="stars-container" aria-label="note"></div>
+            </div>
+            <div class="status">Ouvert {{ restaurant.horaire_debut }} - {{ restaurant.horaire_fin }}</div>
+            <a href="tel:{{ restaurant.telephone }}" class="contact">{{ restaurant.telephone }}</a>
+        </div>
+    </div>
 
-<h3>Menu</h3>
-<ul>
-  {% for r in repas %}
-    <li>
-      <img src="{{ r.image }}" alt="{{ r.nom }}" width="100">
-      <strong>{{ r.nom }}</strong> - {{ r.prix }} Ar<br>
-      <em>{{ r.description }}</em><br>
-      {% if r.est_dispo %}
-        <span style="color:green;">✅ Disponible</span><br>
-        <a href="#">
-          <button>➕ Ajouter au panier</button>
-        </a>
-      {% else %}
-        <span style="color:red;">❌ Indisponible</span><br>
-        <button disabled>Ajouter au panier</button>
-      {% endif %}
-    </li>
-  {% empty %}
-    <p>Aucun plat disponible.</p>
-  {% endfor %}
-</ul>
+    
+    <div class="categories">
+        {% for type in types %}
+        <button class="category-btn {% if selected_type == type.id %}active{% endif %}" 
+                onclick="window.location.href='?type={{ type.id }}'">
+            {{ type.nom }}
+        </button>
+        {% endfor %}
+        <button class="category-btn" onclick="window.location.href='{% url 'restaurant_detail' restaurant.id %}'">
+            Afficher tout
+        </button>
+    </div>
+
+    <div class="menu">
+        {% for r in repas %}
+        <div class="menu-item {% if not r.est_dispo %}unavailable{% endif %}">
+            <img src="{% static 'img/plats/' %}{{ r.image }}" alt="{{ r.nom }}">
+            <h3>{{ r.nom }}</h3>
+            <p>{{ r.description }}</p>
+            <div class="price-line">
+                <div class="price">{{ r.prix }} Ar</div>
+                {% if r.est_dispo %}
+                <button class="add-to-cart" onclick="addToCart({{ r.id }})">
+                    <img src="{% static 'img/icones/typcn-shopping-cart0.svg' %}" alt="Add to Cart Icon">
+                </button>
+                {% else %}
+                <button class="add-to-cart" disabled>
+                    <img src="{% static 'img/icones/typcn-shopping-cart0.svg' %}" alt="Add to Cart Icon">
+                </button>
+                {% endif %}
+            </div>
+            {% if not r.est_dispo %}
+            <div class="availability">Indisponible</div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="no-items">
+            <p>Aucun plat disponible pour cette catégorie.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // Generate star ratings
+        function generateStars(note, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            const fullStars = Math.floor(note);
+            const halfStar = (note - fullStars >= 0.25 && note - fullStars < 0.75);
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+            // Full stars
+            for (let i = 0; i < fullStars; i++) {
+                const star = document.createElement("ion-icon");
+                star.setAttribute("name", "star");
+                container.appendChild(star);
+            }
+
+            // Half star
+            if (halfStar) {
+                const half = document.createElement("ion-icon");
+                half.setAttribute("name", "star-half");
+                container.appendChild(half);
+            }
+
+            // Empty stars
+            for (let i = 0; i < emptyStars; i++) {
+                const empty = document.createElement("ion-icon");
+                empty.setAttribute("name", "star-outline");
+                container.appendChild(empty);
+            }
+        }
+
+        // Initialize with the restaurant's rating
+        generateStars({{ note }}, "stars-container");
+
+        // Category filter buttons
+        const buttons = document.querySelectorAll('.category-btn');
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                buttons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        // Add to cart function
+        function addToCart(mealId) {
+            // Implement your cart functionality here
+            console.log('Added to cart:', mealId);
+            // Example: fetch('/add_to_cart/', { method: 'POST', body: JSON.stringify({id: mealId}) });
+        }
+
+        // Hamburger menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const hamburgerMenu = document.getElementById('hamburger-menu');
+            const submenuParents = document.querySelectorAll('.has-submenu');
+
+            menuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                hamburgerMenu.classList.toggle('active');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
+                    hamburgerMenu.classList.remove('active');
+                }
+            });
+
+            submenuParents.forEach(function(parent) {
+                parent.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    parent.classList.toggle('open');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
