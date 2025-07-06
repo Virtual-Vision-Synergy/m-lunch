@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}M'Lunch - Backoffice{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-orange: #cc5500;
+            --light-orange: #e67300;
+            --dark-orange: #b8440a;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #f8f9fa;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-orange) 0%, var(--dark-orange) 100%);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .sidebar-section {
+            margin-bottom: 15px;
+        }
+
+        .sidebar-section-title {
+            padding: 10px 20px 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+
+        .sidebar-item {
+            display: block;
+            padding: 12px 25px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: rgba(255,255,255,0.5);
+        }
+
+        .sidebar-item.active {
+            background-color: rgba(255,255,255,0.15);
+            border-left-color: white;
+            font-weight: 500;
+        }
+
+        .sidebar-item i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        /* Header */
+        .page-header {
+            background: white;
+            border-radius: 10px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary-orange);
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .page-subtitle {
+            color: var(--text-light);
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary-orange);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-card-title {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary-orange), var(--light-orange));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .stat-card-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-orange);
+            line-height: 1;
+        }
+
+        /* Content Cards */
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .content-card-header {
+            background: var(--primary-orange);
+            color: white;
+            padding: 20px 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .content-card-body {
+            padding: 25px;
+        }
+
+        /* Filters */
+        .filters-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .filters-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        .table-header {
+            background: var(--primary-orange);
+            color: white;
+            padding: 15px 25px;
+            font-weight: 600;
+        }
+
+        .custom-table {
+            margin: 0;
+        }
+
+        .custom-table thead th {
+            background: var(--primary-orange);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .custom-table tbody td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Buttons */
+        .btn-orange {
+            background: var(--primary-orange);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-orange:hover {
+            background: var(--dark-orange);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .btn-orange-outline {
+            border: 1px solid var(--primary-orange);
+            color: var(--primary-orange);
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-orange-outline:hover {
+            background: var(--primary-orange);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tab Navigation */
+        .nav-tabs-orange {
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .nav-tabs-orange .nav-link {
+            border: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 12px 25px;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+        }
+
+        .nav-tabs-orange .nav-link.active {
+            background: var(--primary-orange);
+            color: white;
+        }
+
+        .nav-tabs-orange .nav-link:hover:not(.active) {
+            background: rgba(204, 85, 0, 0.1);
+            color: var(--primary-orange);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-utensils me-2"></i>Admin</h3>
+        </div>
+        <div class="sidebar-menu">
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Tableau</div>
+                <a href="{% url 'index' %}" class="sidebar-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                    <i class="fas fa-chart-pie"></i>Dashboard
+                </a>
+                <a href="{% url 'commande_list' %}" class="sidebar-item {% if 'commande' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-shopping-cart"></i>Clients
+                </a>
+                <a href="{% url 'restaurant_list' %}" class="sidebar-item {% if 'restaurant' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-store"></i>Restaurants
+                </a>
+                <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item {% if 'livra' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-truck"></i>Livreurs
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-map-marker-alt"></i>Secteurs
+                </a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Gestion</div>
+                <a href="{% url 'stats_dashboard' %}" class="sidebar-item {% if 'stats' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>Statistiques
+                </a>
+                <a href="{% url 'commande_list' %}" class="sidebar-item">
+                    <i class="fas fa-list"></i>Commandes
+                </a>
+                <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item">
+                    <i class="fas fa-shipping-fast"></i>Livraisons
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>{% block page_title %}{% endblock %}</h1>
+            <p class="page-subtitle">{% block page_subtitle %}Gestion de votre plateforme de livraison{% endblock %}</p>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Content -->
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="btn btn-orange d-md-none" style="position: fixed; top: 20px; left: 20px; z-index: 1001;" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        }
+
+        // Close sidebar on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.querySelector('[onclick="toggleSidebar()"]');
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -5,24 +5,31 @@ from django.db.models import Q
 from mlunch.core.models import (
     Livreur, Zone, StatutLivreur, HistoriqueStatutLivreur,
     Livraison, StatutLivraison, HistoriqueStatutLivraison,
-    ZoneLivreur
+    ZoneLivreur, Commande
 )
 
-def livreurs_list(request):
+# ========== VUE PRINCIPALE UNIFIÉE ==========
+
+def livraison_livreur_dashboard(request):
+    """Vue fusionnée principale pour gérer les livraisons et les livreurs"""
+    # Paramètres de filtrage
     secteur = request.GET.get('secteur')
-    statut = request.GET.get('statut')
+    statut_livreur = request.GET.get('statut_livreur')
+    statut_livraison = request.GET.get('statut_livraison')
+    view_type = request.GET.get('view', 'livreurs')  # Par défaut afficher les livreurs
 
-    # Base queryset
+    # Données pour les filtres
+    secteurs = Zone.objects.all()
+    statuts_livreur = StatutLivreur.objects.all()
+    statuts_livraison = StatutLivraison.objects.all()
+
+    # Gestion des livreurs avec filtres
     livreurs = Livreur.objects.all()
-
-    # Apply filters
     if secteur:
         livreurs = livreurs.filter(zonelivreur__zone__nom=secteur)
-
-    if statut:
-        # Get current status from history
+    if statut_livreur:
         livreurs = livreurs.filter(
-            historiques__statut__appellation=statut,
+            historiques__statut__appellation=statut_livreur,
             historiques__id__in=[
                 hist.id for hist in HistoriqueStatutLivreur.objects.filter(
                     livreur__in=livreurs
@@ -30,37 +37,142 @@ def livreurs_list(request):
             ]
         )
 
-    # Get data for filters
-    secteurs = Zone.objects.all()
-    statuts = StatutLivreur.objects.all()
-
-    # Add current status to each livreur
+    # Préparation des données livreurs avec leurs statuts actuels
     livreurs_with_status = []
     for livreur in livreurs:
         latest_status = livreur.historiques.order_by('-mis_a_jour_le').first()
         secteur_livreur = livreur.zonelivreur_set.first()
+
+        # Compter les livraisons en cours pour ce livreur via l'historique
+        livraisons_en_cours = 0
+        for livraison in livreur.livraisons.all():
+            latest_livraison_status = livraison.historiques.order_by('-mis_a_jour_le').first()
+            if latest_livraison_status and latest_livraison_status.statut.appellation in ['En cours', 'Assignée']:
+                livraisons_en_cours += 1
+
         livreurs_with_status.append({
             'id': livreur.id,
             'nom': livreur.nom,
             'contact': livreur.contact,
             'secteur': secteur_livreur.zone.nom if secteur_livreur else 'Non défini',
             'statut': latest_status.statut.appellation if latest_status else 'Non défini',
-            'date_inscri': livreur.date_inscri
+            'date_inscri': livreur.date_inscri,
+            'livraisons_en_cours': livraisons_en_cours
         })
 
-    return render(request, 'backoffice/livreurs/livreurs_list.html', {
+    # Gestion des livraisons avec filtres
+    livraisons = Livraison.objects.select_related('livreur', 'commande').all()
+    if secteur:
+        livraisons = livraisons.filter(livreur__zonelivreur__zone__nom=secteur)
+    if statut_livraison:
+        # Filtrer par statut en utilisant l'historique
+        livraison_ids_with_status = []
+        for livraison in livraisons:
+            latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
+            if latest_status and latest_status.statut.appellation == statut_livraison:
+                livraison_ids_with_status.append(livraison.id)
+        livraisons = livraisons.filter(id__in=livraison_ids_with_status)
+
+    # Préparation des données livraisons
+    livraisons_with_details = []
+    for livraison in livraisons:
+        latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
+        livraisons_with_details.append({
+            'id': livraison.id,
+            'commande_id': livraison.commande.id if livraison.commande else None,
+            'livreur_nom': livraison.livreur.nom if livraison.livreur else 'Non assigné',
+            'livreur_id': livraison.livreur.id if livraison.livreur else None,
+            'statut': latest_status.statut.appellation if latest_status else 'Non défini',
+            'attribue_le': livraison.attribue_le,
+            'adresse_livraison': livraison.commande.point_recup.nom if livraison.commande and livraison.commande.point_recup else 'Non définie'
+        })
+
+    # Récupérer les commandes non assignées pour le bouton d'assignment
+    commandes_non_assignees = Commande.objects.filter(livraisons__isnull=True)
+
+    return render(request, 'backoffice/livraison_livreur_dashboard.html', {
         'livreurs': livreurs_with_status,
+        'livraisons': livraisons_with_details,
+        'commandes_non_assignees': commandes_non_assignees,
         'secteurs': secteurs,
-        'statuts': statuts,
+        'statuts_livreur': statuts_livreur,
+        'statuts_livraison': statuts_livraison,
         'selected_secteur': secteur,
-        'selected_statut': statut,
+        'selected_statut_livreur': statut_livreur,
+        'selected_statut_livraison': statut_livraison,
+        'view_type': view_type
     })
 
+# ========== GESTION DES ASSIGNATIONS ==========
+
+def livreur_assigner_commande(request, livreur_id):
+    """Vue pour assigner une commande à un livreur (inverse de commande_attribuer)"""
+    livreur = get_object_or_404(Livreur, id=livreur_id)
+
+    # Récupérer les commandes non assignées
+    commandes_disponibles = Commande.objects.filter(livraisons__isnull=True)
+
+    # Filtrer par secteur du livreur si nécessaire
+    secteur_livreur = livreur.zonelivreur_set.first()
+    if secteur_livreur:
+        # Optionnel: filtrer les commandes par zone du livreur
+        commandes_disponibles = commandes_disponibles.filter(
+            client__zoneclient__zone=secteur_livreur.zone
+        )
+
+    if request.method == 'POST':
+        commande_id = request.POST.get('commande_id')
+        if commande_id:
+            try:
+                commande = get_object_or_404(Commande, id=commande_id)
+
+                # Créer la livraison
+                livraison = Livraison.objects.create(
+                    livreur=livreur,
+                    commande=commande
+                )
+
+                # Créer l'historique de statut initial
+                statut_assigne, created = StatutLivraison.objects.get_or_create(
+                    appellation='Assignée'
+                )
+                HistoriqueStatutLivraison.objects.create(
+                    livraison=livraison,
+                    statut=statut_assigne
+                )
+
+                messages.success(request, f"Commande #{commande.id} assignée avec succès à {livreur.nom}")
+                return redirect('livraison_livreur_dashboard')
+
+            except Exception as e:
+                messages.error(request, f"Erreur lors de l'assignation: {str(e)}")
+
+    return render(request, 'backoffice/livreur_assigner_commande.html', {
+        'livreur': livreur,
+        'commandes_disponibles': commandes_disponibles,
+        'secteur_livreur': secteur_livreur.zone.nom if secteur_livreur else 'Non défini'
+    })
+
+# ========== GESTION INDIVIDUELLE DES LIVREURS ==========
 
 def livreur_detail(request, livreur_id):
+    """Détail d'un livreur spécifique"""
     livreur = get_object_or_404(Livreur, id=livreur_id)
     latest_status = livreur.historiques.order_by('-mis_a_jour_le').first()
     secteur_livreur = livreur.zonelivreur_set.first()
+
+    # Récupérer les livraisons du livreur
+    livraisons = livreur.livraisons.all()
+    livraisons_data = []
+    for livraison in livraisons:
+        latest_livraison_status = livraison.historiques.order_by('-mis_a_jour_le').first()
+        livraisons_data.append({
+            'id': livraison.id,
+            'commande_id': livraison.commande.id,
+            'statut': latest_livraison_status.statut.appellation if latest_livraison_status else 'Non défini',
+            'attribue_le': livraison.attribue_le,
+            'adresse': livraison.commande.point_recup.nom if livraison.commande and livraison.commande.point_recup else 'Non définie'
+        })
 
     livreur_data = {
         'id': livreur.id,
@@ -69,36 +181,53 @@ def livreur_detail(request, livreur_id):
         'secteur': secteur_livreur.zone.nom if secteur_livreur else 'Non défini',
         'statut': latest_status.statut.appellation if latest_status else 'Non défini',
         'date_inscri': livreur.date_inscri,
-        'position': livreur.position
+        'livraisons': livraisons_data
     }
 
     return render(request, 'backoffice/livreurs/livreur_detail.html', {'livreur': livreur_data})
 
-
 def livreur_add(request):
+    """Ajouter un nouveau livreur"""
     if request.method == 'POST':
         nom = request.POST.get('nom')
         contact = request.POST.get('contact')
         secteur = request.POST.get('secteur')
         statut = request.POST.get('statut')
 
-        # Create livreur
-        livreur = Livreur.objects.create(
-            nom=nom,
-            contact=contact
-        )
+        try:
+            # Validation des données
+            if not nom:
+                messages.error(request, "Le nom du livreur est obligatoire")
+                raise ValueError("Nom obligatoire")
 
-        # Add zone relationship
-        if secteur:
-            zone = Zone.objects.get(nom=secteur)
-            ZoneLivreur.objects.create(zone=zone, livreur=livreur)
+            # Créer le livreur
+            livreur = Livreur.objects.create(
+                nom=nom,
+                contact=contact or ""
+            )
 
-        # Add status
-        if statut:
-            statut_obj = StatutLivreur.objects.get(appellation=statut)
+            # Ajouter la relation zone
+            if secteur:
+                zone = Zone.objects.get(nom=secteur)
+                ZoneLivreur.objects.create(zone=zone, livreur=livreur)
+
+            # Ajouter le statut (par défaut 'Actif' si non spécifié)
+            if statut:
+                statut_obj = StatutLivreur.objects.get(appellation=statut)
+            else:
+                statut_obj, created = StatutLivreur.objects.get_or_create(appellation='Actif')
+
             HistoriqueStatutLivreur.objects.create(livreur=livreur, statut=statut_obj)
 
-        return redirect('livreurs_list')
+            messages.success(request, f"Livreur {nom} ajouté avec succès")
+            return redirect('livraison_livreur_dashboard')
+
+        except Zone.DoesNotExist:
+            messages.error(request, "Secteur sélectionné introuvable")
+        except StatutLivreur.DoesNotExist:
+            messages.error(request, "Statut sélectionné introuvable")
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la création: {str(e)}")
 
     secteurs = Zone.objects.all()
     statuts = StatutLivreur.objects.all()
@@ -108,8 +237,8 @@ def livreur_add(request):
         'action': 'Ajouter'
     })
 
-
 def livreur_edit(request, livreur_id):
+    """Modifier un livreur existant"""
     livreur = get_object_or_404(Livreur, id=livreur_id)
     latest_status = livreur.historiques.order_by('-mis_a_jour_le').first()
     secteur_livreur = livreur.zonelivreur_set.first()
@@ -135,7 +264,6 @@ def livreur_edit(request, livreur_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             changements = []
 
-            # Verifier les changements de nom
             if livreur_data['nom'] != nom:
                 changements.append({
                     'champ': 'Nom',
@@ -143,27 +271,24 @@ def livreur_edit(request, livreur_id):
                     'apres': nom
                 })
 
-            # Verifier les changements de contact
             if livreur_data['contact'] != contact:
                 changements.append({
                     'champ': 'Contact',
-                    'avant': livreur_data['contact'] or 'Non defini',
-                    'apres': contact or 'Non defini'
+                    'avant': livreur_data['contact'] or 'Non défini',
+                    'apres': contact or 'Non défini'
                 })
 
-            # Verifier les changements de secteur
             if livreur_data['secteur'] != secteur:
                 changements.append({
                     'champ': 'Secteur',
-                    'avant': livreur_data['secteur'] or 'Non defini',
+                    'avant': livreur_data['secteur'] or 'Non défini',
                     'apres': secteur
                 })
 
-            # Verifier les changements de statut
             if livreur_data['statut'] != statut:
                 changements.append({
                     'champ': 'Statut',
-                    'avant': livreur_data['statut'] or 'Non defini',
+                    'avant': livreur_data['statut'] or 'Non défini',
                     'apres': statut
                 })
 
@@ -171,26 +296,25 @@ def livreur_edit(request, livreur_id):
 
         # Si confirm=1, on effectue les modifications
         if request.POST.get('confirm') == '1':
-            # Update basic info
+            # Mettre à jour les infos de base
             livreur.nom = nom
             livreur.contact = contact
             livreur.save()
 
-            # Update zone
+            # Mettre à jour la zone
             if secteur != livreur_data['secteur']:
-                # Remove old zone relationships
                 ZoneLivreur.objects.filter(livreur=livreur).delete()
-                # Add new zone relationship
                 if secteur:
                     zone = Zone.objects.get(nom=secteur)
                     ZoneLivreur.objects.create(zone=zone, livreur=livreur)
 
-            # Update status
+            # Mettre à jour le statut
             if statut != livreur_data['statut']:
                 statut_obj = StatutLivreur.objects.get(appellation=statut)
                 HistoriqueStatutLivreur.objects.create(livreur=livreur, statut=statut_obj)
 
-            return redirect('livreurs_list')
+            messages.success(request, f"Livreur {nom} modifié avec succès")
+            return redirect('livraison_livreur_dashboard')
 
     return render(request, 'backoffice/livreurs/livreur_form.html', {
         'livreur': livreur_data,
@@ -199,100 +323,40 @@ def livreur_edit(request, livreur_id):
         'action': 'Modifier'
     })
 
-
 def livreur_delete(request, livreur_id):
+    """Supprimer/Désactiver un livreur"""
     livreur = get_object_or_404(Livreur, id=livreur_id)
 
-    # Check if livreur has active deliveries
+    # Vérifier s'il a des livraisons en cours
     active_deliveries = livreur.livraisons.filter(
-        historiques__statut__appellation__in=['En cours', 'En préparation', 'Attribuée']
+        historiques__statut__appellation__in=['En cours', 'En préparation', 'Assignée']
     ).exists()
 
     if active_deliveries:
-        return render(request, 'backoffice/livreurs/livreur_delete_error.html', {
-            'reason': "Impossible de supprimer ce livreur : il a des livraisons en cours."
-        })
+        messages.error(request, "Impossible de supprimer ce livreur : il a des livraisons en cours.")
+        return redirect('livraison_livreur_dashboard')
 
-    # Check if already inactive
+    # Vérifier s'il est déjà inactif
     latest_status = livreur.historiques.order_by('-mis_a_jour_le').first()
     if latest_status and latest_status.statut.appellation == 'Inactif':
-        return redirect('livreurs_list')
+        messages.info(request, "Ce livreur est déjà inactif.")
+        return redirect('livraison_livreur_dashboard')
 
     if request.method == 'POST':
-        # Set status to inactive instead of deleting
+        # Mettre le statut à inactif au lieu de supprimer
         statut_inactif, created = StatutLivreur.objects.get_or_create(appellation='Inactif')
         HistoriqueStatutLivreur.objects.create(livreur=livreur, statut=statut_inactif)
-        return redirect('livreurs_list')
+        messages.success(request, f"Livreur {livreur.nom} désactivé avec succès")
+        return redirect('livraison_livreur_dashboard')
 
     return render(request, 'backoffice/livreurs/livreur_delete_confirm.html', {
-        'livreur_id': livreur_id
+        'livreur': livreur
     })
 
-
-def livraisons_list(request):
-    # Recuperer les filtres
-    secteur = request.GET.get('secteur')
-    statut = request.GET.get('statut')
-    adresse = request.GET.get('adresse')
-    livreur_id = request.GET.get('livreur')
-
-    # Base queryset
-    livraisons = Livraison.objects.select_related('livreur', 'commande', 'commande__point_recup').all()
-
-    # Apply filters
-    if secteur:
-        livraisons = livraisons.filter(livreur__zonelivreur__zone__nom=secteur)
-
-    if statut:
-        livraisons = livraisons.filter(
-            historiques__statut__appellation=statut,
-            historiques__id__in=[
-                hist.id for hist in HistoriqueStatutLivraison.objects.filter(
-                    livraison__in=livraisons
-                ).order_by('livraison', '-mis_a_jour_le').distinct('livraison')
-            ]
-        )
-
-    if adresse:
-        livraisons = livraisons.filter(
-            Q(commande__point_recup__nom__icontains=adresse)
-        )
-
-    if livreur_id:
-        livraisons = livraisons.filter(livreur_id=livreur_id)
-
-    # Prepare livraisons data with current status
-    livraisons_data = []
-    for livraison in livraisons:
-        latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
-        livraisons_data.append({
-            'id': livraison.id,
-            'livreur_nom': livraison.livreur.nom,
-            'livreur_id': livraison.livreur.id,
-            'commande_id': livraison.commande.id,
-            'adresse': livraison.commande.point_recup.nom,
-            'statut': latest_status.statut.appellation if latest_status else 'Non défini',
-            'attribue_le': livraison.attribue_le
-        })
-
-    # Recuperer les donnees pour les filtres
-    secteurs = Zone.objects.all()
-    statuts = StatutLivraison.objects.all()
-    livreurs = Livreur.objects.all()
-
-    return render(request, 'backoffice/livraisons/livraisons_list.html', {
-        'livraisons': livraisons_data,
-        'secteurs': secteurs,
-        'statuts': statuts,
-        'livreurs': livreurs,
-        'selected_secteur': secteur,
-        'selected_statut': statut,
-        'selected_adresse': adresse,
-        'selected_livreur': livreur_id,
-    })
-
+# ========== GESTION INDIVIDUELLE DES LIVRAISONS ==========
 
 def livraison_detail(request, livraison_id):
+    """Détail d'une livraison spécifique"""
     livraison = get_object_or_404(Livraison, id=livraison_id)
     latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
 
@@ -303,13 +367,14 @@ def livraison_detail(request, livraison_id):
         'commande_id': livraison.commande.id,
         'adresse': livraison.commande.point_recup.nom,
         'statut': latest_status.statut.appellation if latest_status else 'Non défini',
-        'attribue_le': livraison.attribue_le
+        'attribue_le': livraison.attribue_le,
+        'historique': livraison.historiques.order_by('-mis_a_jour_le').all()
     }
 
     return render(request, 'backoffice/livraisons/livraison_detail.html', {'livraison': livraison_data})
 
-
 def livraison_edit(request, livraison_id):
+    """Modifier une livraison existante"""
     livraison = get_object_or_404(Livraison, id=livraison_id)
     latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
 
@@ -334,7 +399,6 @@ def livraison_edit(request, livraison_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             changements = []
 
-            # Verifier les changements de livreur
             if livraison_data['livreur_id'] != new_livreur_id:
                 new_livreur = Livreur.objects.get(id=new_livreur_id)
                 changements.append({
@@ -343,11 +407,10 @@ def livraison_edit(request, livraison_id):
                     'apres': new_livreur.nom
                 })
 
-            # Verifier les changements de statut
             if livraison_data['statut'] != new_statut:
                 changements.append({
                     'champ': 'Statut',
-                    'avant': livraison_data['statut'] or 'Non defini',
+                    'avant': livraison_data['statut'] or 'Non défini',
                     'apres': new_statut
                 })
 
@@ -355,17 +418,18 @@ def livraison_edit(request, livraison_id):
 
         # Si confirm=1, on effectue les modifications
         if request.POST.get('confirm') == '1':
-            # Update status
+            # Mettre à jour le statut
             if new_statut != livraison_data['statut']:
                 statut_obj = StatutLivraison.objects.get(appellation=new_statut)
                 HistoriqueStatutLivraison.objects.create(livraison=livraison, statut=statut_obj)
 
-            # Update livreur
+            # Mettre à jour le livreur
             if livraison_data['livreur_id'] != new_livreur_id:
                 livraison.livreur_id = new_livreur_id
                 livraison.save()
 
-            return redirect('livraisons_list')
+            messages.success(request, "Livraison modifiée avec succès")
+            return redirect('livraison_livreur_dashboard')
 
     return render(request, 'backoffice/livraisons/livraison_form.html', {
         'livraison': livraison_data,
@@ -374,36 +438,35 @@ def livraison_edit(request, livraison_id):
         'action': 'Modifier'
     })
 
-
 def livraison_delete(request, livraison_id):
+    """Annuler une livraison"""
     try:
         livraison = get_object_or_404(Livraison, id=livraison_id)
         latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
         current_status = latest_status.statut.appellation if latest_status else None
 
-        # Verifier si la livraison peut être annulee
-        if current_status in ['Livree', 'Livrée']:
-            return render(request, 'backoffice/livraisons/livraison_delete_error.html', {
-                'reason': "Impossible d'annuler une livraison dejà effectuee."
-            })
+        # Vérifier si la livraison peut être annulée
+        if current_status in ['Livrée', 'Livrée']:
+            messages.error(request, "Impossible d'annuler une livraison déjà effectuée.")
+            return redirect('livraison_livreur_dashboard')
 
-        if current_status in ['Annulee', 'Annulée']:
-            messages.info(request, "Cette livraison est dejà annulee.")
-            return redirect('livraisons_list')
+        if current_status in ['Annulée', 'Annulée']:
+            messages.info(request, "Cette livraison est déjà annulée.")
+            return redirect('livraison_livreur_dashboard')
 
         if request.method == 'POST':
-            # Get or create 'Annulee' status
+            # Créer ou récupérer le statut 'Annulée'
             statut_annule, created = StatutLivraison.objects.get_or_create(appellation='Annulée')
 
-            # Create status history entry
+            # Créer l'entrée d'historique
             HistoriqueStatutLivraison.objects.create(livraison=livraison, statut=statut_annule)
 
-            messages.success(request, "La livraison a ete annulee avec succès.")
-            return redirect('livraisons_list')
+            messages.success(request, "La livraison a été annulée avec succès.")
+            return redirect('livraison_livreur_dashboard')
 
     except Exception as e:
         messages.error(request, f"Erreur: {str(e)}")
-        return redirect('livraisons_list')
+        return redirect('livraison_livreur_dashboard')
 
     return render(request, 'backoffice/livraisons/livraison_delete_confirm.html', {
         'livraison': {

@@ -1,0 +1,67 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Assigner une commande à {{ livreur.nom }} - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-truck me-2"></i>
+                        Assigner une commande à {{ livreur.nom }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Livreur:</strong> {{ livreur.nom }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Secteur:</strong> {{ secteur_livreur }}
+                        </div>
+                    </div>
+
+                    {% if commandes_disponibles %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="commande_id" class="form-label">
+                                    <strong>Sélectionner une commande à assigner:</strong>
+                                </label>
+                                <select name="commande_id" id="commande_id" class="form-select" required>
+                                    <option value="">-- Choisir une commande --</option>
+                                    {% for commande in commandes_disponibles %}
+                                        <option value="{{ commande.id }}">
+                                            Commande #{{ commande.id }} - {{ commande.point_recup.nom }}
+                                            ({{ commande.client.prenom }} {{ commande.client.nom }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Retour
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-check me-1"></i>Assigner la commande
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Aucune commande disponible pour ce livreur dans son secteur.
+                        </div>
+                        <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Retour
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
