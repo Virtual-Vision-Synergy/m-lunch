@@ -5,26 +5,44 @@ from django.db.models import Sum
 
 from mlunch.core.models import (
     Commande, StatutCommande, HistoriqueStatutCommande, Repas, CommandeRepas,
-    PointRecup, Client, RestaurantRepas, Restaurant
+    PointRecup, Client, RestaurantRepas, Restaurant, SuivisCommande
 )
+from mlunch.core.services.suivisCommande_service import SuivisCommandeService
 
 class CommandeService:
     @staticmethod
     def create_commande(client_id, point_recup_id, initial_statut_id):
-        # pdb.set_trace()
         try:
             with transaction.atomic():
+                # Créer la commande
                 commande = Commande.objects.create(
                     client_id=client_id,
                     point_recup_id=point_recup_id
                 )
-                # Vérifier si le statut existe
+
+                # Vérifier que le statut existe
                 if not StatutCommande.objects.filter(id=initial_statut_id).exists():
                     return {"error": "Statut non trouvé"}
+
+                # Ajouter l'historique du statut
                 historique = HistoriqueStatutCommande.objects.create(
                     commande=commande,
                     statut_id=initial_statut_id
                 )
+
+                # Récupérer les restaurants liés à cette commande
+                restaurant_ids = CommandeService.get_all_id_restaurant_from_commande(commande.id)
+
+                # Créer un suivi pour chaque restaurant via le service
+                suivis_list = []
+                for restaurant_id in restaurant_ids:
+                    suivi_data = SuivisCommandeService.create_suivi(
+                        commande_id=commande.id,
+                        restaurant_id=restaurant_id,
+                    )
+                    suivis_list.append(suivi_data)
+
+                # Retourner la réponse complète
                 return {
                     "commande": {
                         "id": commande.id,
@@ -37,10 +55,13 @@ class CommandeService:
                         "commande_id": historique.commande_id,
                         "statut_id": historique.statut_id,
                         "mis_a_jour_le": historique.mis_a_jour_le
-                    }
+                    },
+                    "suivis": suivis_list
                 }
+
         except Exception as e:
             return {"error": f"Erreur lors de la création de la commande : {str(e)}"}
+
 
     @staticmethod
     def add_repas_to_commande(commande_id, repas_id, quantite):
@@ -473,3 +494,93 @@ class CommandeService:
 
         except Exception as e:
             return {"error": f"Erreur lors du calcul du total : {str(e)}"}
+
+    @staticmethod
+    def get_all_id_restaurant_from_commande(commande_id):
+        """
+        Retourne la liste des IDs des restaurants liés aux repas d'une commande.
+        """
+        try:
+            # Récupérer tous les repas liés à la commande
+            repas_ids = CommandeRepas.objects.filter(commande_id=commande_id).values_list('repas_id', flat=True)
+
+            # Rechercher les restaurants liés à ces repas
+            restaurant_ids = RestaurantRepas.objects.filter(
+                repas_id__in=repas_ids
+            ).values_list('restaurant_id', flat=True).distinct()
+
+            # Retourner la liste (évaluée)
+            return list(restaurant_ids)
+
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des restaurants de la commande : {str(e)}"}
+
+    @staticmethod
+    def check_if_commande_done(commande_id):
+        """
+        Vérifie si tous les suivis liés à une commande ont un statut True.
+        """
+        try:
+            existe_suivi_non_traite = SuivisCommande.objects.filter(
+                commande_id=commande_id,
+                statut=False
+            ).exists()
+
+            if existe_suivi_non_traite:
+                return False  
+
+            return True
+
+        except Exception as e:
+            return {"error": f"Erreur lors de la vérification de la commande : {str(e)}"}
+    
+    @staticmethod
+    def change_state_auto(commande_id):
+        """
+        Change automatiquement l'état de la commande en 'Prête' si tous les suivis sont traités
+        et que le statut actuel de la commande est 'En cours' (avec ou sans accent, minuscule ou majuscule).
+        """
+        try:
+            if not CommandeService.check_if_commande_done(commande_id):
+                return {"success": False, "message": "Tous les suivis ne sont pas traités."}
+
+            # Récupérer la commande
+            commande = Commande.objects.get(id=commande_id)
+
+            # Récupérer le dernier historique de statut (le plus récent)
+            dernier_statut_commande = commande.historiques.order_by('-mis_a_jour_le').first()
+
+            if not dernier_statut_commande:
+                return {"error": "Aucun statut trouvé pour cette commande."}
+
+            # Vérifier que le statut actuel est "En cours" (variantes accent/casse)
+            appellations_en_cours = ['En cours', 'en cours', 'EN COURS', 'Encours', 'encours', 'ENCOURS']
+            statut_actuel = dernier_statut_commande.statut.appellation or ""
+
+            if statut_actuel.lower().replace(" ", "") not in [a.lower().replace(" ", "") for a in appellations_en_cours]:
+                return {"success": False, "message": f"Le statut actuel de la commande n'est pas 'En cours' mais '{statut_actuel}'."}
+
+            # Trouver le statut "Prête" dans la base (avec variantes)
+            appellations_prete = ['Prête', 'Prete', 'prête', 'prete', 'PRÊTE', 'PRETE']
+            statut_prete = None
+            for appellation in appellations_prete:
+                try:
+                    statut_prete = StatutCommande.objects.get(appellation__iexact=appellation)
+                    break
+                except StatutCommande.DoesNotExist:
+                    continue
+
+            if statut_prete is None:
+                return {"error": "Le statut 'Prête' (ou variantes) n'existe pas dans la base de données."}
+
+            # Changer le statut de la commande en "Prête"
+            CommandeService.changer_statut_commande(commande_id, statut_prete.id)
+
+            return {"success": True, "message": "Commande marquée comme prête."}
+
+        except Commande.DoesNotExist:
+            return {"error": "Commande introuvable."}
+        except Exception as e:
+            return {"error": f"Erreur lors du changement d'état automatique : {str(e)}"}
+
+

@@ -8,18 +8,22 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
+
 """
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal311.dll'
 GEOS_LIBRARY_PATH=r'C:\OSGeo4W\bin\geos_c.dll'
+
+env_path = BASE_DIR / '.env'
+# Charge explicitement le .env
+load_dotenv(dotenv_path=env_path, override=True)
+# Load environment variables from .env file
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 

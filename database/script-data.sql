@@ -4,8 +4,7 @@
 -- 1. Statuts
 INSERT INTO core_statutcommande (appellation) VALUES
 ('En attente'),
-('Confirmée'),
-('En préparation'),
+('En cours'),
 ('Prête'),
 ('En livraison'),
 ('Livrée'),

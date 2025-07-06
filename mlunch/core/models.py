@@ -245,3 +245,17 @@ class HistoriqueZonesRecuperation(models.Model):
     mis_a_jour_le = models.DateTimeField(default=now)
     def __str__(self):
         return f"{self.zone} - {self.point_recup} ({self.mis_a_jour_le})"
+
+class SuivisCommande(models.Model):
+    commande = models.ForeignKey('Commande', on_delete=models.CASCADE, related_name='suivis_commandes')
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='suivis_commandes')
+    statut = models.BooleanField(default=False) 
+    mis_a_jour_le = models.DateTimeField(default=now)
+
+    class Meta:
+        unique_together = ('commande', 'restaurant', 'mis_a_jour_le')
+        ordering = ['-mis_a_jour_le']
+
+    def __str__(self):
+        return f"Commande {self.commande.id} - {self.restaurant.nom} : {self.statut} ({self.mis_a_jour_le})"
+

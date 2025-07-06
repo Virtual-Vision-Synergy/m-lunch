@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from mlunch.core.models import Restaurant, RestaurantRepas, Repas, DisponibiliteRepas, Commande, CommandeRepas
+from mlunch.core.services.commande_service import CommandeService
 from mlunch.core.services.repas_service import RepasService
 import json
+
+from mlunch.core.services.suivisCommande_service import SuivisCommandeService
 
 def login_view(request):
     """Affiche la page de connexion pour les restaurants"""
@@ -219,19 +222,16 @@ def commande_details_view(request, commande_id):
 
         # Récupérer le statut actuel de la commande
         dernier_historique = commande.historiques.order_by('-mis_a_jour_le').first()
-        statut_actuel = dernier_historique.statut if dernier_historique else None
 
-        # Récupérer tous les statuts disponibles
-        from mlunch.core.models import StatutCommande
-        statuts_disponibles = StatutCommande.objects.all()
-
+        suivi_data = SuivisCommandeService.get_suivi(commande_id=commande.id, restaurant_id=restaurant.id)
+        suivi_statut = suivi_data.get("statut", False) if isinstance(suivi_data, dict) else False
+    
         context = {
             'restaurant': restaurant,
             'commande': commande,
             'repas_enrichis': repas_enrichis,
             'total_restaurant': total_restaurant,
-            'statut_actuel': statut_actuel,
-            'statuts_disponibles': statuts_disponibles
+            'suivi_statut': suivi_statut
         }
         return render(request, 'commande_details.html', context)
 
@@ -285,6 +285,38 @@ def modifier_statut_commande(request):
 
         except (Restaurant.DoesNotExist, Commande.DoesNotExist, StatutCommande.DoesNotExist):
             return JsonResponse({'error': 'Ressource introuvable'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Données JSON invalides'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+
+def modifier_statut_suivis(request):
+    """API pour modifier le statut d'un suivi de commande"""
+    if request.method == 'POST':
+        if 'restaurant_id' not in request.session:
+            return JsonResponse({'error': 'Non authentifié'}, status=401)
+
+        try:
+            data = json.loads(request.body)
+            commande_id = data.get('commande_id')
+            restaurant_id = request.session['restaurant_id']
+
+            if not commande_id:
+                return JsonResponse({'error': 'ID de la commande manquant'}, status=400)
+
+            # Changer le statut du suivi
+            result = SuivisCommandeService.changer_statut(commande_id, restaurant_id)
+
+            if 'error' in result:
+                return JsonResponse({'error': result['error']}, status=400)
+
+            # Appeler la fonction pour changer automatiquement le statut de la commande
+            CommandeService.change_state_auto(commande_id)
+
+            return JsonResponse(result)
+
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Données JSON invalides'}, status=400)
         except Exception as e:

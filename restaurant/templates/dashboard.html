@@ -4,194 +4,227 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de bord - {{ restaurant.nom }} - M'Lunch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+        :root {
+            --primary-color: #C64304;
+            --primary-dark: #A53703;
+            --text-color: #2E2E2E;
+            --light-gray: #F5F5F5;
+            --border-color: #E0E0E0;
+            --white: #FFFFFF;
+            --error-color: #E74C3C;
+            --success-color: #2ECC71;
+            --warning-color: #F39C12;
+            --info-color: #3498DB;
+        }
+
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
         .header {
-            background-color: #e74c3c;
-            color: white;
-            padding: 1rem 2rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 1.5rem 3rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
             margin: 0;
         }
+
         .logout-btn {
-            background-color: #c0392b;
-            color: white;
-            padding: 0.5rem 1rem;
+            background-color: var(--primary-dark);
+            color: var(--white);
+            padding: 0.7rem 1.5rem;
             text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
+
         .logout-btn:hover {
-            background-color: #a93226;
+            background-color: #8C2B0E;
+            transform: translateY(-2px);
         }
+
         .container {
             max-width: 1200px;
-            margin: 2rem auto;
+            margin: 3rem auto;
             padding: 0 2rem;
         }
+
         .welcome-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2.5rem;
         }
+
         .welcome-card h2 {
-            color: #e74c3c;
-            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
         }
+
+        .welcome-card p {
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .welcome-card strong {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
         }
+
         .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background: var(--white);
+            padding: 2rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             text-align: center;
+            transition: transform 0.3s ease;
         }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
         .stat-card h3 {
             margin-top: 0;
-            color: #333;
-        }
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #e74c3c;
-        }
-        .actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        .action-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        .action-card:hover {
-            transform: translateY(-5px);
-        }
-        .action-card h4 {
-            margin-top: 0;
-            color: #333;
-        }
-        .action-btn {
-            background-color: #e74c3c;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            text-decoration: none;
-            border-radius: 5px;
-            display: inline-block;
-            transition: background-color 0.3s;
-        }
-        .action-btn:hover {
-            background-color: #c0392b;
-        }
-        .messages {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 500;
             margin-bottom: 1rem;
         }
-        .messages .alert {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 5px;
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
         }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
         }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+
+        /* Section des plats */
         .plats-section {
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
         }
+
         .plats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
         }
+
         .plat-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             overflow: hidden;
-            transition: transform 0.3s;
+            transition: all 0.3s ease;
         }
+
         .plat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
+
+        .plat-image-container {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+        }
+
         .plat-image {
             width: 100%;
-            height: 150px;
+            height: 100%;
             object-fit: cover;
+            transition: transform 0.5s ease;
         }
+
+        .plat-card:hover .plat-image {
+            transform: scale(1.05);
+        }
+
         .plat-image-placeholder {
             width: 100%;
-            height: 150px;
+            height: 180px;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f0f0f0;
-            font-size: 2rem;
+            background-color: var(--light-gray);
+            color: #999;
+            font-size: 3rem;
         }
+
         .plat-info {
-            padding: 1rem;
+            padding: 1.5rem;
         }
+
+        .plat-info h4 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
         .plat-type {
             font-size: 0.9rem;
             color: #777;
+            margin-bottom: 0.8rem;
         }
+
         .plat-description {
-            margin: 0.5rem 0;
-            color: #333;
+            margin: 0.8rem 0;
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
+
         .plat-prix {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #e74c3c;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 1rem 0;
         }
-        .plat-actions {
-            margin-top: 1rem;
+
+        /* Toggle de disponibilité */
+        .plat-disponibilite {
+            display: flex;
+            align-items: center;
+            margin-top: 1.2rem;
         }
-        .btn-action {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn-action:hover {
-            background-color: #c0392b;
-        }
-        .no-plats {
-            text-align: center;
-            padding: 2rem;
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            border-radius: 10px;
-        }
-        /* Styles pour le toggle de disponibilité */
+
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -230,104 +263,196 @@
         }
 
         input:checked + .slider {
-            background-color: #e74c3c;
+            background-color: var(--primary-color);
         }
 
         input:checked + .slider:before {
             transform: translateX(26px);
         }
 
-        .plat-disponibilite {
-            display: flex;
-            align-items: center;
-            margin-top: 0.5rem;
-        }
-
         .disponibilite-text {
-            margin-left: 0.5rem;
-            font-size: 0.9rem;
-            color: #333;
-        }
-        /* Styles pour la section des commandes */
-        .commandes-section {
-            margin-top: 2rem;
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-left: 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
 
-        .commandes-section h2 {
-            color: #e74c3c;
-            margin-top: 0;
+        .disponible {
+            color: var(--success-color);
+        }
+
+        .indisponible {
+            color: var(--error-color);
+        }
+
+        /* Section des commandes */
+        .commandes-section {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 3rem;
         }
 
         .commandes-table-container {
-            max-width: 100%;
+            width: 100%;
             overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         .commandes-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 1rem;
         }
 
         .commandes-table th,
         .commandes-table td {
-            padding: 0.75rem;
+            padding: 1.2rem 1.5rem;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .commandes-table th {
-            background-color: #f9f9f9;
-            color: #333;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
-        .commande-row:hover {
-            background-color: #f1f1f1;
+        .commandes-table tr:hover {
+            background-color: rgba(198, 67, 4, 0.03);
         }
 
+        /* Badges de statut */
         .badge {
+            display: inline-block;
             padding: 0.5rem 1rem;
-            border-radius: 5px;
-            font-size: 0.9rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
             color: white;
         }
 
         .badge-en-cours {
-            background-color: #f39c12;
+            background-color: var(--warning-color);
         }
 
         .badge-terminee {
-            background-color: #27ae60;
+            background-color: var(--success-color);
         }
 
         .badge-annulee {
-            background-color: #c0392b;
+            background-color: var(--error-color);
         }
 
-        .no-commandes {
-            text-align: center;
-            padding: 2rem;
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            border-radius: 10px;
+        .badge-prete {
+            background-color: var(--info-color);
         }
 
+        /* Boutons */
         .btn-detail {
-            background-color: #007bff;
+            background-color: var(--primary-color);
             color: white;
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.2rem;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 0.9rem;
-            transition: background-color 0.3s;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
         .btn-detail:hover {
-            background-color: #0056b3;
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Messages */
+        .messages {
+            margin-bottom: 2rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.15);
+            color: var(--success-color);
+            border: 1px solid rgba(46, 204, 113, 0.2);
+        }
+
+        .alert-error {
+            background-color: rgba(231, 76, 60, 0.15);
+            color: var(--error-color);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        /* États vides */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            background-color: rgba(245, 245, 245, 0.5);
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.8rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.2rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 0 1.2rem;
+            }
+            
+            .welcome-card,
+            .commandes-section {
+                padding: 1.8rem;
+            }
+            
+            .plats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .commandes-table th,
+            .commandes-table td {
+                padding: 0.8rem;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -374,20 +499,22 @@
             </div>
         </div>
 
-        <!-- Section des plats du restaurant -->
+        <!-- Section des plats -->
         <div class="plats-section">
-            <h2>Mes plats</h2>
+            <h2 class="section-title">Mes plats</h2>
             {% if plats_avec_dispo %}
                 <div class="plats-grid">
                     {% for plat_info in plats_avec_dispo %}
                         <div class="plat-card" data-repas-id="{{ plat_info.repas.id }}">
-                            {% if plat_info.repas.image %}
-                                <img src="{{ plat_info.repas.image }}" alt="{{ plat_info.repas.nom }}" class="plat-image">
-                            {% else %}
-                                <div class="plat-image-placeholder">
-                                    <span>📸</span>
-                                </div>
-                            {% endif %}
+                            <div class="plat-image-container">
+                                {% if plat_info.repas.image %}
+                                    <img src="{{ plat_info.repas.image }}" alt="{{ plat_info.repas.nom }}" class="plat-image">
+                                {% else %}
+                                    <div class="plat-image-placeholder">
+                                        <span>🍽️</span>
+                                    </div>
+                                {% endif %}
+                            </div>
                             <div class="plat-info">
                                 <h4>{{ plat_info.repas.nom }}</h4>
                                 <p class="plat-type">{{ plat_info.repas.type.nom }}</p>
@@ -403,7 +530,7 @@
                                                {% if plat_info.est_disponible %}checked{% endif %}>
                                         <span class="slider"></span>
                                     </label>
-                                    <span class="disponibilite-text">
+                                    <span class="disponibilite-text {% if plat_info.est_disponible %}disponible{% else %}indisponible{% endif %}">
                                         {% if plat_info.est_disponible %}
                                             Disponible
                                         {% else %}
@@ -416,16 +543,16 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="no-plats">
+                <div class="empty-state">
                     <p>Aucun plat configuré pour votre restaurant.</p>
-                    <a href="#" class="action-btn">Ajouter un plat</a>
+                    <a href="#" class="btn-primary">Ajouter un plat</a>
                 </div>
             {% endif %}
         </div>
 
-        <!-- Section des commandes du restaurant -->
+        <!-- Section des commandes -->
         <div class="commandes-section">
-            <h2>Commandes récentes</h2>
+            <h2 class="section-title">Commandes récentes</h2>
             {% if commandes %}
                 <div class="commandes-table-container">
                     <table class="commandes-table">
@@ -440,22 +567,18 @@
                         </thead>
                         <tbody>
                             {% for commande_info in commandes %}
-                                <tr class="commande-row">
-                                    <td class="commande-id">#{{ commande_info.commande.id }}</td>
-                                    <td class="client-info">
-                                        {{ commande_info.commande.client.prenom }} {{ commande_info.commande.client.nom }}
-                                    </td>
-                                    <td class="date-commande">
-                                        {{ commande_info.commande.cree_le|date:"d/m/Y H:i" }}
-                                    </td>
-                                    <td class="statut-commande">
+                                <tr>
+                                    <td>#{{ commande_info.commande.id }}</td>
+                                    <td>{{ commande_info.commande.client.prenom }} {{ commande_info.commande.client.nom }}</td>
+                                    <td>{{ commande_info.commande.cree_le|date:"d/m/Y H:i" }}</td>
+                                    <td>
                                         <span class="badge badge-{{ commande_info.statut|lower }}">
                                             {{ commande_info.statut }}
                                         </span>
                                     </td>
-                                    <td class="actions-commande">
+                                    <td>
                                         <a href="{% url 'commande_details' commande_info.commande.id %}" class="btn-detail">
-                                            Voir détails
+                                            Détails
                                         </a>
                                     </td>
                                 </tr>
@@ -464,7 +587,7 @@
                     </table>
                 </div>
             {% else %}
-                <div class="no-commandes">
+                <div class="empty-state">
                     <p>Aucune commande récente.</p>
                 </div>
             {% endif %}
@@ -480,6 +603,19 @@
                 toggle.addEventListener('change', function() {
                     const repasId = this.getAttribute('data-repas-id');
                     const isChecked = this.checked;
+                    const platCard = this.closest('.plat-card');
+                    const disponibiliteText = platCard.querySelector('.disponibilite-text');
+
+                    // Changement visuel immédiat
+                    if (isChecked) {
+                        disponibiliteText.textContent = 'Disponible';
+                        disponibiliteText.classList.remove('indisponible');
+                        disponibiliteText.classList.add('disponible');
+                    } else {
+                        disponibiliteText.textContent = 'Indisponible';
+                        disponibiliteText.classList.remove('disponible');
+                        disponibiliteText.classList.add('indisponible');
+                    }
 
                     // Envoyer la requête AJAX
                     fetch('{% url "toggle_disponibilite_repas" %}', {
@@ -495,31 +631,36 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.error) {
-                            // En cas d'erreur, remettre le toggle dans sa position précédente
+                            // En cas d'erreur, annuler le changement visuel
                             this.checked = !isChecked;
-                            alert('Erreur: ' + data.error);
-                        } else {
-                            // Mettre à jour le texte de disponibilité
-                            const platCard = this.closest('.plat-card');
-                            const disponibiliteText = platCard.querySelector('.disponibilite-text');
-
-                            if (data.nouvelle_disponibilite) {
-                                disponibiliteText.textContent = 'Disponible';
-                                disponibiliteText.style.color = '#155724';
-                            } else {
+                            if (isChecked) {
                                 disponibiliteText.textContent = 'Indisponible';
-                                disponibiliteText.style.color = '#721c24';
+                                disponibiliteText.classList.remove('disponible');
+                                disponibiliteText.classList.add('indisponible');
+                            } else {
+                                disponibiliteText.textContent = 'Disponible';
+                                disponibiliteText.classList.remove('indisponible');
+                                disponibiliteText.classList.add('disponible');
                             }
-
-                            // Afficher un message de succès temporaire
+                            showTemporaryMessage(data.error, 'error');
+                        } else {
                             showTemporaryMessage(data.message, 'success');
                         }
                     })
                     .catch(error => {
-                        // En cas d'erreur réseau, remettre le toggle dans sa position précédente
-                        this.checked = !isChecked;
                         console.error('Erreur:', error);
-                        alert('Erreur de connexion. Veuillez réessayer.');
+                        // Annuler le changement visuel en cas d'erreur réseau
+                        this.checked = !isChecked;
+                        if (isChecked) {
+                            disponibiliteText.textContent = 'Indisponible';
+                            disponibiliteText.classList.remove('disponible');
+                            disponibiliteText.classList.add('indisponible');
+                        } else {
+                            disponibiliteText.textContent = 'Disponible';
+                            disponibiliteText.classList.remove('indisponible');
+                            disponibiliteText.classList.add('disponible');
+                        }
+                        showTemporaryMessage('Erreur de connexion. Veuillez réessayer.', 'error');
                     });
                 });
             });
@@ -551,10 +692,13 @@
 
             messagesContainer.appendChild(alertDiv);
 
-            // Supprimer le message après 3 secondes
+            // Supprimer le message après 5 secondes
             setTimeout(() => {
-                alertDiv.remove();
-            }, 3000);
+                alertDiv.style.opacity = '0';
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 300);
+            }, 5000);
         }
 
         // Créer le conteneur de messages s'il n'existe pas

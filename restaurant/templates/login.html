@@ -1,99 +1,11 @@
-<!DOCTYPE html>
+{% load static %}
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion Restaurant - M'Lunch</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .login-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        .logo {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .logo h1 {
-            color: #e74c3c;
-            margin: 0;
-            font-size: 2rem;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: #333;
-        }
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            outline: none;
-            border-color: #e74c3c;
-        }
-        .btn {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #c0392b;
-        }
-        .messages {
-            margin-bottom: 1rem;
-        }
-        .messages .alert {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 5px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .footer-text {
-            text-align: center;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            color: #666;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
     <div class="login-container">
@@ -116,13 +28,18 @@
             {% csrf_token %}
 
             <div class="form-group">
-                <label for="nom">Nom du restaurant :</label>
-                <input type="text" id="nom" name="nom" required>
+                <label for="nom">Nom du restaurant</label>
+                <div class="input-wrapper">
+                    <input type="text" id="nom" name="nom" placeholder="Entrez le nom de votre restaurant" required>
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="mot_de_passe">Mot de passe :</label>
-                <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+                <label for="mot_de_passe">Mot de passe</label>
+                <div class="input-wrapper">
+                    <input type="password" id="mot_de_passe" name="mot_de_passe" placeholder="Entrez votre mot de passe" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+                </div>
             </div>
 
             <button type="submit" class="btn">Se connecter</button>
@@ -132,5 +49,12 @@
             <p>Connectez-vous pour gérer votre restaurant</p>
         </div>
     </div>
+
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById("mot_de_passe");
+            passwordField.type = passwordField.type === "password" ? "text" : "password";
+        }
+    </script>
 </body>
 </html>
