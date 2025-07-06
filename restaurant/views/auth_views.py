@@ -63,11 +63,13 @@ def dashboard_view(request):
 
         for rr in restaurant_repas:
             repas = rr.repas
-            # Récupérer la disponibilité du repas
-            try:
-                disponibilite = DisponibiliteRepas.objects.get(repas=repas)
+            # Récupérer la disponibilité du repas (dernière entrée uniquement)
+            disponibilite = DisponibiliteRepas.objects.filter(repas=repas).order_by('-mis_a_jour_le').first()
+
+            # Définir la disponibilité basée sur le résultat
+            if disponibilite:
                 est_disponible = disponibilite.est_dispo
-            except DisponibiliteRepas.DoesNotExist:
+            else:
                 # Si pas d'entrée, considérer comme disponible par défaut
                 est_disponible = True
 
@@ -79,16 +81,42 @@ def dashboard_view(request):
         # Récupérer les commandes du restaurant
         # Une commande concerne le restaurant si elle contient des repas du restaurant
         repas_ids = [rr.repas.id for rr in restaurant_repas]
-        commandes_restaurant = Commande.objects.filter(
-            repas_commandes__repas__id__in=repas_ids
+
+        # Obtenir le statut "En attente"
+        from mlunch.core.models import StatutCommande
+        try:
+            statut_en_attente = StatutCommande.objects.get(appellation="En attente")
+        except StatutCommande.DoesNotExist:
+            # Si le statut n'existe pas, on récupère le premier statut (probablement "En attente")
+            statut_en_attente = StatutCommande.objects.first()
+
+        # Récupérer uniquement les commandes en attente
+        # On récupère d'abord les ID des commandes dont le dernier historique a le statut "En attente"
+        from django.db.models import Max, OuterRef, Subquery
+        from mlunch.core.models import HistoriqueStatutCommande
+
+        # Sous-requête pour récupérer le dernier historique de statut pour chaque commande
+        derniers_historiques = HistoriqueStatutCommande.objects.filter(
+            commande=OuterRef('pk')
+        ).order_by('-mis_a_jour_le').values('statut')[:1]
+
+        # Filtrer les commandes dont le dernier historique a le statut "En attente"
+        commandes_en_attente = Commande.objects.filter(
+            repas_commandes__repas__id__in=repas_ids,
+            historiques__statut=statut_en_attente,
+            historiques__mis_a_jour_le=Subquery(
+                HistoriqueStatutCommande.objects.filter(
+                    commande=OuterRef('pk')
+                ).order_by('-mis_a_jour_le').values('mis_a_jour_le')[:1]
+            )
         ).distinct().select_related('client', 'point_recup').prefetch_related(
             'repas_commandes__repas',
             'historiques__statut'
-        ).order_by('-cree_le')[:10]  # Les 10 dernières commandes
+        ).order_by('-cree_le')[:10]  # Les 10 dernières commandes en attente
 
         # Enrichir les commandes avec les détails
         commandes_enrichies = []
-        for commande in commandes_restaurant:
+        for commande in commandes_en_attente:
             # Récupérer les repas de cette commande qui appartiennent à ce restaurant
             repas_commande = CommandeRepas.objects.filter(
                 commande=commande,

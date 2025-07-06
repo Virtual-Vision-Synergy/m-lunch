@@ -93,6 +93,7 @@ class RepasService:
     def switch_disponibilite(repas_id, restaurant_id):
         """
         Change la disponibilité d'un repas pour un restaurant donné
+        En créant une nouvelle entrée à chaque fois au lieu de mettre à jour
         """
         try:
             # Vérifier que le repas appartient au restaurant
@@ -101,15 +102,26 @@ class RepasService:
                 restaurant_id=restaurant_id
             )
 
-            # Récupérer ou créer l'entrée de disponibilité
-            disponibilite, created = DisponibiliteRepas.objects.get_or_create(
-                repas=restaurant_repas.repas,
-                defaults={'est_dispo': True}
-            )
+            # Récupérer la disponibilité actuelle (dernière entrée uniquement)
+            disponibilite_actuelle = DisponibiliteRepas.objects.filter(
+                repas=restaurant_repas.repas
+            ).order_by('-mis_a_jour_le').first()
 
-            # Inverser la disponibilité
-            disponibilite.est_dispo = not disponibilite.est_dispo
-            disponibilite.save()
+            # Définir la nouvelle valeur (inverse de la valeur actuelle ou False par défaut)
+            # Nous supposons que si un repas est toggled, il est toggled à False (non disponible)
+            if disponibilite_actuelle:
+                if disponibilite_actuelle.est_dispo:
+                    nouvelle_valeur = False  # Si actuellement disponible, on le rend indisponible
+                else:
+                    nouvelle_valeur = True   # Si actuellement indisponible, on le rend disponible
+            else:
+                nouvelle_valeur = False  # Par défaut, quand on toggle pour la première fois, on rend indisponible
+
+            # Créer une nouvelle entrée de disponibilité à chaque fois
+            disponibilite = DisponibiliteRepas.objects.create(
+                repas=restaurant_repas.repas,
+                est_dispo=nouvelle_valeur
+            )
 
             return {
                 "success": True,
