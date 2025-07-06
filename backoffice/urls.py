@@ -36,6 +36,11 @@ urlpatterns = [
     path('api/stats/restaurants/', stats_views.stats_restaurants_api, name='stats_restaurants_api'),
     path('api/stats/zones/', stats_views.stats_zones_api, name='stats_zones_api'),
 
+    # Nouvelles APIs pour le dashboard unifié
+    path('api/stats/', stats_views.stats_api, name='stats_api'),
+    path('api/zones/', stats_views.zones_api, name='zones_api'),
+    path('api/restaurants/', stats_views.restaurants_api, name='restaurants_api'),
+
     #Livraison
 
     path('livreurs/', livraison_views.livreurs_list, name='livreurs_list'),

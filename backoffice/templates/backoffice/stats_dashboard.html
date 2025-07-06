@@ -9,224 +9,353 @@
     <!-- Favicon pour éviter l'erreur 404 -->
     <link rel="icon" href="data:,">
 </head>
-<body class="bg-gray-100 p-6">
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-6">Statistiques des Restaurants</h1>
-        
+<body class="bg-gray-100 min-h-screen">
+    <!-- Menu de navigation -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">M'Lunch - Statistiques</h1>
+            <div class="flex space-x-4">
+                <button id="nav-restaurant" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800 transition">Restaurant</button>
+                <button id="nav-secteur" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800 transition">Secteur</button>
+                <button id="nav-livraison" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800 transition">Livraison</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-6">
         <!-- Filtres -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <!-- Filtre de base -->
-            <div>
-                <label for="base_filter" class="block text-sm font-medium text-gray-700">Filtre de base</label>
-                <select id="base_filter" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    <option value="zone">Secteur (Zone)</option>
-                    <option value="restaurant">Restaurant</option>
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Filtres</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Filtre de base -->
+                <div>
+                    <label for="base_filter" class="block text-sm font-medium text-gray-700 mb-2">Filtre de base</label>
+                    <select id="base_filter" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        <option value="secteur">Secteur</option>
+                        <option value="restaurant">Restaurant</option>
+                    </select>
+                </div>
+
+                <!-- Filtre temporel -->
+                <div>
+                    <label for="temporal_filter" class="block text-sm font-medium text-gray-700 mb-2">Période</label>
+                    <select id="temporal_filter" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        <option value="day">Jour</option>
+                        <option value="month">Mois</option>
+                        <option value="year">Année</option>
+                    </select>
+                </div>
+
+                <!-- Filtre contenu -->
+                <div>
+                    <label for="content_filter" class="block text-sm font-medium text-gray-700 mb-2">Contenu</label>
+                    <select id="content_filter" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        <option value="chiffre_affaires">Chiffre d'affaires</option>
+                        <option value="chiffre_vente">Chiffre de vente (nb commandes)</option>
+                        <option value="types_repas">Types de repas vendus</option>
+                    </select>
+                </div>
+
+                <!-- Bouton Valider -->
+                <div class="flex items-end">
+                    <button id="validate_button" class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
+                        Valider
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dropdown pour secteurs -->
+            <div id="secteur_filter_container" class="mt-4">
+                <label for="secteur_id" class="block text-sm font-medium text-gray-700 mb-2">Sélectionner un secteur</label>
+                <select id="secteur_id" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    <option value="">Tous les secteurs</option>
+                    <!-- Rempli dynamiquement -->
                 </select>
             </div>
-            <!-- Filtre temporel -->
-            <div>
-                <label for="temporal_filter" class="block text-sm font-medium text-gray-700">Période</label>
-                <select id="temporal_filter" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    <option value="day">Jour</option>
-                    <option value="month">Mois</option>
-                    <option value="year">Année</option>
+
+            <!-- Dropdown pour restaurants (caché par défaut) -->
+            <div id="restaurant_filter_container" class="mt-4 hidden">
+                <label for="restaurant_id" class="block text-sm font-medium text-gray-700 mb-2">Sélectionner un restaurant</label>
+                <select id="restaurant_id" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    <option value="">Sélectionner un restaurant</option>
+                    <!-- Rempli dynamiquement -->
                 </select>
             </div>
         </div>
 
-        <!-- Dropdown pour zones -->
-        <div id="zone_filter_container" class="mb-4">
-            <label for="zone_id" class="block text-sm font-medium text-gray-700">Sélectionner une zone</label>
-            <select id="zone_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                <!-- Rempli dynamiquement -->
-            </select>
+        <!-- Graphiques -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Graphique principal (courbe/chandelle) -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 id="chart_title" class="text-lg font-semibold mb-4">Statistiques</h3>
+                <div style="position: relative; height: 400px; width: 100%;">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Graphique en camembert -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 id="pie_chart_title" class="text-lg font-semibold mb-4">Répartition</h3>
+                <div style="position: relative; height: 400px; width: 100%;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
         </div>
-
-        <!-- Dropdown pour restaurants (caché par défaut) -->
-        <div id="restaurant_filter_container" class="mb-4 hidden">
-            <label for="restaurant_id" class="block text-sm font-medium text-gray-700">Sélectionner un restaurant</label>
-            <select id="restaurant_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                <!-- Rempli dynamiquement -->
-            </select>
-        </div>
-
-        <!-- Bouton Valider -->
-        <button id="validate_button" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Valider</button>
-
-        <!-- Graphique en courbe pour le chiffre d'affaires -->
-        <h2 class="text-xl font-semibold mt-6">Chiffre d'affaires</h2>
-        <canvas id="statsChartLine" class="mt-2"></canvas>
-
-        <!-- Graphique en camembert pour les commandes par type -->
-        <h2 class="text-xl font-semibold mt-6">Commandes par type</h2>
-        <canvas id="statsChartPie" class="mt-2"></canvas>
     </div>
 
     <script>
-        let chartLineInstance = null;
-        let chartPieInstance = null;
+        let mainChartInstance = null;
+        let pieChartInstance = null;
+        let currentSection = 'restaurant';
 
-        // Charger les zones
-        async function loadZones() {
-            console.log('Tentative de chargement des zones depuis /staff/api/zones/');
+        // Charger les secteurs
+        async function loadSecteurs() {
             try {
                 const response = await fetch('/staff/api/zones/');
-                console.log('Réponse reçue pour /staff/api/zones/:', response.status, response.statusText);
-                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                const zoneSelect = document.getElementById('zone_id');
-                zoneSelect.innerHTML = '<option value="">Sélectionner une zone</option>';
-                data.zones.forEach(zone => {
-                    const option = document.createElement('option');
-                    option.value = zone.id;
-                    option.textContent = zone.nom;
-                    zoneSelect.appendChild(option);
-                });
-                console.log('Zones chargées:', data.zones);
+
+                const secteurSelect = document.getElementById('secteur_id');
+                secteurSelect.innerHTML = '<option value="">Tous les secteurs</option>';
+
+                if (data.zones) {
+                    data.zones.forEach(zone => {
+                        const option = document.createElement('option');
+                        option.value = zone.id;
+                        option.textContent = zone.nom;
+                        secteurSelect.appendChild(option);
+                    });
+                }
             } catch (error) {
-                console.error('Erreur lors du chargement des zones:', error.message);
-                alert('Erreur lors du chargement des zones: ' + error.message);
+                console.error('Erreur lors du chargement des secteurs:', error);
             }
         }
 
         // Charger les restaurants
         async function loadRestaurants() {
-            console.log('Tentative de chargement des restaurants depuis /staff/api/restaurants/');
             try {
                 const response = await fetch('/staff/api/restaurants/');
-                console.log('Réponse reçue pour /staff/api/restaurants/:', response.status, response.statusText);
-                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+
                 const restaurantSelect = document.getElementById('restaurant_id');
                 restaurantSelect.innerHTML = '<option value="">Sélectionner un restaurant</option>';
-                data.restaurants.forEach(restaurant => {
-                    const option = document.createElement('option');
-                    option.value = restaurant.id;
-                    option.textContent = restaurant.nom;
-                    restaurantSelect.appendChild(option);
-                });
-                console.log('Restaurants chargés:', data.restaurants);
+
+                if (data.restaurants) {
+                    data.restaurants.forEach(restaurant => {
+                        const option = document.createElement('option');
+                        option.value = restaurant.id;
+                        option.textContent = restaurant.nom;
+                        restaurantSelect.appendChild(option);
+                    });
+                }
             } catch (error) {
-                console.error('Erreur lors du chargement des restaurants:', error.message);
-                alert('Erreur lors du chargement des restaurants: ' + error.message);
+                console.error('Erreur lors du chargement des restaurants:', error);
             }
+        }
+
+        // Gestion des onglets de navigation
+        document.getElementById('nav-restaurant').addEventListener('click', () => {
+            currentSection = 'restaurant';
+            updateNavigation();
+        });
+
+        document.getElementById('nav-secteur').addEventListener('click', () => {
+            currentSection = 'secteur';
+            updateNavigation();
+        });
+
+        document.getElementById('nav-livraison').addEventListener('click', () => {
+            currentSection = 'livraison';
+            updateNavigation();
+        });
+
+        function updateNavigation() {
+            // Réinitialiser les styles des boutons
+            document.querySelectorAll('[id^="nav-"]').forEach(btn => {
+                btn.classList.remove('bg-blue-800');
+                btn.classList.add('bg-blue-700');
+            });
+
+            // Mettre en surbrillance le bouton actif
+            document.getElementById(`nav-${currentSection}`).classList.add('bg-blue-800');
+            document.getElementById(`nav-${currentSection}`).classList.remove('bg-blue-700');
         }
 
         // Afficher/masquer les dropdowns selon le filtre de base
         document.getElementById('base_filter').addEventListener('change', (e) => {
-            const zoneContainer = document.getElementById('zone_filter_container');
+            const secteurContainer = document.getElementById('secteur_filter_container');
             const restaurantContainer = document.getElementById('restaurant_filter_container');
-            if (e.target.value === 'zone') {
-                zoneContainer.classList.remove('hidden');
+
+            if (e.target.value === 'secteur') {
+                secteurContainer.classList.remove('hidden');
                 restaurantContainer.classList.add('hidden');
             } else {
-                zoneContainer.classList.add('hidden');
+                secteurContainer.classList.add('hidden');
                 restaurantContainer.classList.remove('hidden');
             }
         });
 
-        // Créer un graphique
-        async function createChart(contentFilter, canvasId, instanceVar) {
+        // Créer les graphiques
+        async function createCharts() {
             const baseFilter = document.getElementById('base_filter').value;
             const temporalFilter = document.getElementById('temporal_filter').value;
-            const zoneId = document.getElementById('zone_id').value;
+            const contentFilter = document.getElementById('content_filter').value;
+            const secteurId = document.getElementById('secteur_id').value;
             const restaurantId = document.getElementById('restaurant_id').value;
 
             // Validation
-            if (baseFilter === 'zone' && !zoneId) {
-                alert('Veuillez sélectionner une zone.');
-                return false;
-            }
             if (baseFilter === 'restaurant' && !restaurantId) {
                 alert('Veuillez sélectionner un restaurant.');
-                return false;
+                return;
             }
 
             try {
-                console.log(`Envoi de la requête à /staff/api/stats/ pour ${contentFilter} avec:`, {
-                    base_filter: baseFilter,
-                    zone_id: zoneId,
-                    restaurant_id: restaurantId,
-                    temporal_filter: temporalFilter,
-                    content_filter: contentFilter
-                });
                 const response = await fetch('/staff/api/stats/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         base_filter: baseFilter,
-                        zone_id: baseFilter === 'zone' ? parseInt(zoneId) : null,
-                        restaurant_id: baseFilter === 'restaurant' ? parseInt(restaurantId) : null,
                         temporal_filter: temporalFilter,
-                        content_filter: contentFilter
+                        content_filter: contentFilter,
+                        secteur_id: secteurId ? parseInt(secteurId) : null,
+                        restaurant_id: restaurantId ? parseInt(restaurantId) : null,
+                        section: currentSection
                     })
                 });
-                console.log(`Réponse reçue pour /staff/api/stats/ (${contentFilter}):`, response.status, response.statusText);
+
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
                 const result = await response.json();
+
                 if (result.error) {
-                    console.error(`Erreur dans la réponse (${contentFilter}):`, result.error);
                     alert(result.error);
-                    return false;
+                    return;
                 }
 
-                // Détruire le graphique existant
-                if (window[instanceVar]) {
-                    window[instanceVar].destroy();
+                // Détruire les graphiques existants
+                if (mainChartInstance) {
+                    mainChartInstance.destroy();
+                }
+                if (pieChartInstance) {
+                    pieChartInstance.destroy();
                 }
 
-                // Créer le graphique
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                window[instanceVar] = new Chart(ctx, {
-                    type: result.chart_type,
+                // Créer le graphique principal (courbe ou chandelle pour chiffre d'affaires)
+                const mainCtx = document.getElementById('mainChart').getContext('2d');
+                const chartType = contentFilter === 'chiffre_affaires' ? 'bar' : 'line'; // Chandelle pour CA
+
+                mainChartInstance = new Chart(mainCtx, {
+                    type: chartType,
                     data: {
-                        labels: result.data.labels,
+                        labels: result.main_chart.labels,
                         datasets: [{
-                            label: contentFilter === 'revenue' ? 'Chiffre d\'affaires (€)' : 'Nombre de commandes',
-                            data: result.data.values,
-                            backgroundColor: result.chart_type === 'pie' ? [
-                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#C9CBCF'
-                            ] : 'rgba(75, 192, 192, 0.2)',
-                            borderColor: result.chart_type === 'pie' ? [
-                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#C9CBCF'
-                            ] : 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
+                            label: result.main_chart.label,
+                            data: result.main_chart.data,
+                            backgroundColor: chartType === 'bar' ?
+                                'rgba(59, 130, 246, 0.8)' : 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
                         }]
                     },
                     options: {
-                        scales: result.chart_type === 'line' ? {
-                            x: { title: { display: true, text: 'Période' } },
-                            y: { title: { display: true, text: contentFilter === 'revenue' ? 'Chiffre d\'affaires (€)' : 'Nombre de commandes' } }
-                        } : {},
+                        responsive: true,
+                        maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: result.chart_type === 'pie' }
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: result.main_chart.y_label
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Période'
+                                }
+                            }
                         }
                     }
                 });
-                console.log(`Graphique ${contentFilter} affiché avec les données:`, result.data);
-                return true;
+
+                // Créer le graphique en camembert seulement s'il y a des données
+                if (result.pie_chart && result.pie_chart.data && result.pie_chart.data.length > 0) {
+                    const pieCtx = document.getElementById('pieChart').getContext('2d');
+                    pieChartInstance = new Chart(pieCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: result.pie_chart.labels,
+                            datasets: [{
+                                data: result.pie_chart.data,
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                                    '#9966FF', '#C9CBCF', '#FF9F40', '#8E44AD',
+                                    '#E67E22', '#2ECC71', '#F39C12', '#3498DB'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        usePointStyle: true
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Afficher un message si pas de données pour le pie chart
+                    const pieCtx = document.getElementById('pieChart').getContext('2d');
+                    pieCtx.clearRect(0, 0, pieCtx.canvas.width, pieCtx.canvas.height);
+                    pieCtx.font = "16px Arial";
+                    pieCtx.fillStyle = "#666";
+                    pieCtx.textAlign = "center";
+                    pieCtx.fillText("Aucune donnée disponible", pieCtx.canvas.width / 2, pieCtx.canvas.height / 2);
+                }
+
+                // Mettre à jour les titres
+                document.getElementById('chart_title').textContent = result.main_chart.title;
+                document.getElementById('pie_chart_title').textContent = result.pie_chart ? result.pie_chart.title : 'Répartition';
+
             } catch (error) {
-                console.error(`Erreur lors de la récupération des statistiques (${contentFilter}):`, error.message);
-                alert(`Erreur lors de la récupération des statistiques (${contentFilter}): ` + error.message);
-                return false;
+                console.error('Erreur lors de la récupération des statistiques:', error);
+                alert('Erreur lors de la récupération des statistiques: ' + error.message);
             }
         }
 
-        // Valider et afficher les deux graphiques
-        document.getElementById('validate_button').addEventListener('click', async () => {
-            const success = await Promise.all([
-                createChart('revenue', 'statsChartLine', 'chartLineInstance'),
-                createChart('orders_by_type', 'statsChartPie', 'chartPieInstance')
-            ]);
-            if (success.every(s => s)) {
-                console.log('Les deux graphiques ont été affichés avec succès.');
-            }
-        });
+        // Valider et afficher les graphiques
+        document.getElementById('validate_button').addEventListener('click', createCharts);
 
-        // Charger les données initiales
-        loadZones();
+        // Initialisation
+        loadSecteurs();
         loadRestaurants();
+        updateNavigation();
     </script>
 </body>
 </html>

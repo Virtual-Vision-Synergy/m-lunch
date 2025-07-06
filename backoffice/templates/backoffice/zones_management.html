@@ -263,7 +263,7 @@
                     <ul class="list-disc pl-5">
                         ${data.repas.length > 0 ? data.repas.map(r => `
                             <li>
-                                ${r.nom} (${r.type_repas}) - ${r.prix / 100} €<br>
+                                ${r.nom} (${r.type_repas}) - ${r.prix / 100} ariary<br>
                                 ${r.description || 'Aucune description'}
                             </li>
                         `).join('') : '<li>Aucun repas proposé</li>'}
@@ -322,14 +322,14 @@
                         `).join('') : '<li>Aucun restaurant associé</li>'}
                     </ul>
                     <h3 class="text-lg font-semibold mt-4">Données financières</h3>
-                    <p><strong>💵 Chiffre d'affaires total :</strong> ${data.financials.total_chiffre_affaires.toFixed(2)} €</p>
-                    <p><strong>💸 Frais totaux (commissions) :</strong> ${data.financials.total_frais.toFixed(2)} €</p>
-                    <p><strong>📈 Bénéfice net estimé :</strong> ${data.financials.benefice_net.toFixed(2)} €</p>
+                    <p><strong>💵 Chiffre d'affaires total :</strong> ${data.financials.total_chiffre_affaires.toFixed(2)} ariary</p>
+                    <p><strong>💸 Frais totaux (commissions) :</strong> ${data.financials.total_frais.toFixed(2)} ariary</p>
+                    <p><strong>📈 Bénéfice net estimé :</strong> ${data.financials.benefice_net.toFixed(2)} ariary</p>
                     <h4 class="text-md font-semibold mt-2">Chiffre d'affaires par restaurant :</h4>
                     <ul class="list-disc pl-5">
                         ${data.financials.restaurants.length > 0 ? data.financials.restaurants.map(r => `
                             <li>
-                                ${r.nom}: ${r.chiffre_affaires.toFixed(2)} € (Commission: ${r.commission.toFixed(2)} %)
+                                ${r.nom}: ${r.chiffre_affaires.toFixed(2)} ariary (Commission: ${r.commission.toFixed(2)} %)
                             </li>
                         `).join('') : '<li>Aucune donnée financière</li>'}
                     </ul>
