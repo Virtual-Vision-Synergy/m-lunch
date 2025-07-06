@@ -11,6 +11,9 @@ urlpatterns = [
     # Gestion des restaurants
     path('restaurants/', restaurant_views.restaurant, name='backoffice_restaurant_list'),
     path('restaurants/<int:restaurant_id>/commandes/', restaurant_views.restaurant_commandes, name='restaurant_commandes'),
+    path('restaurants/<int:restaurant_id>/financier/', restaurant_views.restaurant_detail_financier, name='restaurant_detail_financier'),
+    path('restaurants/<int:restaurant_id>/financier/api/', restaurant_views.restaurant_financier_api, name='restaurant_financier_api'),
+    path('restaurants/<int:restaurant_id>/repas/api/', restaurant_views.restaurant_repas_api, name='restaurant_repas_api'),
     path('restaurants/ajouter/', restaurant_views.restaurant_ajouter, name='restaurant_add_form'),
     path('restaurants/nouveau/', restaurant_views.ajouter_restaurant, name='restaurant_create'),
     path('api/restaurants/<int:restaurant_id>/', restaurant_views.get_restaurant_detail, name='restaurant_api_detail'),

@@ -90,15 +90,15 @@ INSERT INTO core_typerepas (nom) VALUES
 ('Menu complet');
 
 -- 7. Restaurants d'Antananarivo (coordonnées corrigées: latitude, longitude)
-INSERT INTO core_restaurant (nom, adresse, description, image, geo_position,mot_de_passe, date_inscri) VALUES
-('Chez Mariette', 'Analakely, près du marché', 'Restaurant traditionnel malgache, spécialités locales', 'mariette.jpg', '-18.9142,47.5212',0, '2024-01-15 10:30:00'),
-('Le Sakamanga', 'Rue Rainitovo, Antaninarenina', 'Cuisine fusion malgache-française', 'sakamanga.jpg', '-18.9185,47.5285',0, '2024-01-15 10:30:00'),
-('Restaurant Grillades', 'Andravoahangy', 'Spécialités grillades et zebu', 'grillades.jpg', '-18.9205,47.5295',0, '2024-01-15 10:30:00'),
-('Café de la Gare', 'Soarano', 'Café et petite restauration', 'cafe_gare.jpg', '-18.9138,47.5248',0, '2024-01-15 10:30:00'),
-('Tana Plaza Food Court', 'Behoririka', 'Court alimentaire moderne', 'tana_plaza.jpg', '-18.9172,47.5228',0, '2024-01-15 10:30:00'),
-('Chez Lolo', 'Isotry', 'Cuisine populaire malgache', 'chez_lolo.jpg', '-18.9265,47.5158',0, '2024-01-15 10:30:00'),
-('Villa Vanille', 'Tsaralalana', 'Restaurant gastronomique', 'villa_vanille.jpg', '-18.9125,47.5245',0, '2024-01-15 10:30:00'),
-('Mama Afrika', 'Antsahamanitra', 'Spécialités africaines', 'mama_afrika.jpg', '-18.9065,47.5188',0, '2024-01-15 10:30:00');
+INSERT INTO core_restaurant (nom, adresse, description, image, geo_position,mot_de_passe) VALUES
+('Chez Mariette', 'Analakely, près du marché', 'Restaurant traditionnel malgache, spécialités locales', 'mariette.jpg', '-18.9142,47.5212',0),
+('Le Sakamanga', 'Rue Rainitovo, Antaninarenina', 'Cuisine fusion malgache-française', 'sakamanga.jpg', '-18.9185,47.5285',0),
+('Restaurant Grillades', 'Andravoahangy', 'Spécialités grillades et zebu', 'grillades.jpg', '-18.9205,47.5295',0),
+('Café de la Gare', 'Soarano', 'Café et petite restauration', 'cafe_gare.jpg', '-18.9138,47.5248',0),
+('Tana Plaza Food Court', 'Behoririka', 'Court alimentaire moderne', 'tana_plaza.jpg', '-18.9172,47.5228',0),
+('Chez Lolo', 'Isotry', 'Cuisine populaire malgache', 'chez_lolo.jpg', '-18.9265,47.5158',0),
+('Villa Vanille', 'Tsaralalana', 'Restaurant gastronomique', 'villa_vanille.jpg', '-18.9125,47.5245',0),
+('Mama Afrika', 'Antsahamanitra', 'Spécialités africaines', 'mama_afrika.jpg', '-18.9065,47.5188',0);
 
 -- 8. Repas malgaches typiques
 INSERT INTO core_repas (nom, description, image, type_id, prix) VALUES
