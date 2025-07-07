@@ -18,4 +18,7 @@ urlpatterns = [
     # path('api/commande/modifier-statut/', auth_views.modifier_statut_commande, name='modifier_statut_commande'),
     path('api/commande/modifier-statut/', auth_views.modifier_statut_suivis, name='modifier_statut_suivis'),
     
+    #gestion restaurant
+    path('modifier-restaurant/', auth_views.form_modif_restaurant, name="modifier_restaurant"),
+    path('modification/', auth_views.modifer_restaurant, name="modifier")
 ]

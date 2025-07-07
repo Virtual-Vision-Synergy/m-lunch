@@ -279,7 +279,6 @@ def modifier_statut_suivis(request):
             return JsonResponse({'error': 'Non authentifié'}, status=401)
 
         try:
-            # Récupérer directement dans request.POST
             commande_id = request.POST.get('commande_id')
             restaurant_id = request.session['restaurant_id']
 
@@ -293,10 +292,19 @@ def modifier_statut_suivis(request):
 
             CommandeService.change_state_auto(commande_id)
 
-            return JsonResponse(result)
+            return redirect('restaurant_dashboard')  
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
 
+def form_modif_restaurant(request):
+    if request.method == 'GET':
+        restaurant_id = request.session.get('restaurant_id')
+        restaurant = Restaurant.objects.get(id=restaurant_id)  # récupère l'objet complet
+        return render(request, 'form-modification-restaurant.html', {'restaurant': restaurant})
+
+@staticmethod
+def modifer_restaurant(request):
+    return render(request, 'login.html')
