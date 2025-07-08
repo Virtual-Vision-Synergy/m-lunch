@@ -1,0 +1,242 @@
+{% load static %}
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un plat - {{ restaurant.nom }} - M'Lunch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ajouter-plat.css' %}">
+</head>
+<body>
+    <div class="header">
+        <h1>M'Lunch - Espace Restaurant</h1>
+        <a href="{% url 'restaurant_logout' %}" class="logout-btn">Déconnexion</a>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-container">
+            <div class="form-card">
+                <h2>Ajouter un nouveau plat</h2>
+                <p>Ajoutez un nouveau plat à votre menu</p>
+
+                <form method="POST" action="{% url 'creer_plat' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="nom">Nom du plat <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="100" 
+                               placeholder="Ex: Riz sauté aux légumes">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type_repas">Type de repas <span class="required">*</span></label>
+                        <select id="type_repas" name="type_repas" required>
+                            <option value="">Sélectionnez un type</option>
+                            {% for type in types_repas %}
+                                <option value="{{ type.id }}">{{ type.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prix">Prix (Ar) <span class="required">*</span></label>
+                        <input type="number" id="prix" name="prix" required min="0" 
+                               placeholder="Ex: 5000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" 
+                                  placeholder="Décrivez votre plat..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image">Image du plat</label>
+                        <div class="file-upload-container">
+                            <div class="file-upload-area" id="file-upload-area">
+                                <div class="file-upload-content">
+                                    <svg class="file-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 15v4c0 1.1.9 2 2 2h14c0-1.1-.9-2-2-2v-4M17 8l-5-5-5 5M12 4.2v10.3"/>
+                                    </svg>
+                                    <p class="file-upload-text">
+                                        <span class="file-upload-main">Cliquez pour sélectionner une image</span><br>
+                                        <span class="file-upload-sub">ou glissez-déposez votre fichier ici</span>
+                                    </p>
+                                </div>
+                                <input type="file" id="image" name="image" accept="image/*" class="file-input">
+                            </div>
+                            <div class="file-upload-info">
+                                <small>Formats acceptés : JPG, PNG, GIF (max 5MB)</small>
+                            </div>
+                            <div id="image-preview" class="image-preview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{% url 'restaurant_dashboard' %}" class="btn-secondary">Annuler</a>
+                        <button type="submit" class="btn-primary">Ajouter le plat</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+{% block scripts %}
+{% block scripts %}
+    <script>
+        // Gestion du drag & drop et preview d'image
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('image');
+            const uploadArea = document.getElementById('file-upload-area');
+            const imagePreview = document.getElementById('image-preview');
+            
+            // Gestion du clic sur la zone d'upload
+            uploadArea.addEventListener('click', function(e) {
+                if (e.target !== fileInput) {
+                    fileInput.click();
+                }
+            });
+            
+            // Gestion du drag & drop
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect(files[0]);
+                }
+            });
+            
+            // Gestion de la sélection de fichier
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+            
+            // Fonction pour gérer la sélection de fichier
+            function handleFileSelect(file) {
+                // Vérifier le type de fichier
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Type de fichier non supporté. Utilisez JPG, PNG ou GIF.');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Vérifier la taille du fichier (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('L\'image ne doit pas dépasser 5MB.');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Afficher la preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview" />
+                        <a href="#" class="remove-image" onclick="removeImage(); return false;">
+                            Supprimer l'image
+                        </a>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Fonction pour supprimer l'image
+            window.removeImage = function() {
+                fileInput.value = '';
+                imagePreview.innerHTML = '';
+            };
+            
+            // Validation du formulaire
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+                
+                // Validation du nom
+                const nomInput = document.getElementById('nom');
+                const nomGroup = nomInput.closest('.form-group');
+                if (!nomInput.value.trim()) {
+                    showError(nomGroup, 'Le nom du plat est obligatoire');
+                    isValid = false;
+                } else {
+                    clearError(nomGroup);
+                }
+                
+                // Validation du type
+                const typeInput = document.getElementById('type_repas');
+                const typeGroup = typeInput.closest('.form-group');
+                if (!typeInput.value) {
+                    showError(typeGroup, 'Le type de repas est obligatoire');
+                    isValid = false;
+                } else {
+                    clearError(typeGroup);
+                }
+                
+                // Validation du prix
+                const prixInput = document.getElementById('prix');
+                const prixGroup = prixInput.closest('.form-group');
+                if (!prixInput.value || parseFloat(prixInput.value) <= 0) {
+                    showError(prixGroup, 'Le prix doit être supérieur à 0');
+                    isValid = false;
+                } else {
+                    clearError(prixGroup);
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Fonction pour afficher une erreur
+            function showError(group, message) {
+                group.classList.add('error');
+                let errorDiv = group.querySelector('.error-message');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-message';
+                    group.appendChild(errorDiv);
+                }
+                errorDiv.textContent = message;
+            }
+            
+            // Fonction pour effacer une erreur
+            function clearError(group) {
+                group.classList.remove('error');
+                const errorDiv = group.querySelector('.error-message');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

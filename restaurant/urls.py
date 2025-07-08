@@ -20,5 +20,10 @@ urlpatterns = [
     
     #gestion restaurant
     path('modifier-restaurant/', auth_views.form_modif_restaurant, name="modifier_restaurant"),
-    path('modification/', auth_views.modifer_restaurant, name="modifier")
+    path('modification/', auth_views.modifer_restaurant, name="modifier"),
+    path('changer-statut/', auth_views.changer_statut_restaurant, name="changer-statut"),
+
+    # Gestion des plats
+    path('plats/ajouter/', auth_views.ajouter_plat_form, name="ajouter_plat"),
+    path('plats/nouveau/', auth_views.ajouter_plat, name="creer_plat"),
 ]

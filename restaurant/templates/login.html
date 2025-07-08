@@ -8,21 +8,24 @@
     <link rel="stylesheet" href="{% static 'css/resto_login.css' %}">
 </head>
 <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="#" class="nav-logo">M'Lunch</a>
+                <span class="nav-subtitle">Plateforme de livraison</span>
+            </div>
+            <div class="nav-info">
+                <span class="nav-space-indicator">Espace Restaurant</span>
+            </div>
+        </div>
+    </nav>
+
     <div class="login-container">
         <div class="logo">
             <h1>M'Lunch</h1>
             <p>Espace Restaurant</p>
         </div>
-
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
 
         <form method="post" action="{% url 'restaurant_connexion' %}">
             {% csrf_token %}
@@ -41,6 +44,16 @@
                     <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
                 </div>
             </div>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
             <button type="submit" class="btn">Se connecter</button>
         </form>
