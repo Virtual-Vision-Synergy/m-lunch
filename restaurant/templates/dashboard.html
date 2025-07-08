@@ -51,18 +51,12 @@
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Commandes du jour</h3>
-                <div class="stat-value">0</div>
-            </div>
+            
             <div class="stat-card">
                 <h3>Commandes en cours</h3>
                 <div class="stat-value">{{ nombre_commandes }}</div>
             </div>
-            <div class="stat-card">
-                <h3>Revenus du jour</h3>
-                <div class="stat-value">0 Ar</div>
-            </div>
+            
             <div class="stat-card">
                 <h3>Plats disponibles</h3>
                 <div class="stat-value">{{ nombre_plats }}</div>
@@ -138,8 +132,8 @@
                                 <tr>
                                     <td>{{ commande_info.commande.id }}</td>
                                     <td>{{ commande_info.commande.client.email }}</td>
-                                    <td>{{ commande_info.commande.date_commande|date:"d/m/Y H:i" }}</td>
-                                    <td>{{ commande_info.commande.montant_total }} Ar</td>
+                                    <td>{{ commande_info.commande.cree_le|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ commande_info.total_restaurant }} Ar</td>
                                     <td>
                                         <span class="badge badge-en-cours">{{ commande_info.statut }}</span>
                                     </td>

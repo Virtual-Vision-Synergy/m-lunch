@@ -133,6 +133,11 @@ body {
     position: relative;
     z-index: 1;
     margin-top: -80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 60px;
 }
 
 
@@ -1009,3 +1014,5 @@ body {
     justify-content: flex-start;
   }
 }
+
+
