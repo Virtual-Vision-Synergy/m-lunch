@@ -1,0 +1,302 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Zone {{ zone.nom }} - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-map-marked-alt me-2"></i>Zone : {{ zone.nom }}</h2>
+    <div>
+        <a href="{% url 'zone_list' %}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>Retour à la liste
+        </a>
+        <a href="{% url 'zone_edit' zone.id %}" class="btn btn-warning me-2">
+            <i class="fas fa-edit me-1"></i>Modifier
+        </a>
+        <button class="btn btn-danger" onclick="deleteZone({{ zone.id }}, '{{ zone.nom }}')">
+            <i class="fas fa-trash me-1"></i>Supprimer
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informations de la zone -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informations</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Nom :</strong></td>
+                        <td>{{ zone.nom }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description :</strong></td>
+                        <td>{{ zone.description|default:"Aucune description" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Clients :</strong></td>
+                        <td><span class="badge bg-info">{{ zone.clients|length }}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Livreurs :</strong></td>
+                        <td><span class="badge bg-success">{{ zone.livreurs|length }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Liste des clients -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Clients dans cette zone</h6>
+            </div>
+            <div class="card-body">
+                {% if zone.clients %}
+                    <div class="list-group list-group-flush">
+                        {% for zone_client in zone.clients %}
+                            <div class="list-group-item px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ zone_client.client.prenom }} {{ zone_client.client.nom }}</strong>
+                                        <br><small class="text-muted">{{ zone_client.client.email }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Aucun client dans cette zone</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Liste des livreurs -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-motorcycle me-2"></i>Livreurs assignés</h6>
+            </div>
+            <div class="card-body">
+                {% if zone.livreurs %}
+                    <div class="list-group list-group-flush">
+                        {% for zone_livreur in zone.livreurs %}
+                            <div class="list-group-item px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ zone_livreur.livreur.nom }}</strong>
+                                        <br><small class="text-muted">{{ zone_livreur.livreur.contact|default:"Pas de contact" }}</small>
+                                    </div>
+                                    <span class="badge bg-success">{{ zone_livreur.livreur.statut|default:"Actif" }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Aucun livreur assigné</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map me-2"></i>Visualisation de la zone</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" style="height: 600px; width: 100%;"></div>
+            </div>
+            <div class="card-footer">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 20px; height: 20px; background: #28a745; opacity: 0.3; border: 2px solid #28a745; margin-right: 8px;"></div>
+                            <small>Zone de livraison</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 8px;"></div>
+                            <small>Centre de la zone</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div style="width: 20px; height: 2px; background: #ffc107; margin-right: 8px;"></div>
+                            <small>Rayon de couverture (3.5km)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer la zone <strong>{{ zone.nom }}</strong> ?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attention :</strong> Cette action supprimera également toutes les associations avec les clients et livreurs.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer définitivement</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .zone-polygon {
+        stroke: #28a745;
+        stroke-width: 3;
+        stroke-opacity: 0.8;
+        fill: #28a745;
+        fill-opacity: 0.3;
+    }
+    .coverage-circle {
+        stroke: #ffc107;
+        stroke-width: 2;
+        stroke-dasharray: 5, 5;
+        fill: none;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialisation de la carte
+    const map = L.map('map').setView([-18.8792, 47.5079], 12); // Antananarivo
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Données de la zone
+    const zoneData = {
+        id: {{ zone.id }},
+        nom: "{{ zone.nom|escapejs }}",
+        description: "{{ zone.description|default:'Aucune description'|escapejs }}",
+        zone: "{{ zone.zone|escapejs }}",
+        clients: {{ zone.clients|length }},
+        livreurs: {{ zone.livreurs|length }}
+    };
+
+    // Fonction pour parser les coordonnées WKT
+    function parseWKT(wkt) {
+        if (!wkt || !wkt.startsWith('POLYGON')) return null;
+
+        const coordsString = wkt.match(/\(\(([^)]+)\)\)/);
+        if (!coordsString) return null;
+
+        const coords = coordsString[1].split(', ').map(pair => {
+            const [lng, lat] = pair.split(' ').map(Number);
+            return [lat, lng];
+        });
+
+        return coords.slice(0, -1); // Enlever le dernier point qui duplique le premier
+    }
+
+    // Fonction pour calculer le centre d'un polygone
+    function calculateCenter(coords) {
+        let latSum = 0, lngSum = 0;
+        coords.forEach(coord => {
+            latSum += coord[0];
+            lngSum += coord[1];
+        });
+        return [latSum / coords.length, lngSum / coords.length];
+    }
+
+    // Afficher la zone sur la carte
+    if (zoneData.zone) {
+        const coords = parseWKT(zoneData.zone);
+        if (coords && coords.length > 0) {
+            // Polygone de la zone
+            const polygon = L.polygon(coords, {
+                className: 'zone-polygon',
+                color: '#28a745',
+                fillOpacity: 0.3
+            }).addTo(map);
+
+            // Centrer la carte sur la zone
+            map.fitBounds(polygon.getBounds(), { padding: [20, 20] });
+
+            // Calculer et afficher le centre
+            const center = calculateCenter(coords);
+
+            // Marker pour le centre
+            L.marker(center, {
+                icon: L.divIcon({
+                    className: 'center-marker',
+                    html: '<div style="background: #dc3545; border: 2px solid white; border-radius: 50%; width: 12px; height: 12px;"></div>',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                })
+            }).addTo(map).bindPopup('Centre de la zone');
+
+            // Cercle de couverture de 3.5km
+            L.circle(center, {
+                radius: 3500, // 3.5km
+                className: 'coverage-circle',
+                color: '#ffc107',
+                fillOpacity: 0
+            }).addTo(map).bindPopup('Zone de couverture (3.5km)');
+
+            // Popup d'information sur le polygone
+            polygon.bindPopup(`
+                <div>
+                    <h6>${zoneData.nom}</h6>
+                    <p>${zoneData.description || 'Aucune description'}</p>
+                    <hr>
+                    <small>
+                        <strong>Clients :</strong> ${zoneData.clients.length}<br>
+                        <strong>Livreurs :</strong> ${zoneData.livreurs.length}
+                    </small>
+                </div>
+            `);
+        }
+    }
+
+    // Fonction de suppression
+    function deleteZone(zoneId, zoneName) {
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        fetch(`/staff/zones/{{ zone.id }}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/staff/zones/';
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erreur lors de la suppression');
+            console.error(error);
+        });
+    });
+</script>
+{% endblock %}

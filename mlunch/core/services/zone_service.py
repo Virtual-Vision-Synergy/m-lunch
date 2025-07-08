@@ -51,7 +51,7 @@ class ZoneService:
             return {"error": f"Erreur lors de la création de la zone : {str(e)}"}
 
     @staticmethod
-    def get_zone_by_coord(lat, lon, max_distance_m=5000):
+    def get_zone_by_coord(lat, lon, max_distance_m=3500):
         #pdb.set_trace()
         """
         Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).
@@ -102,3 +102,30 @@ class ZoneService:
             return list(Zone.objects.values('id', 'nom', 'description', 'zone'))
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des zones : {str(e)}"}
+
+    @staticmethod
+    def get_zones_by_coord(lat, lon, max_distance_m=3500):
+        """
+        Retourne TOUTES les zones qui contiennent un point (lat, lon) ou sont à proximité.
+        Utile pour récupérer tous les livreurs disponibles dans plusieurs zones qui se chevauchent.
+        """
+        point = Point(float(lon), float(lat))
+        zones_found = []
+
+        for zone in Zone.objects.all():
+            try:
+                poly = wkt.loads(zone.zone)
+                # Si le point est dans la zone
+                if poly.contains(point):
+                    zones_found.append({'id': zone.id, 'nom': zone.nom, 'distance': 0})
+                else:
+                    # Calculer la distance en mètres
+                    dist = poly.distance(point) * 111320
+                    if dist <= max_distance_m:
+                        zones_found.append({'id': zone.id, 'nom': zone.nom, 'distance': dist})
+            except Exception:
+                continue
+
+        # Trier par distance (zones contenant le point en premier)
+        zones_found.sort(key=lambda x: x['distance'])
+        return zones_found

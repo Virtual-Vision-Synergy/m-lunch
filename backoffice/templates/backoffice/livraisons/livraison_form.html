@@ -1,0 +1,164 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}{{ action }} Livraison - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-truck me-2"></i>
+                    {{ action }} une Livraison
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="livraisonForm">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="livreur_id" class="form-label">Livreur <span class="text-danger">*</span></label>
+                                <select name="livreur_id" id="livreur_id" class="form-select" required>
+                                    <option value="">-- Choisir un livreur --</option>
+                                    {% for livreur_obj in livreurs %}
+                                        <option value="{{ livreur_obj.id }}"
+                                                {% if livraison.livreur_id == livreur_obj.id %}selected{% endif %}>
+                                            {{ livreur_obj.nom }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="statut" class="form-label">Statut</label>
+                                <select name="statut" id="statut" class="form-select">
+                                    <option value="">-- Choisir un statut --</option>
+                                    {% for statut_obj in statuts %}
+                                        <option value="{{ statut_obj.appellation }}"
+                                                {% if livraison.statut == statut_obj.appellation %}selected{% endif %}>
+                                            {{ statut_obj.appellation }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if livraison %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Commande</label>
+                                <div class="form-control-plaintext">
+                                    <a href="{% url 'commande_detail' livraison.commande_id %}">
+                                        #{{ livraison.commande_id }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Adresse</label>
+                                <div class="form-control-plaintext">{{ livraison.adresse }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Modal de confirmation des changements -->
+                    <div class="modal fade" id="changementsModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirmer les modifications</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Voici les changements qui seront effectués :</p>
+                                    <div id="changementsListe"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <button type="button" class="btn btn-primary" id="confirmerChangements">Confirmer</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>{{ action }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Script pour la confirmation des changements (si modification)
+{% if action == 'Modifier' %}
+document.getElementById('livraisonForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.changements && data.changements.length > 0) {
+            // Afficher les changements dans le modal
+            const liste = document.getElementById('changementsListe');
+            liste.innerHTML = '';
+            data.changements.forEach(changement => {
+                liste.innerHTML += `
+                    <div class="alert alert-info">
+                        <strong>${changement.champ}:</strong>
+                        <span class="text-muted">${changement.avant}</span>
+                        → <span class="text-primary">${changement.apres}</span>
+                    </div>
+                `;
+            });
+
+            // Afficher le modal
+            new bootstrap.Modal(document.getElementById('changementsModal')).show();
+        } else {
+            // Pas de changements, soumettre directement
+            this.submit();
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        this.submit(); // En cas d'erreur, soumettre quand même
+    });
+});
+
+// Confirmer les changements
+document.getElementById('confirmerChangements').addEventListener('click', function() {
+    const form = document.getElementById('livraisonForm');
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'confirm';
+    hiddenInput.value = '1';
+    form.appendChild(hiddenInput);
+    form.submit();
+});
+{% endif %}
+</script>
+{% endblock %}

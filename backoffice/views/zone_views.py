@@ -1,76 +1,162 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
-from mlunch.core.services.zone_service import ZoneService
-from mlunch.core.models import Zone, ZoneRestaurant, ZoneClient
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 import json
+from mlunch.core.models import Zone, ZoneClient, ZoneLivreur
+from mlunch.core.services.zone_service import ZoneService
+
 
 def zone_list(request):
-    zones = ZoneService.get_all_zones()
-    return render(request, 'backoffice/zones_management.html', {
-        'zones': zones
+    """Liste toutes les zones avec leurs informations et coordonnées pour la carte"""
+    zones = Zone.objects.all()
+    zones_data = []
+
+    for zone in zones:
+        zone_data = {
+            'id': zone.id,
+            'nom': zone.nom,
+            'description': zone.description,
+            'zone': zone.zone,
+            'clients_count': ZoneClient.objects.filter(zone=zone).count(),
+            'livreurs_count': ZoneLivreur.objects.filter(zone=zone).count()
+        }
+        zones_data.append(zone_data)
+
+    return render(request, 'backoffice/zones/zone_list.html', {
+        'zones': zones_data
     })
+
 
 def zone_detail(request, zone_id):
-    """Détail d'une zone spécifique"""
+    """Affiche les détails d'une zone avec sa carte"""
     zone = get_object_or_404(Zone, id=zone_id)
-    restaurants = ZoneRestaurant.objects.filter(zone=zone).select_related('restaurant')
     clients = ZoneClient.objects.filter(zone=zone).select_related('client')
+    livreurs = ZoneLivreur.objects.filter(zone=zone).select_related('livreur')
 
-    return render(request, 'backoffice/zone_detail.html', {
-        'zone': zone,
-        'restaurants': restaurants,
-        'clients': clients
+    zone_data = {
+        'id': zone.id,
+        'nom': zone.nom,
+        'description': zone.description,
+        'zone': zone.zone,
+        'clients': clients,
+        'livreurs': livreurs
+    }
+
+    return render(request, 'backoffice/zones/zone_detail.html', {
+        'zone': zone_data
     })
 
-def zone_add(request):
-    """Ajouter une nouvelle zone"""
+
+def zone_create(request):
+    """Création d'une nouvelle zone avec dessin sur carte"""
     if request.method == 'POST':
+        nom = request.POST.get('nom')
+        description = request.POST.get('description', '')
+        coordinates = request.POST.get('coordinates')
+
+        if not nom or not coordinates:
+            messages.error(request, 'Le nom et les coordonnées sont requis')
+            return render(request, 'backoffice/zones/zone_create.html')
+
         try:
-            nom = request.POST.get('nom')
-            description = request.POST.get('description')
-            zone_polygon = request.POST.get('zone')
+            # Parser les coordonnées JSON
+            coords_data = json.loads(coordinates)
+            if len(coords_data) < 3:
+                messages.error(request, 'Au minimum 3 points sont requis pour définir une zone')
+                return render(request, 'backoffice/zones/zone_create.html')
 
-            zone = ZoneService.create_zone({
-                'nom': nom,
-                'description': description,
-                'zone': zone_polygon
-            })
+            # Utiliser le service pour créer la zone
+            result = ZoneService.create_zone(nom, description, coords_data, 1)
 
-            messages.success(request, 'Zone ajoutée avec succès')
-            return redirect('backoffice:zone_detail', zone_id=zone.id)
+            if 'error' in result:
+                messages.error(request, result['error'])
+                return render(request, 'backoffice/zones/zone_create.html')
+
+            messages.success(request, f'Zone "{nom}" créée avec succès!')
+            return redirect('zone_detail', zone_id=result['zone']['id'])
+
+        except json.JSONDecodeError:
+            messages.error(request, 'Format de coordonnées invalide')
         except Exception as e:
-            messages.error(request, f'Erreur lors de l\'ajout: {str(e)}')
+            messages.error(request, f'Erreur lors de la création: {str(e)}')
 
-    return render(request, 'backoffice/zone_add.html')
+    return render(request, 'backoffice/zones/zone_create.html')
 
-@csrf_exempt
-def zone_update(request, zone_id):
-    """Met à jour une zone"""
+
+def zone_edit(request, zone_id):
+    """Modification d'une zone existante"""
+    zone = get_object_or_404(Zone, id=zone_id)
+
     if request.method == 'POST':
+        nom = request.POST.get('nom')
+        description = request.POST.get('description', '')
+        coordinates = request.POST.get('coordinates')
+
+        if not nom:
+            messages.error(request, 'Le nom est requis')
+            return render(request, 'backoffice/zones/zone_edit.html', {'zone': zone})
+
         try:
-            data = json.loads(request.body)
-            zone = get_object_or_404(Zone, id=zone_id)
+            zone.nom = nom
+            zone.description = description
 
-            ZoneService.update_zone(zone, data)
+            if coordinates:
+                coords_data = json.loads(coordinates)
+                if len(coords_data) >= 3:
+                    # Convertir en format WKT si nécessaire
+                    polygon_coords = ', '.join([f"{coord['lng']} {coord['lat']}" for coord in coords_data])
+                    # Fermer le polygone en ajoutant le premier point à la fin
+                    first_coord = coords_data[0]
+                    polygon_coords += f", {first_coord['lng']} {first_coord['lat']}"
+                    zone.zone = f"POLYGON(({polygon_coords}))"
 
-            return JsonResponse({'success': True, 'message': 'Zone mise à jour avec succès'})
+            zone.save()
+            messages.success(request, f'Zone "{nom}" modifiée avec succès!')
+            return redirect('zone_detail', zone_id=zone.id)
+
+        except json.JSONDecodeError:
+            messages.error(request, 'Format de coordonnées invalide')
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            messages.error(request, f'Erreur lors de la modification: {str(e)}')
 
-    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+    return render(request, 'backoffice/zones/zone_edit.html', {'zone': zone})
 
-@csrf_exempt
+
+@require_http_methods(["DELETE", "POST"])
 def zone_delete(request, zone_id):
-    """Supprime une zone"""
-    if request.method == 'DELETE':
-        try:
-            zone = get_object_or_404(Zone, id=zone_id)
-            ZoneService.delete_zone(zone)
+    """Suppression d'une zone"""
+    zone = get_object_or_404(Zone, id=zone_id)
 
-            return JsonResponse({'success': True, 'message': 'Zone supprimée avec succès'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+    try:
+        zone_nom = zone.nom
+        zone.delete()
 
-    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+        if request.headers.get('Content-Type') == 'application/json':
+            return JsonResponse({'success': True, 'message': f'Zone "{zone_nom}" supprimée avec succès'})
+        else:
+            messages.success(request, f'Zone "{zone_nom}" supprimée avec succès!')
+            return redirect('zone_list')
+
+    except Exception as e:
+        if request.headers.get('Content-Type') == 'application/json':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f'Erreur lors de la suppression: {str(e)}')
+            return redirect('zone_detail', zone_id=zone_id)
+
+
+@csrf_exempt
+def get_zone_by_coordinates(request):
+    """API pour récupérer une zone par coordonnées"""
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        lat = data.get('lat')
+        lng = data.get('lng')
+
+        if lat and lng:
+            result = ZoneService.get_zone_by_coord(lat, lng)
+            return JsonResponse(result if result else {'error': 'Aucune zone trouvée'})
+
+    return JsonResponse({'error': 'Paramètres invalides'})

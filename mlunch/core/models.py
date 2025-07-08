@@ -113,6 +113,7 @@ class Livreur(models.Model):
     nom = models.CharField(max_length=100, unique=True)
     contact = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
+    geo_position = models.CharField(max_length=100, blank=True, null=True, default="0,0", help_text="Format: latitude,longitude")
     date_inscri = models.DateTimeField(default=now)
     def __str__(self):
         return self.nom

@@ -1,0 +1,223 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Gestion des Zones - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-map-marked-alt me-2"></i>Gestion des Zones</h2>
+    <a href="{% url 'zone_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Créer une zone
+    </a>
+</div>
+
+<!-- Carte pour visualiser toutes les zones -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map me-2"></i>Carte des zones</h5>
+            </div>
+            <div class="card-body">
+                <div id="map" style="height: 400px; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des zones -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Liste des zones</h5>
+    </div>
+    <div class="card-body">
+        {% if zones %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Description</th>
+                            <th>Clients</th>
+                            <th>Livreurs</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for zone in zones %}
+                        <tr>
+                            <td>
+                                <strong>{{ zone.nom }}</strong>
+                            </td>
+                            <td>{{ zone.description|default:"Aucune description" }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ zone.clients_count }} client{{ zone.clients_count|pluralize:"s" }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ zone.livreurs_count }} livreur{{ zone.livreurs_count|pluralize:"s" }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'zone_detail' zone.id %}" class="btn btn-sm btn-outline-primary" title="Voir détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'zone_edit' zone.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteZone({{ zone.id }}, '{{ zone.nom }}')" title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucune zone définie</h5>
+                <p class="text-muted">Commencez par créer votre première zone de livraison</p>
+                <a href="{% url 'zone_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Créer une zone
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer la zone <strong id="zoneName"></strong> ?</p>
+                <p class="text-danger"><small><i class="fas fa-exclamation-triangle me-1"></i>Cette action est irréversible.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .zone-polygon {
+        stroke: #3388ff;
+        stroke-width: 3;
+        stroke-opacity: 0.8;
+        fill: #3388ff;
+        fill-opacity: 0.2;
+    }
+    .zone-polygon:hover {
+        fill-opacity: 0.4;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialisation de la carte
+    const map = L.map('map').setView([-18.8792, 47.5079], 12); // Antananarivo
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Données des zones
+    const zones = [
+        {% for zone in zones %}
+        {
+            id: {{ zone.id }},
+            nom: "{{ zone.nom|escapejs }}",
+            description: "{{ zone.description|default:'Aucune description'|escapejs }}",
+            zone: "{{ zone.zone|escapejs }}",
+            clients_count: {{ zone.clients_count }},
+            livreurs_count: {{ zone.livreurs_count }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // Fonction pour parser les coordonnées WKT
+    function parseWKT(wkt) {
+        if (!wkt || !wkt.startsWith('POLYGON')) return null;
+
+        const coordsString = wkt.match(/\(\(([^)]+)\)\)/);
+        if (!coordsString) return null;
+
+        const coords = coordsString[1].split(', ').map(pair => {
+            const [lng, lat] = pair.split(' ').map(Number);
+            return [lat, lng];
+        });
+
+        return coords.slice(0, -1); // Enlever le dernier point qui duplique le premier
+    }
+
+    // Ajouter les zones sur la carte
+    zones.forEach(zone => {
+        if (zone.zone) {
+            const coords = parseWKT(zone.zone);
+            if (coords && coords.length > 0) {
+                const polygon = L.polygon(coords, {
+                    className: 'zone-polygon',
+                    color: '#3388ff',
+                    fillOpacity: 0.2
+                }).addTo(map);
+
+                polygon.bindPopup(`
+                    <div>
+                        <h6>${zone.nom}</h6>
+                        <p>${zone.description || 'Aucune description'}</p>
+                        <div class="d-flex gap-2">
+                            <a href="/staff/zones/${zone.id}/" class="btn btn-sm btn-primary">Voir</a>
+                            <a href="/staff/zones/${zone.id}/edit/" class="btn btn-sm btn-warning">Modifier</a>
+                        </div>
+                    </div>
+                `);
+            }
+        }
+    });
+
+    // Fonction de suppression de zone
+    let zoneToDelete = null;
+
+    function deleteZone(zoneId, zoneName) {
+        zoneToDelete = zoneId;
+        document.getElementById('zoneName').textContent = zoneName;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (zoneToDelete) {
+            fetch(`/staff/zones/${zoneToDelete}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Erreur lors de la suppression');
+                console.error(error);
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import restaurant_views, commande_views, zone_views, stats_views, livraison_views, livreur_views
+from .views import restaurant_views, commande_views, stats_views, livraison_views, zone_views
 
 urlpatterns = [
     # Dashboard principal
@@ -26,28 +26,35 @@ urlpatterns = [
 
     # Gestion des zones
     path('zones/', zone_views.zone_list, name='zone_list'),
+    path('zones/creer/', zone_views.zone_create, name='zone_create'),
     path('zones/<int:zone_id>/', zone_views.zone_detail, name='zone_detail'),
-    path('zones/ajouter/', zone_views.zone_add, name='zone_add'),
-    path('api/zones/<int:zone_id>/', zone_views.zone_update, name='zone_update'),
-    path('api/zones/<int:zone_id>/supprimer/', zone_views.zone_delete, name='zone_delete'),
+    path('zones/<int:zone_id>/edit/', zone_views.zone_edit, name='zone_edit'),
+    path('zones/<int:zone_id>/delete/', zone_views.zone_delete, name='zone_delete'),
+    path('api/zones/by-coordinates/', zone_views.get_zone_by_coordinates, name='get_zone_by_coordinates'),
 
     # Statistiques et tableaux de bord
     path('stats/', stats_views.stats_dashboard, name='stats_dashboard'),
     path('api/stats/commandes/', stats_views.stats_commandes_api, name='stats_commandes_api'),
     path('api/stats/restaurants/', stats_views.stats_restaurants_api, name='stats_restaurants_api'),
     path('api/stats/zones/', stats_views.stats_zones_api, name='stats_zones_api'),
-
-    # Nouvelles APIs pour le dashboard unifié
     path('api/stats/', stats_views.stats_api, name='stats_api'),
     path('api/zones/', stats_views.zones_api, name='zones_api'),
     path('api/restaurants/', stats_views.restaurants_api, name='restaurants_api'),
 
-    # Gestion des livreurs
-    path('livreurs/', livreur_views.livreurs_list, name='livreur_list'),
-    path('livreurs/add/', livreur_views.livreur_add, name='livreur_add'),
-    path('livreurs/<int:livreur_id>/', livreur_views.livreur_detail, name='livreur_detail'),
-    path('livreurs/<int:livreur_id>/edit/', livreur_views.livreur_edit, name='livreur_edit'),
-    path('livreurs/<int:livreur_id>/delete/', livreur_views.livreur_delete, name='livreur_delete'),
-    path('livreurs/<int:livreur_id>/assigner-commande/', livreur_views.livreur_assigner_commande, name='livreur_assigner_commande'),
-    path('livreurs/<int:livreur_id>/assigner-commande/confirmer/', livreur_views.livreur_assigner_commande_confirmer, name='livreur_assigner_commande_confirmer'),
+
+    path('livraisons-livreurs/', livraison_views.livraison_livreur_dashboard, name='livraison_livreur_dashboard'),
+
+    # Gestion des assignations
+    path('livreurs/<int:livreur_id>/assigner-commande/', livraison_views.livreur_assigner_commande, name='livreur_assigner_commande'),
+
+    # Gestion individuelle des livreurs
+    path('livreurs/ajouter/', livraison_views.livreur_add, name='livreur_add'),
+    path('livreurs/<int:livreur_id>/', livraison_views.livreur_detail, name='livreur_detail'),
+    path('livreurs/<int:livreur_id>/modifier/', livraison_views.livreur_edit, name='livreur_edit'),
+    path('livreurs/<int:livreur_id>/supprimer/', livraison_views.livreur_delete, name='livreur_delete'),
+
+    # Gestion individuelle des livraisons
+    path('livraisons/<int:livraison_id>/', livraison_views.livraison_detail, name='livraison_detail'),
+    path('livraisons/<int:livraison_id>/modifier/', livraison_views.livraison_edit, name='livraison_edit'),
+    path('livraisons/<int:livraison_id>/annuler/', livraison_views.livraison_delete, name='livraison_delete'),
 ]

@@ -151,14 +151,16 @@ INSERT INTO core_client (email, mot_de_passe, contact, prenom, nom, date_inscri)
 ('rajao.david@gmail.com', 'hashed_password_7', '+261 34 22 678 90', 'David', 'Rajao', '2024-05-01 08:15:00'),
 ('raveloson.lucia@outlook.com', 'hashed_password_8', '+261 33 66 789 01', 'Lucia', 'Raveloson', '2024-05-20 15:30:00');
 
--- 10. Livreurs
-INSERT INTO core_livreur (nom, contact, position, date_inscri) VALUES
-('Randria Thierry', '+261 34 11 222 33', 'Analakely', '2024-01-10 08:00:00'),
-('Razaka Joseph', '+261 33 44 555 66', 'Behoririka', '2024-01-15 09:30:00'),
-('Ramanantsoa Eric', '+261 32 77 888 99', 'Andravoahangy', '2024-02-01 10:15:00'),
-('Raharison Claude', '+261 34 55 111 22', 'Isotry', '2024-02-15 11:45:00'),
-('Rakotozafy Bruno', '+261 33 88 333 44', 'Antsahamanitra', '2024-03-01 07:30:00'),
-('Randriamampionona Solo', '+261 32 99 666 77', 'Tsaralalana', '2024-03-15 12:00:00');
+-- 10. Livreurs avec coordonnées GPS
+INSERT INTO core_livreur (nom, contact, position, geo_position, date_inscri) VALUES
+('Randria Thierry', '+261 34 11 222 33', 'Analakely', '-18.9145,47.5210', '2024-01-10 08:00:00'),
+('Razaka Joseph', '+261 33 44 555 66', 'Behoririka', '-18.9170,47.5225', '2024-01-15 09:30:00'),
+('Ramanantsoa Eric', '+261 32 77 888 99', 'Andravoahangy', '-18.9205,47.5305', '2024-02-01 10:15:00'),
+('Raharison Claude', '+261 34 55 111 22', 'Isotry', '-18.9260,47.5155', '2024-02-15 11:45:00'),
+('Rakotozafy Bruno', '+261 33 88 333 44', 'Antsahamanitra', '-18.9060,47.5185', '2024-03-01 07:30:00'),
+('Randriamampionona Solo', '+261 32 99 666 77', 'Tsaralalana', '-18.9125,47.5245', '2024-03-15 12:00:00'),
+('Rakotomalala Frank', '+261 34 12 345 78', 'Antaninarenina', '-18.9185,47.5285', '2024-04-01 08:30:00'),
+('Razanadrakoto Kevin', '+261 33 23 456 89', 'Ambatonakanga', '-18.9110,47.5325', '2024-04-15 09:00:00');
 
 -- 11. Horaires des restaurants (lundi=1, dimanche=7)
 INSERT INTO core_horaire (restaurant_id, le_jour, horaire_debut, horaire_fin, mis_a_jour_le) VALUES
