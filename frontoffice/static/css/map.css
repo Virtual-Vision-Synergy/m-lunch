@@ -295,11 +295,11 @@ body {
     }
 
     .menu-button {
-      background: linear-gradient(45deg, #ff6b35, #f7931e);
+      background:  #C64304;
       color: white;
       border: none;
       padding: 10px 20px;
-      border-radius: 25px;
+      border-radius: 10px;
       cursor: pointer;
       margin-top: 10px;
       font-weight: 600;

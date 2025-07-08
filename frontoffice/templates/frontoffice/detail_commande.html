@@ -11,41 +11,42 @@
 <body>
   <!-- HEADER -->
   <header class="site-header">
-    <div class="overlap-wrapper">
-      <div class="overlap-2">
-        <div class="group-8">
-          <div class="overlap-group-3">
-            <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
-            <div class="group-11">
-              <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
-              <a href="#" class="text-wrapper-11">Livraison</a>
-              <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
-              <a href="#about" class="text-wrapper-12">A propos</a>
-            </div>
-            <div class="icons-right">
-              <a href="#" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
-              <a href="#" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
-              <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
-              <nav id="hamburger-menu" class="hamburger-menu">
-                <ul>
-                  <li class="has-submenu">
-                    <a href="#">Commande <span class="arrow">&#x2304;</span></a>
-                    <ul class="submenu">
-                      <li><a href="#">Mes commandes</a></li>
-                      <li><a href="#">En cours</a></li>
-                    </ul>
-                  </li>
-                  <li><a href="#">Panier</a></li>
-                  <li><a href="#about">A propos</a></li>
-                   <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
-                </ul>
-              </nav>
-            </div>
+  <div class="overlap-wrapper">
+    <div class="overlap-2">
+      <div class="group-8">
+        <div class="overlap-group-3">
+          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <div class="group-11">
+            <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
+            <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
+            <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
+            <a href="#about" class="text-wrapper-12">A propos</a>
+          </div>
+          <div class="icons-right">
+            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+
+            <nav id="hamburger-menu" class="hamburger-menu">
+              <ul>
+                <li class="has-submenu">
+                  <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                  <ul class="submenu">
+                    <li><a href="en_cours.html">En Cours</a></li>
+                    <li><a href="historique.html">Historique</a></li>
+                  </ul>
+                </li>
+                <li><a href="panier.html">Panier</a></li>
+                <li><a href="#about">A propos</a></li>
+                <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
     </div>
-  </header>
+  </div>
+</header>
 
   <div class="commande-detail-container">
     <h2>Commande #{{ commande.id }}</h2>
@@ -73,7 +74,7 @@
         {% endfor %}
       </tbody>
     </table>
-    <div class="total">Total : <strong>{{ total|floatformat:0 }} Ar</strong></div>
+    <div class="total">Total : {{ total|floatformat:0 }} Ar</div>
   </div>
 </body>
 </html>

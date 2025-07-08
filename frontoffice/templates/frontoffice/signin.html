@@ -1,163 +1,168 @@
-<style>
-.container-inscription {
-    max-width: 500px;
-    margin: 40px auto;
-    padding: 24px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.container-inscription form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-.container-inscription label {
-    font-weight: 500;
-    margin-bottom: 2px;
-}
-#map-container {
-    margin-top: 24px;
-    text-align: center;
-}
-#map {
-    width: 100%;
-    height: 400px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-}
-.toast-message {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    z-index: 9999;
-    background: #fff;
-    color: #333;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    padding: 12px 24px;
-    font-size: 1rem;
-    border-left: 6px solid #007bff;
-    opacity: 0.97;
-    transition: opacity 0.3s;
-}
-.toast-success { border-color: #28a745; }
-.toast-danger { border-color: #dc3545; }
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription - M'Lunch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/inscription.css' %}">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+</head>
 
-.form-group { margin-bottom: 12px; }
-.form-control {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
-    box-sizing: border-box;
-}
-.btn.btn-primary {
-    background: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    padding: 10px 0;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.btn.btn-primary:hover {
-    background: #0056b3;
-}
-.alert.alert-danger {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    padding: 10px 16px;
-    margin-bottom: 16px;
-    font-size: 1rem;
-}
-</style>
-
-<div class="container-inscription">
-    {% if erreur %}
-        <div class="alert alert-danger" style="margin-bottom:16px;">{{ erreur }}</div>
-    {% endif %}
-    <form method="post" autocomplete="off" style="margin-bottom:0;">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="prenom">Prénom:</label>
-            <input type="text" name="prenom" class="form-control" required placeholder="Votre prénom">
-        </div>
-        <div class="form-group">
-            <label for="nom">Nom:</label>
-            <input type="text" name="nom" class="form-control" required placeholder="Votre nom">
-        </div>
-        <div class="form-group">
-            <label for="email">Adresse e-mail:</label>
-            <input type="email" name="email" class="form-control" required placeholder="exemple@email.com">
-        </div>
-        <div class="form-group">
-            <label for="mot_de_passe">Mot de passe:</label>
-            <input type="password" name="mot_de_passe" class="form-control" required placeholder="Mot de passe sécurisé">
-        </div>
-        <div class="form-group">
-            <label for="confirm_password">Confirmer le mot de passe:</label>
-            <input type="password" name="confirm_password" class="form-control" required placeholder="Confirmez votre mot de passe">
-        </div>
-        <div class="form-group">
-            <label for="telephone">Numéro de téléphone:</label>
-            <input type="tel" name="telephone" class="form-control" placeholder="Ex: 0321234567">
-        </div>
-        <div class="form-group">
-            <label for="secteur">Secteur:</label>
-            <input type="text" id="secteur" name="secteur" class="form-control" readonly placeholder="Cliquez sur la carte pour choisir" required />
-        </div>
-        <button type="submit" class="btn btn-primary" style="margin-top:8px;">S'inscrire</button>
-    </form>
-    <div id="map-container">
-        <h4 style="margin-top:24px;">Sélectionnez votre secteur sur la carte</h4>
-        <div id="map"></div>
+<body>
+<div class="max-container">
+  <div class="inscription-container">
+    <div class="header">
+      <div class="welcome">Welcome to</div>
+      <div class="title">M'Lunch</div>
     </div>
+
+    {% if erreur %}
+    <div class="error-message">{{ erreur }}</div>
+    {% endif %}
+
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label for="prenom">Prénom</label>
+          <div class="input-wrapper">
+            <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nom">Nom</label>
+          <div class="input-wrapper">
+            <input type="text" id="nom" name="nom" placeholder="Votre nom" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <div class="input-wrapper">
+          <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+        </div>
+      </div>
+
+      <div class="form-group password-wrapper">
+        <label for="mot_de_passe">Mot de passe</label>
+        <div class="input-wrapper">
+          <input type="password" id="mot_de_passe" name="mot_de_passe" placeholder="••••••••" required>
+          <i class="fa-solid fa-eye-slash toggle-password" aria-label="Afficher le mot de passe"></i>
+        </div>
+      </div>
+
+      <div class="form-group password-wrapper">
+        <label for="confirm_password">Confirmation du mot de passe</label>
+        <div class="input-wrapper">
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+          <i class="fa-solid fa-eye-slash toggle-password" aria-label="Afficher le mot de passe"></i>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telephone">Contact</label>
+          <div class="input-wrapper">
+            <input type="tel" id="telephone" name="telephone" placeholder="Votre numéro">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="secteur">Secteur</label>
+          <div class="input-wrapper">
+            <input type="text" id="secteur" name="secteur" class="sector-input" readonly placeholder="Cliquez sur la carte pour choisir" required>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">Valider l'inscription</button>
+    </form>
+    <div class="already-account" style="font-size: 0.95em; margin-top: 10px; text-align: right;">
+      <a href="{% url 'connexion' %}" style="font-size: 0.95em; color: #666; text-decoration: underline;">Déjà un compte&nbsp;?</a>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <h4 class="map-title">Sélectionnez votre secteur sur la carte</h4>
+    <div id="map"></div>
+  </div>
 </div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const map = L.map('map').setView([-18.8792, 47.5079], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        L.Control.geocoder().addTo(map);
-
-        let marker;
-        map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lon = e.latlng.lng;
-            if (marker) map.removeLayer(marker);
-            marker = L.marker([lat, lon]).addTo(map);
-            fetch(`/api/zone-from-coord/?lat=${lat}&lon=${lon}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('secteur').value = data.nom;
-                        showToast(`Zone sélectionnée : ${data.nom}`, 'success');
-                    } else {
-                        document.getElementById('secteur').value = '';
-                        showToast("Aucune zone à moins de 5 km.", 'danger');
-                    }
-                });
-        });
-
-        // Toast notification
-        function showToast(message, type) {
-            let toast = document.createElement('div');
-            toast.className = `toast-message toast-${type}`;
-            toast.innerText = message;
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 2500);
-        }
+  document.addEventListener('DOMContentLoaded', function() {
+    // Password toggle
+    document.querySelectorAll('.toggle-password').forEach(icon => {
+      icon.addEventListener('click', function() {
+        const input = this.parentElement.querySelector('input');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        this.classList.toggle('fa-eye-slash');
+        this.classList.toggle('fa-eye');
+      });
     });
+
+    // Initialize map - wait a moment to ensure container is rendered
+    setTimeout(() => {
+      const map = L.map('map', {
+        preferCanvas: true
+      }).setView([-18.8792, 47.5079], 13);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      
+      // Add geocoder control
+      L.Control.geocoder({
+        defaultMarkGeocode: false
+      }).on('markgeocode', function(e) {
+        map.setView(e.geocode.center, 15);
+        updateSector(e.geocode.center.lat, e.geocode.center.lng);
+      }).addTo(map);
+
+      let marker;
+      map.on('click', function(e) {
+        updateSector(e.latlng.lat, e.latlng.lng);
+      });
+
+      function updateSector(lat, lng) {
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map);
+        
+        fetch(`/api/zone-from-coord/?lat=${lat}&lon=${lng}`)
+          .then(response => response.json())
+          .then(data => {
+            const secteurInput = document.getElementById('secteur');
+            if (data.success) {
+              secteurInput.value = data.nom;
+              showToast(`Zone sélectionnée : ${data.nom}`, 'success');
+            } else {
+              secteurInput.value = '';
+              showToast("Aucune zone de livraison à proximité", 'danger');
+            }
+          });
+      }
+    }, 100);
+
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  });
 </script>
+</body>
+</html>

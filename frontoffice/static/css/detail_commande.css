@@ -65,7 +65,7 @@
       }
       .commande-detail-container .plat-quantite {
         color: #C64304;
-        font-weight: 600;
+        font-weight: 400;
       }
       .commande-detail-container .plat-prix {
         color: #28a745;
@@ -75,6 +75,6 @@
         text-align: right;
         font-size: 1.1rem;
         color: #C64304;
-        font-weight: 700;
+        font-weight: 400;
         margin-top: 18px;
       }

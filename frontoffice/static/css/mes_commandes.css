@@ -52,11 +52,11 @@
         }
         .order-id {
             color: #ff6b35;
-            font-weight: 700;
+            font-weight: 400;
         }
         .order-total {
             color: #28a745;
-            font-weight: 600;
+            font-weight: 400;
         }
         .order-status {
             padding: 7px 16px;

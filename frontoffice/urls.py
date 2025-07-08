@@ -32,13 +32,13 @@ urlpatterns = [
     # Panier
     path('panier/', panier_views.panier_view, name='panier'),
     path('api/panier/ajouter/', panier_views.add_to_panier, name='add_to_panier'),
-    path('api/panier/update/', panier_views.update_quantity, name='update_quantity'),
-    path('api/panier/supprimer/', panier_views.remove_from_panier, name='remove_from_panier'),
+    path('api/panier/update/<int:item_id>/', panier_views.update_quantity, name='update_quantity'),
+    path('api/panier/supprimer/<int:item_id>/', panier_views.remove_from_panier, name='remove_from_panier'),
     path('api/panier/vider/', panier_views.clear_panier, name='clear_panier'),
-    path('api/panier/valider/', panier_views.validate_commande, name='validate_commande'),
+    path('api/panier/valider/', panier_views.finalize_commande, name='finalize_commande'),
     path('api/panier/count/', panier_views.get_panier_count, name='panier_count'),
 
-
+    path('api/panier/modes-paiement/', panier_views.get_modes_paiement, name='get_modes_paiement'),
     path('api/points-recuperation/', zone_views.points_de_recuperation, name='points_recuperation'),
     path('api/zone-from-coord/', zone_views.api_zone_from_coord, name='zone_from_coord'),
 ]
