@@ -65,9 +65,9 @@
                 <td>{{ c.articles }}</td>
                 <td class="order-total">{{ c.total }} Ar</td>
                 <td>
-                    <span class="order-status {% if c.statut == 'Livré' %}status-livre{% elif c.statut == 'Annulé' %}status-annule{% else %}status-en-cours{% endif %}">
-                        {{ c.statut }}
-                    </span>
+                  <span class="order-status {% if c.statut == 'Livré' %}status-livre{% elif c.statut == 'Annulé' %}status-annule{% else %}status-en-cours{% endif %}">
+                    {{ c.statut }}
+                  </span>
                 </td>
                 <td><a href="{% url 'detail_commande' c.commande.id %}" class="details-link">Voir détails</a></td>
             </tr>

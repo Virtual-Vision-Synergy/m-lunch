@@ -373,7 +373,7 @@ class PanierService:
     @staticmethod
     def finalize_commande(client_id, point_recup_id, mode_paiement_id):
         """
-        Met à jour le statut de la commande à 3 (par exemple : 'validée'),
+        Met à jour le statut de la commande à 2 (par exemple : 'validée'),
         et met à jour le point de récupération et le mode de paiement.
         """
         try:
@@ -396,7 +396,7 @@ class PanierService:
                 commande.save()
 
                 # Mettre à jour le statut à 3
-                statut = StatutCommande.objects.get(id=3)
+                statut = StatutCommande.objects.get(id=2)
                 HistoriqueStatutCommande.objects.create(
                     commande=commande,
                     statut=statut
