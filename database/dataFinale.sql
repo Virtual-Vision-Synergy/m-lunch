@@ -31,8 +31,7 @@ INSERT INTO core_statutentite (appellation) VALUES
 INSERT INTO core_modepaiement (nom) VALUES
 ('Especes'),
 ('Mobile Money'),
-('Carte bancaire'),
-('Virement');
+('Carte bancaire');
 
 INSERT INTO core_entite (nom) VALUES
 ('Zone Commerciale'),
