@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mon Panier - M'Lunch</title>
+  <link rel="stylesheet" href="{% static 'css/header.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/panier1.css'%}" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400&family=REM:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
+  <style>
+   
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+  <div class="overlap-wrapper">
+    <div class="overlap-2">
+      <div class="group-8">
+        <div class="overlap-group-3">
+          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <div class="group-11">
+            <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
+            <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
+            <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
+            <a href="#about" class="text-wrapper-12">A propos</a>
+          </div>
+          <div class="icons-right">
+            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+
+            <nav id="hamburger-menu" class="hamburger-menu">
+              <ul>
+                <li class="has-submenu">
+                  <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                  <ul class="submenu">
+                    <li><a href="en_cours.html">En Cours</a></li>
+                    <li><a href="historique.html">Historique</a></li>
+                  </ul>
+                </li>
+                <li><a href="panier.html">Panier</a></li>
+                <li><a href="#about">A propos</a></li>
+                <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+    
+  <!-- Main Content -->
+  <div class="main-content">
+    {% if items %}
+    <div class="conteneur-commandes">
+      <div class="commandes-container">
+        <h2 class="commandes-title">Votre Panier :</h2>
+        <table class="commande-table">
+          <thead>
+            <tr>
+              <th>Plat</th>
+              <th>Image</th>
+              <th>Quantité</th>
+              <th>Prix</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td class="plat-nom">
+                {{ item.nom }}
+                {% if item.restaurant_nom %}
+                <div class="restaurant-nom">{{ item.restaurant_nom }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.image %}
+                <img src="{{ item.image }}" alt="{{ item.nom }}" />
+                {% else %}
+                <div class="image-placeholder"></div>
+                {% endif %}
+              </td>
+              <td>
+                <div class="quantity-control">
+                  <button class="quantity-btn" onclick="changeQuantity({{ item.item_id }}, -1)">
+                    <img src="{% static 'img/icones/minus.png' %}" alt="Diminuer" />
+                  </button>
+                  <span class="quantity-value" id="quantite-{{ item.item_id }}">{{ item.quantite }}</span>
+                  <button class="quantity-btn" onclick="changeQuantity({{ item.item_id }}, 1)">
+                    <img src="{% static 'img/icones/addition.png' %}" alt="Augmenter" />
+                  </button>
+                </div>
+              </td>
+              <td class="plat-prix">{{ item.total|floatformat:0 }} Ar</td>
+              <td>
+                <button class="btn-supprimer" onclick="removeFromPanier({{ item.item_id }})">
+                  <img src="{% static 'img/icones/delete.png' %}" alt="Supprimer" />
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="cost-summary">
+          <p><strong>Sous-total :</strong> <span>{{ totals.sous_total|floatformat:0 }} Ar</span></p>
+          <p><strong>Livraison :</strong> 
+            <span>
+              {% if totals.frais_livraison > 0 %}
+                {{ totals.frais_livraison|floatformat:0 }} Ar
+              {% else %}
+                Gratuit
+              {% endif %}
+            </span>
+          </p>
+          <div class="line-4"></div>
+          <p><strong>Total :</strong> <span>{{ totals.total|floatformat:0 }} Ar</span></p>
+          <p><strong>Articles :</strong> <span>{{ totals.quantite_totale }}</span></p>
+        </div>
+      </div>
+      
+      <div class="rectangle-droite">
+        <div class="payement-info">Informations de paiement</div>
+        <div class="methoses-de-payements">Méthodes de paiement</div>
+        <form class="payment-options" id="payment-options-form">
+        <div id="payment-methods-container">
+            <!-- Les options de paiement seront injectées ici -->
+        </div>
+          
+          <div class="pickup-section">
+            <div class="pickup-title">Point de récupération</div>
+            <select class="pickup-dropdown" id="point_recuperation" name="pickup-point" required>
+              <option value="">Choisir un point de récupération</option>
+              {% for point in points_recuperation %}
+              <option value="{{ point.id }}">{{ point.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <button type="button" class="btn-valider-paiement" onclick="submitOrder()">Valider la commande</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-cart">
+      <h2>Votre panier est vide</h2>
+      <p>Parcourez notre menu et ajoutez des plats à votre panier.</p>
+      <a href="{% url 'restaurant_list' %}">Voir les restaurants</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    let panierModifications = {};
+
+    function changeQuantity(itemId, delta) {
+      const quantiteElement = document.getElementById(`quantite-${itemId}`);
+      let currentQuantity = parseInt(quantiteElement.textContent);
+      let newQuantity = currentQuantity + delta;
+      if (newQuantity < 1) newQuantity = 1;
+
+      quantiteElement.textContent = newQuantity;
+      panierModifications[itemId] = newQuantity;
+      
+      // Update the cart via AJAX
+      updateCart();
+    }
+
+    function removeFromPanier(itemId) {
+      // AJAX call to remove item
+      fetch(`/api/panier/supprimer/${itemId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload(); // Refresh to show updated cart
+        }
+      });
+    }
+
+    function updateCart() {
+    // Pour chaque modification de quantité, on appelle l'endpoint update_quantity
+        const updates = Object.entries(panierModifications).map(([itemId, quantite]) => {
+            return fetch(`/api/panier/update/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ quantite: quantite })
+            })
+            .then(response => response.json());
+        });
+
+        Promise.all(updates).then(results => {
+            // Si au moins une mise à jour a réussi, on rafraîchit la page ou on met à jour les totaux
+            let success = results.some(r => r.success);
+            if (success) {
+            location.reload(); // Ou tu peux mettre à jour les totaux dynamiquement ici
+            } else {
+            alert('Erreur lors de la mise à jour du panier.');
+            }
+        });
+    }
+
+    function submitOrder() {
+      const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+      const pickupPoint = document.getElementById('point_recuperation').value;
+    
+      if (!pickupPoint) {
+        alert('Veuillez sélectionner un point de récupération');
+        return;
+      }
+      if (!paymentMethod) {
+        alert('Veuillez sélectionner un méthode de paiement');
+        return;
+      }
+      // AJAX call to finalize the order
+      fetch('/api/panier/valider/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          mode_paiement_id: paymentMethod,
+          point_recup_id: pickupPoint
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/panier/';
+        } else {
+          alert('Erreur lors de la commande: ' + data.message);
+        }
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Charger dynamiquement les modes de paiement
+        fetch('/api/panier/modes-paiement/')
+            .then(response => response.json())
+            .then(data => {
+            if (data.success && Array.isArray(data.modes)) {
+                const container = document.getElementById('payment-methods-container');
+                container.innerHTML = '';
+                data.modes.forEach((mode, idx) => {
+                const id = `mode-paiement-${mode.id}`;
+                const checked = idx === 0 ? 'checked' : '';
+                container.innerHTML += `
+                    <div class="payment-option">
+                    <input type="radio" id="${id}" name="payment-method" value="${mode.id}" ${checked}>
+                    <label for="${id}">
+                        <span>${mode.nom}</span>
+                    </label>
+                    </div>
+                `;
+                });
+            } else {
+                document.getElementById('payment-methods-container').innerHTML = '<div style="color:red;">Aucun mode de paiement disponible</div>';
+            }
+            })
+            .catch(() => {
+            document.getElementById('payment-methods-container').innerHTML = '<div style="color:red;">Erreur lors du chargement des modes de paiement</div>';
+            });
+        });
+    // Hamburger menu functionality
+    document.getElementById('menu-toggle').addEventListener('click', function(e) {
+      e.stopPropagation();
+      const menu = document.getElementById('hamburger-menu');
+      menu.classList.toggle('active');
+    });
+
+    document.querySelectorAll('.has-submenu').forEach(item => {
+      item.addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('arrow')) {
+          this.classList.toggle('open');
+          e.preventDefault();
+        }
+      });
+    });
+
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('hamburger-menu');
+      if (menu && menu.classList.contains('active')) {
+        if (!menu.contains(e.target) && e.target.id !== 'menu-toggle') {
+          menu.classList.remove('active');
+        }
+      }
+      
+      document.querySelectorAll('.has-submenu.open').forEach(function(item) {
+        if (!item.contains(e.target)) {
+          item.classList.remove('open');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

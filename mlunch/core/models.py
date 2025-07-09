@@ -67,6 +67,7 @@ class StatutRestaurant(models.Model):
 
 class Restaurant(models.Model):
     nom = models.CharField(max_length=150, unique=True)
+    mot_de_passe = models.CharField(max_length=128)
     adresse = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     image = models.TextField(blank=True, null=True)
@@ -94,7 +95,15 @@ class Repas(models.Model):
     prix = models.IntegerField()
     def __str__(self):
         return self.nom
+    
+class DisponibiliteRepas(models.Model):
+    repas = models.ForeignKey('Repas', on_delete=models.CASCADE, related_name='disponibilites')
+    est_dispo = models.BooleanField(default=True)
+    mis_a_jour_le = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"{self.repas} - {'Disponible' if self.est_dispo else 'Indisponible'} ({self.mis_a_jour_le})"
+    
 class StatutLivreur(models.Model):
     appellation = models.CharField(max_length=100, blank=True, null=True)
     def __str__(self):
@@ -104,6 +113,7 @@ class Livreur(models.Model):
     nom = models.CharField(max_length=100, unique=True)
     contact = models.TextField(blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
+    geo_position = models.CharField(max_length=100, blank=True, null=True, default="0,0", help_text="Format: latitude,longitude")
     date_inscri = models.DateTimeField(default=now)
     def __str__(self):
         return self.nom
@@ -197,7 +207,63 @@ class LimiteCommandesJournalieres(models.Model):
     date = models.DateField()
 
 class ModePaiement(models.Model):
-    nom = models.CharField(max_length=100, unique=True)
+    nom = models.CharField(max_length=150)
     def __str__(self):
         return self.nom
 
+class StatutEntite(models.Model):
+    appellation = models.CharField(max_length=100)
+    def __str__(self):
+        return self.appellation
+
+class Entite(models.Model):
+    nom = models.CharField(max_length=100)
+    def __str__(self):
+        return self.nom
+
+class HistoriqueStatutEntite(models.Model):
+    entite = models.ForeignKey('Entite', on_delete=models.CASCADE, related_name='historiques')
+    statut = models.ForeignKey('StatutEntite', on_delete=models.CASCADE)
+    mis_a_jour_le = models.DateTimeField(default=now)
+    def __str__(self):
+        return f"{self.entite} - {self.statut} ({self.mis_a_jour_le})"
+
+class ReferenceZoneEntite(models.Model):
+    zone = models.ForeignKey('Zone', on_delete=models.CASCADE)
+    entite = models.ForeignKey('Entite', on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('zone', 'entite')
+
+class CommandePaiement(models.Model):
+    paiement = models.ForeignKey('ModePaiement', on_delete=models.CASCADE)
+    ajouter_le = models.DateTimeField(default=now)
+    def __str__(self):
+        return f"Paiement {self.paiement} - {self.ajouter_le}"
+
+class HistoriqueZonesRecuperation(models.Model):
+    zone = models.ForeignKey('Zone', on_delete=models.CASCADE, related_name='historiques_recuperation')
+    point_recup = models.ForeignKey('PointRecup', on_delete=models.CASCADE)
+    mis_a_jour_le = models.DateTimeField(default=now)
+    def __str__(self):
+        return f"{self.zone} - {self.point_recup} ({self.mis_a_jour_le})"
+
+class SuivisCommande(models.Model):
+    commande = models.ForeignKey('Commande', on_delete=models.CASCADE, related_name='suivis_commandes')
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='suivis_commandes')
+    statut = models.BooleanField(default=False) 
+    mis_a_jour_le = models.DateTimeField(default=now)
+
+    class Meta:
+        unique_together = ('commande', 'restaurant', 'mis_a_jour_le')
+        ordering = ['-mis_a_jour_le']
+
+    def __str__(self):
+        return f"Commande {self.commande.id} - {self.restaurant.nom} : {self.statut} ({self.mis_a_jour_le})"
+
+class Admin(models.Model):
+    nom = models.CharField(max_length=100, unique=True)
+    mot_de_passe = models.CharField(max_length=128)
+    date_inscri = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.nom

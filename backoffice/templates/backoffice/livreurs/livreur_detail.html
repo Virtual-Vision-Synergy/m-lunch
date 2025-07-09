@@ -1,0 +1,128 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Détails du livreur {{ livreur.nom }} - M'Lunch{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header-orange {
+        background: var(--primary-orange) !important;
+        color: white !important;
+    }
+
+    .badge-orange {
+        background: var(--primary-orange);
+        color: white;
+    }
+
+    .badge-orange-light {
+        background: var(--light-orange);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header card-header-orange">
+                <h4 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    Détails du livreur
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5>Informations personnelles</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Nom:</strong></td>
+                                <td>{{ livreur.nom }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contact:</strong></td>
+                                <td>{{ livreur.contact|default:"Non renseigné" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Secteur:</strong></td>
+                                <td><span class="badge badge-orange-light">{{ livreur.secteur }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Statut:</strong></td>
+                                <td>
+                                    {% if livreur.statut == 'Actif' %}
+                                        <span class="badge bg-success">{{ livreur.statut }}</span>
+                                    {% elif livreur.statut == 'Inactif' %}
+                                        <span class="badge bg-secondary">{{ livreur.statut }}</span>
+                                    {% else %}
+                                        <span class="badge badge-orange">{{ livreur.statut }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date d'inscription:</strong></td>
+                                <td>{{ livreur.date_inscri|date:"d/m/Y" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5>Livraisons</h5>
+                        {% if livreur.livraisons %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Commande</th>
+                                            <th>Statut</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for livraison in livreur.livraisons %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'livraison_detail' livraison.id %}">
+                                                        #{{ livraison.commande_id }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    {% if livraison.statut == 'Livrée' %}
+                                                        <span class="badge badge-sm bg-success">{{ livraison.statut }}</span>
+                                                    {% elif livraison.statut == 'En cours' %}
+                                                        <span class="badge badge-sm badge-orange">{{ livraison.statut }}</span>
+                                                    {% else %}
+                                                        <span class="badge badge-sm badge-orange-light">{{ livraison.statut }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ livraison.attribue_le|date:"d/m" }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Aucune livraison assignée</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Retour au dashboard
+                    </a>
+                    <div>
+                        <a href="{% url 'livreur_assigner_commande' livreur.id %}" class="btn btn-success me-2">
+                            <i class="fas fa-plus me-1"></i>Assigner une commande
+                        </a>
+                        <a href="{% url 'livreur_edit' livreur.id %}" class="btn btn-orange">
+                            <i class="fas fa-edit me-1"></i>Modifier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

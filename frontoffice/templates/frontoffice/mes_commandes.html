@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Commandes - M'Lunch</title>
+    <link rel="stylesheet" href="{% static 'css/header.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/mes_commandes.css' %}" />
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="site-header">
+  <div class="overlap-wrapper">
+    <div class="overlap-2">
+      <div class="group-8">
+        <div class="overlap-group-3">
+          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <div class="group-11">
+            <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
+            <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
+            <a href="{% url 'restaurant_list' %}" class="text-wrapper-12">Restaurant</a>
+            <a href="#about" class="text-wrapper-12">A propos</a>
+          </div>
+          <div class="icons-right">
+            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+
+            <nav id="hamburger-menu" class="hamburger-menu">
+              <ul>
+                <li class="has-submenu">
+                  <a href="#">Commande <span class="arrow">&#x2304;</span></a>
+                  <ul class="submenu">
+                    <li><a href="en_cours.html">En Cours</a></li>
+                    <li><a href="historique.html">Historique</a></li>
+                  </ul>
+                </li>
+                <li><a href="panier.html">Panier</a></li>
+                <li><a href="#about">A propos</a></li>
+                <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+    <div class="container">
+        <h2>Mes commandes passées</h2>
+        <table>
+            <tr>
+                <th>Référence</th>
+                <th>Date</th>
+                <th>Articles</th>
+                <th>Total</th>
+                <th>Statut</th>
+                <th></th>
+            </tr>
+            {% for c in commandes %}
+            <tr>
+                <td class="order-id">#{{ c.commande.id }}</td>
+                <td>{{ c.commande.cree_le|date:"d/m/Y H:i" }}</td>
+                <td>{{ c.articles }}</td>
+                <td class="order-total">{{ c.total }} Ar</td>
+                <td>
+                  <span class="order-status {% if c.statut == 'Livré' %}status-livre{% elif c.statut == 'Annulé' %}status-annule{% else %}status-en-cours{% endif %}">
+                    {{ c.statut }}
+                  </span>
+                </td>
+                <td><a href="{% url 'detail_commande' c.commande.id %}" class="details-link">Voir détails</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <script>
+        // Hamburger menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const hamburgerMenu = document.getElementById('hamburger-menu');
+            const submenuParents = document.querySelectorAll('.has-submenu');
+            menuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                hamburgerMenu.classList.toggle('active');
+            });
+            document.addEventListener('click', function(e) {
+                if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
+                    hamburgerMenu.classList.remove('active');
+                }
+            });
+            submenuParents.forEach(function(parent) {
+                parent.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    parent.classList.toggle('open');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

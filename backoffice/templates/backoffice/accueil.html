@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Statistique</title>
+</head>
+<body>
+    {% extends 'backoffice/base.html' %}
+
+    {% block title %}Accueil - M'Lunch Backoffice{% endblock %}
+
+    {% block page_title %}Bienvenue Admin{% endblock %}
+
+    {% block page_subtitle %}Vue d'ensemble et gestion des commandes{% endblock %}
+
+    {% block content %}
+    <div class="filters-section mb-4">
+        <div class="filters-title">Filtrer par statut</div>
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <select name="statut" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tous les statuts --</option>
+                    {% for statut in statuts %}
+                        <option value="{{ statut.appellation }}" {% if request.GET.statut == statut.appellation %}selected{% endif %}>
+                            {{ statut.appellation }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">Liste des commandes</div>
+        <table class="table custom-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Point de récupération</th>
+                    <th>Date/Heure</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for commande in commandes %}
+                <tr>
+                    <td>{{ commande.client }}</td>
+                    <td>{{ commande.point_recup }}</td>
+                    <td>{{ commande.cree_le }}</td>
+                    <td>{{ commande.statut }}</td>
+                    <td>
+                        {% if commande.statut == "En livraison" %}
+                        <a href="{% url 'commande_attribuer' commande.id %}" class="btn-attribuer">
+                            Attribuer
+                        </a>
+                        {% else %}
+                        <!-- Rien à afficher -->
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center">Aucune commande trouvée.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %}
+</body>
+</html>

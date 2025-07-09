@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription - M'Lunch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/inscription.css' %}">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+</head>
+
+<body>
+<div class="max-container">
+  <div class="inscription-container">
+    <div class="header">
+      <div class="welcome">Welcome to</div>
+      <div class="title">M'Lunch</div>
+    </div>
+
+    {% if erreur %}
+    <div class="error-message">{{ erreur }}</div>
+    {% endif %}
+
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label for="prenom">Prénom</label>
+          <div class="input-wrapper">
+            <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nom">Nom</label>
+          <div class="input-wrapper">
+            <input type="text" id="nom" name="nom" placeholder="Votre nom" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <div class="input-wrapper">
+          <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+        </div>
+      </div>
+
+      <div class="form-group password-wrapper">
+        <label for="mot_de_passe">Mot de passe</label>
+        <div class="input-wrapper">
+          <input type="password" id="mot_de_passe" name="mot_de_passe" placeholder="••••••••" required>
+          <i class="fa-solid fa-eye-slash toggle-password" aria-label="Afficher le mot de passe"></i>
+        </div>
+      </div>
+
+      <div class="form-group password-wrapper">
+        <label for="confirm_password">Confirmation du mot de passe</label>
+        <div class="input-wrapper">
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+          <i class="fa-solid fa-eye-slash toggle-password" aria-label="Afficher le mot de passe"></i>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telephone">Contact</label>
+          <div class="input-wrapper">
+            <input type="tel" id="telephone" name="telephone" placeholder="Votre numéro">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="secteur">Secteur</label>
+          <div class="input-wrapper">
+            <input type="text" id="secteur" name="secteur" class="sector-input" readonly placeholder="Cliquez sur la carte pour choisir" required>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">Valider l'inscription</button>
+    </form>
+    <div class="already-account">
+      <a href="{% url 'connexion' %}">Déjà un compte&nbsp;?</a>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <h4 class="map-title">Sélectionnez votre secteur sur la carte</h4>
+    <div id="map"></div>
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Password toggle
+    document.querySelectorAll('.toggle-password').forEach(icon => {
+      icon.addEventListener('click', function() {
+        const input = this.parentElement.querySelector('input');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        this.classList.toggle('fa-eye-slash');
+        this.classList.toggle('fa-eye');
+      });
+    });
+
+    // Initialize map - wait a moment to ensure container is rendered
+    setTimeout(() => {
+      const map = L.map('map', {
+        preferCanvas: true
+      }).setView([-18.8792, 47.5079], 13);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      
+      // Add geocoder control
+      L.Control.geocoder({
+        defaultMarkGeocode: false
+      }).on('markgeocode', function(e) {
+        map.setView(e.geocode.center, 15);
+        updateSector(e.geocode.center.lat, e.geocode.center.lng);
+      }).addTo(map);
+
+      let marker;
+      map.on('click', function(e) {
+        updateSector(e.latlng.lat, e.latlng.lng);
+      });
+
+      function updateSector(lat, lng) {
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map);
+        
+        fetch(`/api/zone-from-coord/?lat=${lat}&lon=${lng}`)
+          .then(response => response.json())
+          .then(data => {
+            const secteurInput = document.getElementById('secteur');
+            if (data.success) {
+              secteurInput.value = data.nom;
+              showToast(`Zone sélectionnée : ${data.nom}`, 'success');
+            } else {
+              secteurInput.value = '';
+              showToast("Aucune zone de livraison à proximité", 'danger');
+            }
+          });
+      }
+    }, 100);
+
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  });
+</script>
+</body>
+</html>

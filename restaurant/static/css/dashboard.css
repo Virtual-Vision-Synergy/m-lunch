@@ -1,0 +1,572 @@
+:root {
+    --primary-color: #C64304;
+    --primary-dark: #A53703;
+    --text-color: #2E2E2E;
+    --light-gray: #F5F5F5;
+    --border-color: #E0E0E0;
+    --white: #FFFFFF;
+    --error-color: #E74C3C;
+    --success-color: #2ECC71;
+    --warning-color: #F39C12;
+    --info-color: #3498DB;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.header {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.logout-btn {
+    background-color: var(--primary-dark);
+    color: var(--white);
+    padding: 0.7rem 1.5rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background-color: #8C2B0E;
+    transform: translateY(-2px);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+}
+
+.welcome-card {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2.5rem;
+}
+
+.welcome-card > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.welcome-card h2 {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 0;
+    font-weight: 600;
+}
+
+/* Nouveau conteneur flex pour boutons Modifier et Désactiver */
+.welcome-card > div:first-child > div {
+    display: flex;
+    gap: 0.8rem;
+}
+
+/* Bouton modifier en contour */
+.btn-outline {
+    background-color: transparent;
+    color: var(--primary-color);
+    padding: 0.8rem 1.8rem;
+    text-decoration: none;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background-color: var(--error-color);
+    color: white;
+    padding: 0.8rem 1.8rem;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.8rem 1.8rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary.secondary {
+    background-color: #777;
+}
+
+/* Bouton secondaire dans tableau */
+.btn-secondary {
+    background-color: #3478f6; /* Bleu moyen */
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(52, 120, 246, 0.4);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background-color: #2a62c4; /* Bleu un peu plus foncé */
+    box-shadow: 0 6px 12px rgba(42, 98, 196, 0.6);
+    transform: translateY(-2px);
+}
+
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background: var(--white);
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card h3 {
+    margin-top: 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.section-title {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+/* Section des plats */
+.plats-section {
+    margin-bottom: 3rem;
+}
+
+.plats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.plat-card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.plat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.plat-image-container {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.plat-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.plat-card:hover .plat-image {
+    transform: scale(1.05);
+}
+
+.plat-image-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--light-gray);
+    color: #999;
+    font-size: 3rem;
+}
+
+.plat-info {
+    padding: 1.5rem;
+}
+
+.plat-info h4 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.plat-type {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 0.8rem;
+}
+
+.plat-description {
+    margin: 0.8rem 0;
+    color: #555;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.plat-prix {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 1rem 0;
+}
+
+/* Toggle de disponibilité */
+.plat-disponibilite {
+    display: flex;
+    align-items: center;
+    margin-top: 1.2rem;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.disponibilite-text {
+    margin-left: 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.disponibilite-text.disponible {
+    color: var(--success-color);
+}
+
+.disponibilite-text.indisponible {
+    color: var(--error-color);
+}
+
+/* Styles pour le toggle désactivé temporairement */
+.toggle-switch input:disabled + .slider {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.commandes-section {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 3rem;
+    width:120%
+}
+
+.commandes-table-container {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.commandes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.commandes-table th,
+.commandes-table td {
+    padding: 1.2rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.commandes-table th {
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.commandes-table tr:hover {
+    background-color: rgba(198, 67, 4, 0.03);
+}
+
+/* Badges de statut */
+.badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: white;
+}
+
+.badge-en-cours {
+    background-color: var(--warning-color);
+}
+
+.badge-terminee {
+    background-color: var(--success-color);
+}
+
+.badge-annulee {
+    background-color: var(--error-color);
+}
+
+.badge-prete {
+    background-color: var(--info-color);
+}
+
+/* Boutons dans tableau */
+.btn-detail {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    cursor: pointer;
+    border: none;
+    margin-right: 0.5rem;
+}
+
+.btn-detail:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Messages */
+.messages {
+    margin-bottom: 2rem;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.alert-error {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: var(--error-color);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+/* États vides */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    background-color: rgba(245, 245, 245, 0.5);
+    border-radius: 12px;
+    margin: 2rem 0;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header {
+        padding: 1.2rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .container {
+        padding: 0 1.2rem;
+    }
+    
+    .welcome-card,
+    .commandes-section {
+        padding: 1.8rem;
+    }
+    
+    .plats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .commandes-table th,
+    .commandes-table td {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+.btn-desactiver {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+    margin-left: 0.5rem;
+}
+.btn-desactiver:hover, .btn-desactiver:focus {
+    background-color: #c0392b;
+    outline: none;
+}
+
+.badge-statut {
+    display: inline-block;
+    padding: 0.3em 1.1em;
+    border-radius: 1em;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.7em;
+    margin-left: 0.5em;
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+}
+.badge-statut.actif {
+    background: #eafaf1;
+    color: #27ae60;
+    border: 1.5px solid #27ae60;
+}
+.badge-statut.inactif {
+    background: #fbeaea;
+    color: #e74c3c;
+    border: 1.5px solid #e74c3c;
+}
+
+.btn-outline,
+.btn-danger {
+    padding: 0.8rem 1.8rem;
+    height: 48px;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}

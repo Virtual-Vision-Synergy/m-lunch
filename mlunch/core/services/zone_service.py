@@ -1,9 +1,7 @@
 import pdb
 from shapely import wkt
 from shapely.geometry import Point
-from django.db import transaction
-from django.utils.timezone import now
-from datetime import datetime
+
 
 from ..models import Zone, StatutZone, HistoriqueStatutZone
 
@@ -11,7 +9,7 @@ from ..models import Zone, StatutZone, HistoriqueStatutZone
 class ZoneService:
     @staticmethod
     def create_zone(nom, description, coordinates, initial_statut_id):
-        pdb.set_trace()
+
         from django.db import transaction
         if not nom or len(nom) > 100 or not nom.strip():
             return {"error": "Nom de zone invalide"}
@@ -53,8 +51,8 @@ class ZoneService:
             return {"error": f"Erreur lors de la création de la zone : {str(e)}"}
 
     @staticmethod
-    def get_zone_by_coord(lat, lon, max_distance_m=5000):
-        pdb.set_trace()
+    def get_zone_by_coord(lat, lon, max_distance_m=3500):
+        #pdb.set_trace()
         """
         Retourne la zone contenant ou la plus proche (à < max_distance_m) d'un point (lat, lon).
         """
@@ -66,7 +64,7 @@ class ZoneService:
                 poly = wkt.loads(zone.zone)
                 if poly.contains(point):
                     return {'id': zone.id, 'nom': zone.nom}
-                dist = poly.distance(point) * 111320  # deg -> m (approx)
+                dist = poly.distance(point) * 111320
                 if closest_dist is None or dist < closest_dist:
                     closest_zone = zone
                     closest_dist = dist
@@ -78,7 +76,7 @@ class ZoneService:
 
     @staticmethod
     def list_zones_actives():
-        pdb.set_trace()
+
         """Liste toutes les zones actives (dernier statut = actif)."""
         try:
             actifs = []
@@ -104,3 +102,30 @@ class ZoneService:
             return list(Zone.objects.values('id', 'nom', 'description', 'zone'))
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des zones : {str(e)}"}
+
+    @staticmethod
+    def get_zones_by_coord(lat, lon, max_distance_m=3500):
+        """
+        Retourne TOUTES les zones qui contiennent un point (lat, lon) ou sont à proximité.
+        Utile pour récupérer tous les livreurs disponibles dans plusieurs zones qui se chevauchent.
+        """
+        point = Point(float(lon), float(lat))
+        zones_found = []
+
+        for zone in Zone.objects.all():
+            try:
+                poly = wkt.loads(zone.zone)
+                # Si le point est dans la zone
+                if poly.contains(point):
+                    zones_found.append({'id': zone.id, 'nom': zone.nom, 'distance': 0})
+                else:
+                    # Calculer la distance en mètres
+                    dist = poly.distance(point) * 111320
+                    if dist <= max_distance_m:
+                        zones_found.append({'id': zone.id, 'nom': zone.nom, 'distance': dist})
+            except Exception:
+                continue
+
+        # Trier par distance (zones contenant le point en premier)
+        zones_found.sort(key=lambda x: x['distance'])
+        return zones_found

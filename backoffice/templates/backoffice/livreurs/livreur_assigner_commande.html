@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assigner une commande - M'Lunch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% block extra_css %}
+    <style>
+        .card-header-orange {
+            background: var(--primary-orange) !important;
+            color: white !important;
+        }
+
+        .alert-orange {
+            background-color: rgba(204, 85, 0, 0.1);
+            border: 1px solid var(--light-orange);
+            color: var(--dark-orange);
+        }
+
+        .commande-card {
+            border: 2px solid #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 15px;
+        }
+
+        .commande-card:hover {
+            border-color: var(--primary-orange);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(204, 85, 0, 0.15);
+        }
+
+        .commande-card.selected {
+            border-color: var(--primary-orange);
+            background-color: rgba(204, 85, 0, 0.05);
+        }
+
+        .distance-info {
+            margin-top: 10px;
+            padding: 10px;
+            border-top: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .distance-total {
+            font-weight: bold;
+            color: var(--primary-orange);
+        }
+
+        .distance-details, .temps-estime {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .distance-error {
+            color: #dc3545;
+            font-size: 14px;
+        }
+
+        .radio-input {
+            display: none;
+        }
+
+        .btn-confirm-assign {
+            background: var(--primary-orange);
+            border: 1px solid var(--primary-orange);
+            color: white;
+        }
+
+        .btn-confirm-assign:hover {
+            background: var(--dark-orange);
+            border: 1px solid var(--dark-orange);
+            color: white;
+        }
+    </style>
+    {% endblock %}
+</head>
+<body>
+    {% block content %}
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header card-header-orange">
+                        <h4 class="mb-0">
+                            <i class="fas fa-user-check me-2"></i>
+                            Assigner une commande au livreur {{ livreur.nom }}
+                        </h4>
+                        <p class="text-white-50 mb-0 mt-2">Sélectionnez une commande à attribuer</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Informations du livreur -->
+                        <div class="alert alert-orange">
+                            <h5><i class="fas fa-user me-2"></i>Livreur sélectionné</h5>
+                            <p><strong>Nom :</strong> {{ livreur.nom }}</p>
+                            <p><strong>Contact :</strong> {{ livreur.contact|default:"Non défini" }}</p>
+                            <p class="mb-0"><strong>Statut :</strong> <span class="badge bg-success">{{ livreur.statut.appellation }}</span></p>
+                        </div>
+
+                        {% if commandes_avec_distance %}
+                            <form method="post" action="{% url 'livreur_assigner_commande_confirmer' livreur.id %}">
+                                {% csrf_token %}
+
+                                <div class="mb-3">
+                                    <h5><i class="fas fa-list me-2"></i>Commandes prêtes ({{ commandes_avec_distance|length }})</h5>
+                                    <p class="text-muted">Triées par distance croissante</p>
+                                </div>
+
+                                {% for item in commandes_avec_distance %}
+                                    <div class="commande-card" onclick="selectCommande({{ item.commande.id }})">
+                                        <input type="radio" name="commande_id" value="{{ item.commande.id }}" id="commande_{{ item.commande.id }}" class="radio-input">
+
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <h6 class="mb-2">Commande #{{ item.commande.id }}</h6>
+                                                <p class="mb-1"><strong>Client :</strong> {{ item.commande.client }}</p>
+                                                <p class="mb-1"><strong>Restaurant :</strong> {{ item.commande.restaurant }}</p>
+                                                <p class="mb-1"><strong>Secteur :</strong> {{ item.commande.secteur }}</p>
+                                                <p class="mb-1"><strong>Date/Heure :</strong> {{ item.commande.date_heure_commande|date:"d/m/Y H:i" }}</p>
+                                                <p class="mb-1"><strong>Repas :</strong> {{ item.commande.nombre_repas }}</p>
+                                                <p class="mb-0"><strong>Prix total :</strong> {{ item.commande.prix_total }} Ar</p>
+                                            </div>
+                                            <div class="col-md-4">
+                                                {% if item.error %}
+                                                    <div class="distance-error">
+                                                        <i class="fas fa-exclamation-triangle"></i> {{ item.error }}
+                                                    </div>
+                                                {% else %}
+                                                    <div class="distance-info">
+                                                        <div class="distance-total">
+                                                            <i class="fas fa-route"></i> {{ item.distance_totale|floatformat:2 }} km
+                                                        </div>
+                                                        <div class="temps-estime">
+                                                            <i class="fas fa-clock"></i> ~{{ item.temps_estime|floatformat:0 }} min
+                                                        </div>
+                                                        {% if item.nombre_restaurants > 1 %}
+                                                            <div class="distance-details">
+                                                                <i class="fas fa-store"></i> {{ item.nombre_restaurants }} restaurants
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                                <div class="mt-4 text-center">
+                                    <button type="submit" class="btn btn-confirm-assign btn-lg me-3">
+                                        <i class="fas fa-check"></i> Confirmer l'attribution
+                                    </button>
+                                    <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary btn-lg">
+                                        <i class="fas fa-times"></i> Annuler
+                                    </a>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning text-center">
+                                <h5><i class="fas fa-exclamation-triangle me-2"></i>Aucune commande prête</h5>
+                                <p class="mb-0">Il n'y a actuellement aucune commande prête à être assignée.</p>
+                                <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-orange mt-3">
+                                    <i class="fas fa-arrow-left me-1"></i>Retour au dashboard
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block extra_js %}
+    <script>
+    function selectCommande(commandeId) {
+        // Désélectionner toutes les cartes
+        document.querySelectorAll('.commande-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Sélectionner la carte cliquée
+        const selectedCard = document.querySelector(`#commande_${commandeId}`).closest('.commande-card');
+        selectedCard.classList.add('selected');
+
+        // Cocher le radio button
+        document.querySelector(`#commande_${commandeId}`).checked = true;
+    }
+    </script>
+    {% endblock %}
+</body>
+</html>
+
+<!-- Template obsolète - Remplacé par backoffice/livreur_assigner_commande.html -->
+<!-- Toutes les références à livreurs_list ont été mises à jour -->

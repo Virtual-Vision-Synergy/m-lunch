@@ -1,0 +1,257 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Créer une Zone - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-map-marked-alt me-2"></i>Créer une nouvelle zone</h2>
+    <a href="{% url 'zone_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Retour à la liste
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-form me-2"></i>Informations de la zone</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="zoneForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nom" class="form-label">Nom de la zone *</label>
+                        <input type="text" class="form-control" id="nom" name="nom" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Description optionnelle de la zone"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Coordonnées</label>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Dessinez la zone sur la carte (minimum 3 points)
+                        </div>
+                        <div id="coordinates-info" class="mt-2">
+                            <span class="badge bg-secondary" id="points-count">0 points</span>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="coordinates" name="coordinates">
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i class="fas fa-save me-1"></i>Créer la zone
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" id="clearBtn">
+                            <i class="fas fa-eraser me-1"></i>Effacer le dessin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Instructions</h6>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li>Cliquez sur la carte pour placer des points</li>
+                    <li>Minimum 3 points requis</li>
+                    <li>Double-cliquez pour terminer le polygone</li>
+                    <li>Le rayon de couverture est de 3.5km depuis le centre</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map me-2"></i>Dessiner la zone sur la carte</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" style="height: 500px; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<style>
+    .zone-polygon {
+        stroke: #28a745;
+        stroke-width: 3;
+        stroke-opacity: 0.8;
+        fill: #28a745;
+        fill-opacity: 0.3;
+    }
+    .center-circle {
+        stroke: #dc3545;
+        stroke-width: 2;
+        fill: #dc3545;
+        fill-opacity: 0.1;
+    }
+    .coverage-circle {
+        stroke: #ffc107;
+        stroke-width: 2;
+        stroke-dasharray: 5, 5;
+        fill: none;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script>
+    // Initialisation de la carte
+    const map = L.map('map').setView([-18.8792, 47.5079], 12); // Antananarivo
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Variables pour le dessin
+    let currentPolygon = null;
+    let currentPoints = [];
+    let centerMarker = null;
+    let coverageCircle = null;
+
+    // Fonction pour calculer le centre d'un polygone
+    function calculateCenter(points) {
+        let latSum = 0, lngSum = 0;
+        points.forEach(point => {
+            latSum += point.lat;
+            lngSum += point.lng;
+        });
+        return {
+            lat: latSum / points.length,
+            lng: lngSum / points.length
+        };
+    }
+
+    // Fonction pour mettre à jour l'affichage
+    function updateDisplay() {
+        const pointsCount = currentPoints.length;
+        document.getElementById('points-count').textContent = `${pointsCount} point${pointsCount > 1 ? 's' : ''}`;
+
+        const submitBtn = document.getElementById('submitBtn');
+        if (pointsCount >= 3) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('btn-secondary');
+            submitBtn.classList.add('btn-primary');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-secondary');
+        }
+
+        // Mettre à jour le champ caché
+        document.getElementById('coordinates').value = JSON.stringify(currentPoints);
+
+        // Calculer et afficher le centre + rayon de 3.5km
+        if (pointsCount >= 3) {
+            const center = calculateCenter(currentPoints);
+
+            // Marker pour le centre
+            if (centerMarker) {
+                map.removeLayer(centerMarker);
+            }
+            centerMarker = L.marker([center.lat, center.lng], {
+                icon: L.divIcon({
+                    className: 'center-marker',
+                    html: '<div style="background: #dc3545; border: 2px solid white; border-radius: 50%; width: 12px; height: 12px;"></div>',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                })
+            }).addTo(map);
+
+            // Cercle de couverture de 3.5km
+            if (coverageCircle) {
+                map.removeLayer(coverageCircle);
+            }
+            coverageCircle = L.circle([center.lat, center.lng], {
+                radius: 3500, // 3.5km
+                className: 'coverage-circle',
+                color: '#ffc107',
+                fillOpacity: 0
+            }).addTo(map);
+        }
+    }
+
+    // Gestion des clics sur la carte
+    map.on('click', function(e) {
+        const point = {
+            lat: e.latlng.lat,
+            lng: e.latlng.lng
+        };
+
+        currentPoints.push(point);
+
+        // Redessiner le polygone
+        if (currentPolygon) {
+            map.removeLayer(currentPolygon);
+        }
+
+        if (currentPoints.length >= 3) {
+            currentPolygon = L.polygon(currentPoints.map(p => [p.lat, p.lng]), {
+                className: 'zone-polygon',
+                color: '#28a745'
+            }).addTo(map);
+        } else if (currentPoints.length === 2) {
+            // Ligne temporaire pour 2 points
+            currentPolygon = L.polyline(currentPoints.map(p => [p.lat, p.lng]), {
+                color: '#28a745',
+                dashArray: '5, 5'
+            }).addTo(map);
+        } else {
+            // Point unique
+            currentPolygon = L.marker([point.lat, point.lng]).addTo(map);
+        }
+
+        updateDisplay();
+    });
+
+    // Bouton pour effacer
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        currentPoints = [];
+        if (currentPolygon) {
+            map.removeLayer(currentPolygon);
+            currentPolygon = null;
+        }
+        if (centerMarker) {
+            map.removeLayer(centerMarker);
+            centerMarker = null;
+        }
+        if (coverageCircle) {
+            map.removeLayer(coverageCircle);
+            coverageCircle = null;
+        }
+        updateDisplay();
+    });
+
+    // Validation du formulaire
+    document.getElementById('zoneForm').addEventListener('submit', function(e) {
+        if (currentPoints.length < 3) {
+            e.preventDefault();
+            alert('Vous devez définir au minimum 3 points pour créer une zone.');
+            return false;
+        }
+
+        const nom = document.getElementById('nom').value.trim();
+        if (!nom) {
+            e.preventDefault();
+            alert('Le nom de la zone est requis.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

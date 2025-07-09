@@ -8,18 +8,22 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
+
 """
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal311.dll'
 GEOS_LIBRARY_PATH=r'C:\OSGeo4W\bin\geos_c.dll'
+
+env_path = BASE_DIR / '.env'
+# Charge explicitement le .env
+load_dotenv(dotenv_path=env_path, override=True)
+# Load environment variables from .env file
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -44,6 +48,7 @@ INSTALLED_APPS = [
     'mlunch.core',
     'backoffice',
     'frontoffice',
+    'restaurant',
 ]
 
 MIDDLEWARE = [
@@ -86,7 +91,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', ''),
+        'PORT': os.getenv('DB_PORT', ''), 
     }
 }
 
@@ -126,7 +131,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'restaurant', 'static'),
+    os.path.join(BASE_DIR, 'frontoffice', 'static'),
+    os.path.join(BASE_DIR, 'backoffice', 'static'),
+]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
@@ -136,3 +146,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Make session expire when browser is closed
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Ensure the session cookie is marked as temporary
+SESSION_SAVE_EVERY_REQUEST = True  # Optional but recommended
+

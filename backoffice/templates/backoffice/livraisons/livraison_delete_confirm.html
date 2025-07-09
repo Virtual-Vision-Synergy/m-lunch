@@ -1,0 +1,44 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Confirmer l'annulation - M'Lunch{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-header card-header-orange">
+                <h4 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmer l'annulation
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-orange">
+                    <p><strong>Attention !</strong></p>
+                    <p>Êtes-vous sûr de vouloir annuler cette livraison ?</p>
+                    <p>Cette action ne peut pas être annulée.</p>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Livraison :</strong> #{{ livraison.id }}<br>
+                    <strong>Livreur :</strong> {{ livraison.livreur_nom }}<br>
+                    <strong>Commande :</strong> #{{ livraison.commande_id }}<br>
+                    <strong>Adresse :</strong> {{ livraison.adresse }}
+                </div>
+
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-cancel-delivery">
+                            <i class="fas fa-times me-1"></i>Annuler la livraison
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

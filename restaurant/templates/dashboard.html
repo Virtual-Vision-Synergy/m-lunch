@@ -1,0 +1,237 @@
+{% load static %}
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - {{ restaurant.nom }} - M'Lunch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+
+    <style>
+        
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>M'Lunch - Espace Restaurant</h1>
+        <a href="{% url 'restaurant_logout' %}" class="logout-btn">Déconnexion</a>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="welcome-card">
+            <div>
+                <h2>Bienvenue, {{ restaurant.nom }} !</h2>
+                <span class="badge-statut {% if statut_resto == 'actif' %}actif{% else %}inactif{% endif %}">
+                    {% if statut_resto == 'actif' %}Actif{% else %}Inactif{% endif %}
+                </span>
+                <div>
+                    <a href="{% url 'modifier_restaurant' %}" class="btn-outline">Modifier</a>
+                    <form method="POST" action="{% url 'changer-statut' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir changer le statut du restaurant ?')">
+                            Changer le statut
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <p><strong>Adresse :</strong> {{ restaurant.adresse|default:"Non renseignée" }}</p>
+            <p><strong>Description :</strong> {{ restaurant.description|default:"Aucune description" }}</p>
+            <p><strong>Position géographique :</strong> {{ restaurant.geo_position }}</p>
+        </div>
+
+        <div class="stats-grid">
+            
+            <div class="stat-card">
+                <h3>Commandes en cours</h3>
+                <div class="stat-value">{{ nombre_commandes }}</div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Plats disponibles</h3>
+                <div class="stat-value">{{ nombre_plats }}</div>
+            </div>
+        </div>
+
+        <!-- Section des plats -->
+        <div class="plats-section">
+            <h2 class="section-title">Mes plats</h2>
+            {% if plats_avec_dispo %}
+                <div class="plats-grid">
+                    {% for plat_info in plats_avec_dispo %}
+                        <div class="plat-card" data-repas-id="{{ plat_info.repas.id }}">
+                            <div class="plat-image-container">
+                                {% if plat_info.repas.image %}
+                                    <img src="/media/plats/{{ plat_info.repas.image }}" alt="{{ plat_info.repas.nom }}" class="plat-image">
+                                {% else %}
+                                    <div class="plat-image-placeholder">
+                                        <span>🍽️</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="plat-info">
+                                <h4>{{ plat_info.repas.nom }}</h4>
+                                <p class="plat-type">{{ plat_info.repas.type.nom }}</p>
+                                <p class="plat-description">{{ plat_info.repas.description|default:"Aucune description"|truncatewords:15 }}</p>
+                                <div class="plat-prix">{{ plat_info.repas.prix }} Ar</div>
+
+                                <!-- Toggle de disponibilité -->
+                                <div class="plat-disponibilite">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" {% if plat_info.est_disponible %}checked{% endif %} 
+                                               onchange="toggleDisponibilite({{ plat_info.repas.id }}, this)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="disponibilite-text {% if plat_info.est_disponible %}disponible{% else %}indisponible{% endif %}">
+                                        {% if plat_info.est_disponible %}Disponible{% else %}Indisponible{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div><br><br>
+                <div class="btn-ajouter-plat-container">
+                    <a href="{% url 'ajouter_plat' %}" class="btn-primary">Ajouter un plat</a>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>Aucun plat configuré pour votre restaurant.</p>
+                    <a href="{% url 'ajouter_plat' %}" class="btn-primary">Ajouter un plat</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Section des commandes -->
+        <div class="commandes-section">
+            <h2 class="section-title">Commandes récentes</h2>
+            {% if commandes %}
+                <div class="commandes-table-container">
+                    <table class="commandes-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client</th>
+                                <th>Date</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande_info in commandes %}
+                                <tr>
+                                    <td>{{ commande_info.commande.id }}</td>
+                                    <td>{{ commande_info.commande.client.email }}</td>
+                                    <td>{{ commande_info.commande.cree_le|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ commande_info.total_restaurant }} Ar</td>
+                                    <td>
+                                        <span class="badge badge-en-cours">{{ commande_info.statut }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'commande_details' commande_info.commande.id %}" class="btn-detail">Détails</a>
+                                        {% if commande_info.statut|lower == 'en cours' %}
+                                            <form method="POST" action="{% url 'mettre_en_preparation' commande_info.commande.id %}" style="display:inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-secondary">Mettre en préparation</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>Aucune commande récente.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleDisponibilite(repasId, checkbox) {
+            const isChecked = checkbox.checked;
+            const disponibiliteText = checkbox.parentElement.nextElementSibling;
+            
+            // Désactiver temporairement le toggle pendant la requête
+            checkbox.disabled = true;
+            
+            // Préparer les données pour la requête
+            const data = {
+                repas_id: repasId
+            };
+            
+            // Envoyer la requête AJAX
+            fetch('{% url "toggle_disponibilite_repas" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    // En cas d'erreur, restaurer l'état précédent
+                    checkbox.checked = !isChecked;
+                    alert('Erreur: ' + data.error);
+                } else {
+                    // Mettre à jour l'affichage avec la réponse du serveur
+                    if (data.nouvelle_disponibilite) {
+                        disponibiliteText.textContent = 'Disponible';
+                        disponibiliteText.className = 'disponibilite-text disponible';
+                        checkbox.checked = true;
+                    } else {
+                        disponibiliteText.textContent = 'Indisponible';
+                        disponibiliteText.className = 'disponibilite-text indisponible';
+                        checkbox.checked = false;
+                    }
+                    
+                    // Afficher un message de succès discret
+                    if (data.message) {
+                        console.log(data.message);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                // Restaurer l'état précédent en cas d'erreur
+                checkbox.checked = !isChecked;
+                alert('Erreur de connexion. Veuillez réessayer.');
+            })
+            .finally(() => {
+                // Réactiver le toggle
+                checkbox.disabled = false;
+            });
+        }
+        
+        // Fonction pour récupérer le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

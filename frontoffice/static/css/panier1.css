@@ -1,0 +1,586 @@
+@import url('https://fonts.googleapis.com/css2?family=REM:wght@200;300;400;700&family=Poppins:wght@300&family=Righteous:wght@400&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'REM', sans-serif;
+    background-color: #ffffff;
+    position: relative;
+}
+
+/* ==== Header principal ==== */
+.site-header {
+    width: 100%;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+}
+
+.overlap-wrapper {
+    width: 100%;
+    max-width: 1280px;
+    margin: auto;
+}
+
+.overlap-group-3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Logo */
+.rectangle-4 {
+    height: 90px;
+    width: auto;
+    object-fit: cover;
+}
+
+/* Liens du menu principal */
+.group-11 {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.group-11 a {
+    text-decoration: none;
+    font-size: 14px;
+    font-family: "Righteous", Helvetica, sans-serif;
+    color: #1e1e1e;
+    font-weight: 400;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+}
+
+.group-11 a:hover {
+    color: #c64304;
+}
+
+/* Icônes à droite */
+.icons-right {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    position: relative;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.icon-button img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+/* Menu hamburger responsive */
+.hamburger-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #333;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.4);
+    border-radius: 8px;
+    z-index: 1001;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+}
+
+.hamburger-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.hamburger-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.hamburger-menu ul li {
+    border-bottom: 1px solid #444;
+}
+
+.hamburger-menu ul li:last-child {
+    border-bottom: none;
+}
+
+.hamburger-menu ul li a {
+    display: block;
+    padding: 12px 18px;
+    text-decoration: none;
+    color: #f0f0f0;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.hamburger-menu ul li a:hover {
+    background-color: #444;
+    color: #FF5722;
+}
+
+/* Sous-menu */
+.hamburger-menu .has-submenu {
+    position: relative;
+}
+
+.hamburger-menu .has-submenu a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hamburger-menu .has-submenu .arrow {
+    font-size: 14px;
+    color: #f0f0f0;
+    transition: transform 0.3s ease;
+}
+
+.hamburger-menu .has-submenu.open .arrow {
+    transform: rotate(180deg);
+}
+
+.hamburger-menu .submenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: #4a4a4a;
+    border-top: 1px solid #555;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.hamburger-menu .has-submenu.open .submenu {
+    max-height: 100px;
+}
+
+.hamburger-menu .submenu li a {
+    padding: 10px 25px;
+    font-size: 15px;
+    color: #e0e0e0;
+}
+
+.hamburger-menu .submenu li a:hover {
+    background-color: #5a5a5a;
+    color: #FF7043;
+}
+
+
+
+/* Contrôle de quantité dans le tableau */
+/* Fixer les largeurs des colonnes pour l'alignement */
+.commande-table th:nth-child(1),
+.commande-table td:nth-child(1) {
+  width: 20%;
+}
+
+.commande-table th:nth-child(2),
+.commande-table td:nth-child(2) {
+  width: 15%;
+}
+
+/* .commande-table th:nth-child(3), */
+/* Centrer l'en-tête "Quantités" */
+.commande-table th:nth-child(3) {
+  text-align: center;
+}
+.commande-table td:nth-child(3) {
+  width: 20%; /* Colonne Quantité */
+}
+
+.commande-table th:nth-child(4),
+.commande-table td:nth-child(4) {
+  width: 15%;
+}
+
+.commande-table th:nth-child(5),
+.commande-table td:nth-child(5) {
+  width: 15%;
+  text-align: center;
+}
+.commande-table {
+  table-layout: fixed;
+}
+
+
+.rectangle-124 {
+  width: 47px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.vector,
+.vector * {
+  box-sizing: border-box;
+}
+.vector {
+  width: 18px;
+  height: 20px;
+  position: relative;
+  overflow: visible;
+}
+.btn-supprimer {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-supprimer img {
+  width: 16px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.btn-supprimer:hover img {
+  transform: scale(1.1); /* Zoom léger au survol */
+}
+
+
+/* .group-78, .group-79, .group-80 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rectangle-100, .rectangle-101, .rectangle-102 {
+  width: 32px;
+  height: 32px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jam-minus, .jam-plus {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+._2 {
+  font-weight: bold;
+  text-align: center;
+  font-size: 1rem;
+} */
+/* Conteneurs des groupes +, -, nombre */
+.group-78, .group-79, .group-80 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+}
+
+/* Les rectangles contenant l'icône ou le chiffre */
+.rectangle-100, .rectangle-101, .rectangle-102 {
+  width: 32px;
+  height: 32px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Icônes + et - */
+.jam-minus, .jam-plus {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Nombre de quantité */
+._2 {
+  font-weight: bold;
+  font-size: 1rem;
+  text-align: center;
+}
+
+
+/* Résumé des coûts */
+.cost-summary {
+  margin-top: 40px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95em;
+  color: #1e1e1e;
+}
+
+/* .cost-summary p {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+} */
+
+.cost-summary p {
+  display: flex;
+  justify-content: flex-end;
+  margin: 6px 0;
+  gap: 20px; /* ou 30px selon ton besoin */
+  align-items: center;
+}
+
+.cost-summary strong {
+  font-weight: 600;
+  text-align: right;
+}
+
+.cost-summary span {
+  min-width: 80px; /* Pour garder l'alignement droit */
+  text-align: right;
+  display: inline-block;
+}
+
+
+.line-4 {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 10px 0;
+  border-radius: 2px;
+}
+
+
+
+/* .cost-summary p {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.cost-summary strong {
+  min-width: 100px;
+} */
+
+.conteneur-commandes {
+  display: flex;
+  align-items: flex-start;
+  gap: 90px; /* Augmente l'espace entre les deux blocs */
+}
+
+.rectangle-droite {
+  width: 250px;
+  height: 300px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin-top: 50px;
+  margin-left: 40px; /* Décale encore plus à droite si besoin */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  background: #f9f9f9;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.payement-info {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 10px;
+  text-align: center;
+  font-family: 'Righteous', cursive;
+}
+
+.methoses-de-payements {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 18px;
+  text-align: center;
+  font-family: 'REM', sans-serif;
+}
+
+.payment-options {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 38px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.payment-option input[type="radio"] {
+  accent-color: #043C4E;
+  width: 18px;
+  height: 18px;
+}
+
+.payment-option input[type="radio"]:checked {
+  accent-color: #043C4E;
+}
+
+.payment-option label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #222;
+}
+
+/*  */
+
+/* Point de récupération dans le formulaire de paiement */
+.pickup-section {
+  margin-top: 25px;
+  margin-bottom: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.pickup-title {
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #043C4E;
+  margin-bottom: 12px;
+}
+
+.pickup-dropdown {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: 'REM', sans-serif;
+  color: #333;
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pickup-dropdown:focus {
+  outline: none;
+  border-color: #043C4E;
+  box-shadow: 0 0 0 3px rgba(4, 60, 78, 0.1);
+}
+
+.pickup-dropdown option {
+  padding: 10px;
+  font-family: 'REM', sans-serif;
+}
+
+.mobile-money, .espece {
+  font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-valider-paiement {
+  width: 55%;
+  padding: 6px 0;
+  background: #C64304;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: 'REM', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 30px;
+  box-shadow: 0 2px 8px rgba(198,67,4,0.10);
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.btn-valider-paiement:hover {
+  background: #a83802;
+}
+
+ /* Additional styles for dynamic content */
+    .empty-cart {
+      text-align: center;
+      padding: 40px;
+      background: #fff;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .empty-cart a {
+      color: #ff6b35;
+      text-decoration: none;
+      font-weight: 500;
+    }
+      /* ...existing styles... */
+  .commande-table img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  .quantity-control img,
+  .btn-supprimer img {
+    width: 18px;
+    height: 18px;
+  }
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .quantity-btn {
+      background: #f0f0f0;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .quantity-btn:hover {
+      background: #e0e0e0;
+    }
+    .quantity-value {
+      min-width: 30px;
+      text-align: center;
+    }

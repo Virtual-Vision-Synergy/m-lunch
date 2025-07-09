@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Erreur de suppression - M'Lunch{% endblock %}</title>
+</head>
+<body>
+    {% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Erreur</h1>
+            <a href="{% url 'livraisons_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header card-header-error">
+                        <h4 class="mb-0">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Impossible d'effectuer cette action
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-error">
+                            <p class="mb-2"><strong>Erreur :</strong></p>
+                            <p>{{ reason }}</p>
+                            <p class="mb-0">Veuillez résoudre ce problème avant de réessayer.</p>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-orange">
+                                <i class="fas fa-arrow-left me-1"></i>Retour au dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>

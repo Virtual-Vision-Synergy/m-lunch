@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord des statistiques</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Favicon pour éviter l'erreur 404 -->
+    <link rel="icon" href="data:,">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    {% extends 'backoffice/base.html' %}
+
+    {% block title %}Tableau de bord des statistiques - M'Lunch Backoffice{% endblock %}
+
+    {% block page_title %}Statistiques{% endblock %}
+
+    {% block page_subtitle %}Analyse des données de vente et de livraison{% endblock %}
+
+    {% block extra_css %}
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    {% endblock %}
+
+    {% block content %}
+    <!-- Filtres -->
+    <div class="filters-section">
+        <div class="filters-title">
+            <i class="fas fa-filter me-2"></i>Filtres de statistiques
+        </div>
+
+        <div class="row g-3 mb-3">
+            <!-- Filtre de base -->
+            <div class="col-md-3">
+                <label for="base_filter" class="form-label">Filtre de base</label>
+                <select id="base_filter" class="form-select">
+                    <option value="secteur">Secteur</option>
+                    <option value="restaurant">Restaurant</option>
+                </select>
+            </div>
+
+            <!-- Filtre temporel -->
+            <div class="col-md-3">
+                <label for="temporal_filter" class="form-label">Période</label>
+                <select id="temporal_filter" class="form-select">
+                    <option value="day">Jour</option>
+                    <option value="month">Mois</option>
+                    <option value="year">Année</option>
+                </select>
+            </div>
+
+            <!-- Filtre contenu -->
+            <div class="col-md-3">
+                <label for="content_filter" class="form-label">Contenu</label>
+                <select id="content_filter" class="form-select">
+                    <option value="chiffre_affaires">Chiffre d'affaires</option>
+                    <option value="chiffre_vente">Chiffre de vente (nb commandes)</option>
+                    <option value="types_repas">Types de repas vendus</option>
+                </select>
+            </div>
+
+            <!-- Bouton Valider -->
+            <div class="col-md-3 d-flex align-items-end">
+                <button id="validate_button" class="btn btn-success w-100">
+                    <i class="fas fa-check me-1"></i>Valider
+                </button>
+            </div>
+        </div>
+
+        <!-- Dropdown pour secteurs -->
+        <div id="secteur_filter_container" class="row g-3">
+            <div class="col-md-6">
+                <label for="secteur_id" class="form-label">Sélectionner un secteur</label>
+                <select id="secteur_id" class="form-select">
+                    <option value="">Tous les secteurs</option>
+                    <!-- Rempli dynamiquement -->
+                </select>
+            </div>
+        </div>
+
+        <!-- Dropdown pour restaurants (caché par défaut) -->
+        <div id="restaurant_filter_container" class="row g-3" style="display: none;">
+            <div class="col-md-6">
+                <label for="restaurant_id" class="form-label">Sélectionner un restaurant</label>
+                <select id="restaurant_id" class="form-select">
+                    <option value="">Sélectionner un restaurant</option>
+                    <!-- Rempli dynamiquement -->
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="charts-grid">
+        <!-- Graphique principal (courbe/chandelle) -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <i class="fas fa-chart-line me-2"></i>
+                <span id="chart_title">Statistiques</span>
+            </div>
+            <div class="content-card-body">
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphique en camembert -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <i class="fas fa-chart-pie me-2"></i>
+                <span id="pie_chart_title">Répartition</span>
+            </div>
+            <div class="content-card-body">
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let mainChartInstance = null;
+        let pieChartInstance = null;
+
+        // Palette de couleurs moderne et variée
+        const colorPalette = {
+            primary: ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'],
+            gradient: [
+                'rgba(59, 130, 246, 0.8)',   // Bleu
+                'rgba(239, 68, 68, 0.8)',    // Rouge
+                'rgba(16, 185, 129, 0.8)',   // Vert
+                'rgba(245, 158, 11, 0.8)',   // Orange
+                'rgba(139, 92, 246, 0.8)',   // Violet
+                'rgba(236, 72, 153, 0.8)',   // Rose
+                'rgba(6, 182, 212, 0.8)',    // Cyan
+                'rgba(132, 204, 22, 0.8)'    // Lime
+            ],
+            borders: ['#1D4ED8', '#DC2626', '#047857', '#D97706', '#7C3AED', '#BE185D', '#0891B2', '#65A30D']
+        };
+
+        // Charger les secteurs
+        async function loadSecteurs() {
+            try {
+                const response = await fetch('/staff/api/zones/');
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+                const data = await response.json();
+
+                const secteurSelect = document.getElementById('secteur_id');
+                secteurSelect.innerHTML = '<option value="">Tous les secteurs</option>';
+
+                if (data.zones) {
+                    data.zones.forEach(zone => {
+                        const option = document.createElement('option');
+                        option.value = zone.id;
+                        option.textContent = zone.nom;
+                        secteurSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des secteurs:', error);
+            }
+        }
+
+        // Charger les restaurants
+        async function loadRestaurants() {
+            try {
+                const response = await fetch('/staff/api/restaurants/');
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+                const data = await response.json();
+
+                const restaurantSelect = document.getElementById('restaurant_id');
+                restaurantSelect.innerHTML = '<option value="">Sélectionner un restaurant</option>';
+
+                if (data.restaurants) {
+                    data.restaurants.forEach(restaurant => {
+                        const option = document.createElement('option');
+                        option.value = restaurant.id;
+                        option.textContent = restaurant.nom;
+                        restaurantSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des restaurants:', error);
+            }
+        }
+
+        // Afficher/masquer les dropdowns selon le filtre de base
+        document.getElementById('base_filter').addEventListener('change', (e) => {
+            const secteurContainer = document.getElementById('secteur_filter_container');
+            const restaurantContainer = document.getElementById('restaurant_filter_container');
+
+            if (e.target.value === 'secteur') {
+                secteurContainer.style.display = 'block';
+                restaurantContainer.style.display = 'none';
+            } else {
+                secteurContainer.style.display = 'none';
+                restaurantContainer.style.display = 'block';
+            }
+        });
+
+        // Créer les graphiques
+        async function createCharts() {
+            const baseFilter = document.getElementById('base_filter').value;
+            const temporalFilter = document.getElementById('temporal_filter').value;
+            const contentFilter = document.getElementById('content_filter').value;
+            const secteurId = document.getElementById('secteur_id').value;
+            const restaurantId = document.getElementById('restaurant_id').value;
+
+            // Validation
+            if (baseFilter === 'restaurant' && !restaurantId) {
+                alert('Veuillez sélectionner un restaurant.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/staff/api/stats/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        base_filter: baseFilter,
+                        temporal_filter: temporalFilter,
+                        content_filter: contentFilter,
+                        secteur_id: secteurId ? parseInt(secteurId) : null,
+                        restaurant_id: restaurantId ? parseInt(restaurantId) : null
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+                const result = await response.json();
+
+                if (result.error) {
+                    alert(result.error);
+                    return;
+                }
+
+                // Détruire les graphiques existants
+                if (mainChartInstance) {
+                    mainChartInstance.destroy();
+                }
+                if (pieChartInstance) {
+                    pieChartInstance.destroy();
+                }
+
+                // Créer le graphique principal avec des couleurs variées
+                const mainCtx = document.getElementById('mainChart').getContext('2d');
+                const chartType = contentFilter === 'chiffre_affaires' ? 'bar' : 'line';
+
+                mainChartInstance = new Chart(mainCtx, {
+                    type: chartType,
+                    data: {
+                        labels: result.main_chart.labels,
+                        datasets: [{
+                            label: result.main_chart.label,
+                            data: result.main_chart.data,
+                            backgroundColor: chartType === 'bar' ?
+                                result.main_chart.data.map((_, index) => colorPalette.gradient[index % colorPalette.gradient.length]) :
+                                'rgba(59, 130, 246, 0.2)',
+                            borderColor: chartType === 'bar' ?
+                                result.main_chart.data.map((_, index) => colorPalette.borders[index % colorPalette.borders.length]) :
+                                '#3B82F6',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: chartType === 'line',
+                            pointBackgroundColor: '#3B82F6',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: result.main_chart.y_label
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Période'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Créer le graphique en camembert avec une palette variée
+                if (result.pie_chart && result.pie_chart.data && result.pie_chart.data.length > 0) {
+                    const pieCtx = document.getElementById('pieChart').getContext('2d');
+                    pieChartInstance = new Chart(pieCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: result.pie_chart.labels,
+                            datasets: [{
+                                data: result.pie_chart.data,
+                                backgroundColor: colorPalette.primary.concat([
+                                    '#F97316', '#14B8A6', '#A855F7', '#F43F5E',
+                                    '#0EA5E9', '#22C55E', '#EAB308', '#6366F1'
+                                ]),
+                                borderWidth: 3,
+                                borderColor: '#ffffff',
+                                hoverBorderWidth: 4,
+                                hoverOffset: 10
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        usePointStyle: true,
+                                        pointStyle: 'circle'
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    },
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: '#3B82F6',
+                                    borderWidth: 1
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Afficher un message si pas de données pour le pie chart
+                    const pieCtx = document.getElementById('pieChart').getContext('2d');
+                    pieCtx.clearRect(0, 0, pieCtx.canvas.width, pieCtx.canvas.height);
+                    pieCtx.font = "16px Arial";
+                    pieCtx.fillStyle = "#666";
+                    pieCtx.textAlign = "center";
+                    pieCtx.fillText("Aucune donnée disponible", pieCtx.canvas.width / 2, pieCtx.canvas.height / 2);
+                }
+
+                // Mettre à jour les titres
+                document.getElementById('chart_title').textContent = result.main_chart.title;
+                document.getElementById('pie_chart_title').textContent = result.pie_chart ? result.pie_chart.title : 'Répartition';
+
+            } catch (error) {
+                console.error('Erreur lors de la récupération des statistiques:', error);
+                alert('Erreur lors de la récupération des statistiques: ' + error.message);
+            }
+        }
+
+        // Valider et afficher les graphiques
+        document.getElementById('validate_button').addEventListener('click', createCharts);
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSecteurs();
+            loadRestaurants();
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>

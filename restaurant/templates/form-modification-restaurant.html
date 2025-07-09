@@ -1,0 +1,285 @@
+{% load static %}
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier restaurant - {{ restaurant.nom }} - M'Lunch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/form-modification-restaurant.css' %}">
+</head>
+<body>
+    <div class="header">
+        <h1>M'Lunch - Espace Restaurant</h1>
+        <a href="{% url 'restaurant_logout' %}" class="logout-btn">Déconnexion</a>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-container">
+            <!-- Restaurant Preview -->
+            <div class="restaurant-preview">
+                <div class="restaurant-preview-header">
+                    <h3 id="preview-name">{{ restaurant.nom }}</h3>
+                    <p>Aperçu en temps réel</p>
+                </div>
+                <div class="restaurant-preview-content">
+                    <div class="restaurant-image" id="preview-image">
+                        {% if restaurant.image %}
+                            <img src="/media/restaurants/{{ restaurant.image }}" alt="{{ restaurant.nom }}" />
+                        {% else %}
+                            <div class="placeholder">📸 Aucune image</div>
+                        {% endif %}
+                    </div>
+                    <div class="restaurant-info">
+                        <div class="info-item">
+                            <label>Adresse</label>
+                            <div class="value" id="preview-adresse">
+                                {% if restaurant.adresse %}
+                                    {{ restaurant.adresse }}
+                                {% else %}
+                                    <span class="empty">Non renseignée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <label>Description</label>
+                            <div class="value" id="preview-description">
+                                {% if restaurant.description %}
+                                    {{ restaurant.description }}
+                                {% else %}
+                                    <span class="empty">Non renseignée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <label>Position</label>
+                            <div class="value" id="preview-position">
+                                {% if restaurant.geo_position and restaurant.geo_position != "0,0" %}
+                                    {{ restaurant.geo_position }}
+                                {% else %}
+                                    <span class="empty">Non renseignée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="form-card">
+                <h2>Modifier les informations du restaurant</h2>
+                <p>Mettez à jour les informations de votre restaurant</p>
+
+                <form method="POST" action="{% url 'modifier' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="nom">Nom du restaurant <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required maxlength="150" 
+                               value="{{ restaurant.nom }}" readonly>
+                        <small style="color: #666; font-size: 14px;">Le nom du restaurant ne peut pas être modifié</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adresse">Adresse</label>
+                        <textarea id="adresse" name="adresse" 
+                                  placeholder="Adresse complète du restaurant"
+                                  maxlength="500">{{ restaurant.adresse }}</textarea>
+                        <small style="color: #666; font-size: 14px;">Adresse complète avec quartier, ville</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" 
+                                  placeholder="Décrivez votre restaurant, spécialités, ambiance..."
+                                  maxlength="1000">{{ restaurant.description }}</textarea>
+                        <small style="color: #666; font-size: 14px;">Description qui sera visible par les clients</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image">Image du restaurant</label>
+                        <input type="file" id="image" name="image" accept="image/*">
+                        <small>Formats acceptés : JPG, PNG, GIF (max 5MB)</small>
+                        {% if restaurant.image %}
+                            <div class="current-image">
+                                <small>Image actuelle :</small>
+                                <img src="/media/restaurants/{{ restaurant.image }}" alt="Image actuelle" style="max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; margin-top: 5px;">
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="geo_position">Position géographique</label>
+                        <input type="text" id="geo_position" name="geo_position" 
+                               value="{{ restaurant.geo_position }}"
+                               readonly
+                               placeholder="Latitude,Longitude (ex: -18.8792,47.5079)"
+                               pattern="^-?\d+\.?\d*,-?\d+\.?\d*$"
+                               title="Format: latitude,longitude (ex: -18.8792,47.5079)">
+                        <small style="color: #666; font-size: 14px;">
+                            La position géographique ne peut pas être modifiée depuis ce formulaire. 
+                            <a href="https://www.google.com/maps" target="_blank" style="color: #007bff;">
+                                Trouvez vos coordonnées sur Google Maps
+                            </a>
+                        </small>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{% url 'restaurant_dashboard' %}" class="btn-secondary">Annuler</a>
+                        <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Éléments de preview
+        const previewAdresse = document.getElementById('preview-adresse');
+        const previewDescription = document.getElementById('preview-description');
+        const previewPosition = document.getElementById('preview-position');
+        const previewImage = document.getElementById('preview-image');
+
+        // Fonction pour mettre à jour le preview
+        function updatePreview() {
+            // Adresse
+            const adresse = document.getElementById('adresse').value.trim();
+            if (adresse) {
+                previewAdresse.innerHTML = adresse;
+            } else {
+                previewAdresse.innerHTML = '<span class="empty">Non renseignée</span>';
+            }
+
+            // Description
+            const description = document.getElementById('description').value.trim();
+            if (description) {
+                previewDescription.innerHTML = description;
+            } else {
+                previewDescription.innerHTML = '<span class="empty">Non renseignée</span>';
+            }
+
+            // Position géographique
+            const position = document.getElementById('geo_position').value.trim();
+            if (position && position !== '0,0') {
+                previewPosition.innerHTML = position;
+            } else {
+                previewPosition.innerHTML = '<span class="empty">Non renseignée</span>';
+            }
+        }
+
+        // Écouter les changements sur tous les champs
+        document.getElementById('adresse').addEventListener('input', updatePreview);
+        document.getElementById('description').addEventListener('input', updatePreview);
+        document.getElementById('image').addEventListener('change', handleImageUpload);
+
+        // Fonction pour gérer l'upload d'image
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Vérifier le type de fichier
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Type de fichier non supporté. Utilisez JPG, PNG ou GIF.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Vérifier la taille du fichier (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('L\'image ne doit pas dépasser 5MB.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Créer un aperçu de l'image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.innerHTML = `<img src="${e.target.result}" alt="Aperçu" />`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Restaurer l'image par défaut
+                {% if restaurant.image %}
+                    previewImage.innerHTML = `<img src="/media/restaurants/{{ restaurant.image }}" alt="{{ restaurant.nom }}" />`;
+                {% else %}
+                    previewImage.innerHTML = '<div class="placeholder">📸 Aucune image</div>';
+                {% endif %}
+            }
+        }
+
+        // Validation de l'image uploadée
+        document.getElementById('image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            let feedback = e.target.parentNode.querySelector('.validation-feedback');
+            
+            if (!feedback) {
+                feedback = document.createElement('div');
+                feedback.className = 'validation-feedback';
+                e.target.parentNode.appendChild(feedback);
+            }
+            
+            if (!file) {
+                feedback.textContent = '';
+                feedback.className = 'validation-feedback';
+                return;
+            }
+            
+            // Vérifier le type de fichier
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                feedback.textContent = '❌ Type de fichier non supporté. Utilisez JPG, PNG ou GIF.';
+                feedback.className = 'validation-feedback error';
+                return;
+            }
+            
+            // Vérifier la taille du fichier (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                feedback.textContent = '❌ L\'image ne doit pas dépasser 5MB.';
+                feedback.className = 'validation-feedback error';
+                return;
+            }
+            
+            feedback.textContent = '✅ Image valide';
+            feedback.className = 'validation-feedback success';
+        });
+        
+        // Compteur de caractères pour les textarea
+        function addCharacterCounter(textareaId, maxLength) {
+            const textarea = document.getElementById(textareaId);
+            const counter = document.createElement('div');
+            counter.className = 'character-counter';
+            
+            function updateCounter() {
+                const remaining = maxLength - textarea.value.length;
+                counter.textContent = `${textarea.value.length}/${maxLength} caractères`;
+                counter.className = remaining < 50 ? 'character-counter warning' : 'character-counter';
+            }
+            
+            textarea.addEventListener('input', updateCounter);
+            textarea.parentNode.appendChild(counter);
+            updateCounter();
+        }
+        
+        // Ajouter les compteurs de caractères
+        addCharacterCounter('adresse', 500);
+        addCharacterCounter('description', 1000);
+        
+        // Validation du formulaire avant soumission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // Pas de validation d'URL d'image car on utilise maintenant l'upload
+            // Pas de validation de position géographique car elle n'est plus modifiable
+        });
+    </script>
+</body>
+</html>

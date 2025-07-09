@@ -8,16 +8,15 @@
     <h1>Bienvenue Admin</h1>
     <header>
         <ul>
-            <li><a href="{% url 'backoffice_index' %}">Logo</a></li>
-            <li><a href="{% url 'backoffice_index' %}">Statistiques</a></li>
-            <li><a href="{% url 'backoffice_restaurant' %}">Restaurant</a></li>
+            <li><a href="{% url 'index' %}">Logo</a></li>
+            <li><a href="{% url 'index' %}">Statistiques</a></li>
+            <li><a href="{% url 'restaurant_list' %}">Restaurant</a></li>
             <li><a href="#">Secteur</a></li>
-            <li><a href="#">Livraison</a></li>
-            <li><a href="{% url 'backoffice_commande' %}">Commande</a></li>
+            {% comment %} <li><a href="{% url 'livraison_list' %}">Livraison</a></li> {% endcomment %}
         </ul>
     </header>
     <section>
-        <h2>Liste des commandes en attente</h2>
+        <h2>Liste des commandes prêtes</h2>
         <table border="1">
             <thead>
                 <tr>
@@ -40,10 +39,9 @@
                     <td>{{ commande.nombre_repas }}</td>
                     <td>{{ commande.prix_total }}</td>
                     <td>
-                        <form method="post" action="#">
-                            {% csrf_token %}
-                            <button type="submit">Attribuer</button>
-                        </form>
+                        <a href="{% url 'commande_attribuer' commande.id %}" class="btn-attribuer">
+                            Attribuer
+                        </a>
                     </td>
                 </tr>
                 {% empty %}
