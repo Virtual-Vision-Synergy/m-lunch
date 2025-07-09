@@ -5,10 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Accueil M'Lunch</title>
-  <link rel="stylesheet" href="{% static 'css/accueil.css' %}" />
+  <link rel="stylesheet" href="{% static 'frontoffice/css/accueil.css' %}" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 </head>
 <body>
   <!-- Quart d'ellipse -->
@@ -23,7 +24,7 @@
     <div class="overlap-2">
       <div class="group-8">
         <div class="overlap-group-3">
-          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <img class="rectangle-4" src="{% static 'frontoffice/img/icones/logo.png' %}" alt="Logo" />
           <div class="group-11">
             <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
             <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
@@ -31,9 +32,9 @@
             <a href="#about" class="text-wrapper-12">A propos</a>
           </div>
           <div class="icons-right">
-            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
-            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
-            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+            <a href="login.html" class="icon-button"><img src="{% static 'frontoffice/img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'frontoffice/img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'frontoffice/img/icones/menu.svg' %}" alt="Menu" /></button>
 
             <nav id="hamburger-menu" class="hamburger-menu">
               <ul>
@@ -64,12 +65,12 @@
       {% if not request.session.client_id %}
       <a href="{% url 'connexion' %}" class="btn-commencer" style="display: inline-flex; align-items: center; text-decoration: none;">
         <span>Commencer</span>
-        <img src="{% static 'img/icones/fleche.svg' %}" alt="Aide" style="margin-left: 6px; vertical-align: middle;" />
+        <img src="{% static 'frontoffice/img/icones/fleche.svg' %}" alt="Aide" style="margin-left: 6px; vertical-align: middle;" />
       </a>
       {% endif %}
     </div>
     <div class="image-droite">
-      <img src="{% static 'img/Humans/bi.png' %}" alt="Repas délicieux" />
+      <img src="{% static 'frontoffice/img/Humans/bi.png' %}" alt="Repas délicieux" />
     </div>
   </main>
 
@@ -140,7 +141,7 @@
     <div class="footer">
       <div class="brand-section">
         <div class="logo-container">
-          <img class="logo-img" src="{% static 'img/icones/logo.png' %}" alt="Logo M'Lunch" />
+          <img class="logo-img" src="{% static 'frontoffice/img/icones/logo.png' %}" alt="Logo M'Lunch" />
           <span>M'Lunch</span>
         </div>
         <p class="brand-description">
@@ -163,17 +164,17 @@
         <div class="social-header">
           <h4 class="section-title">Réseaux sociaux:</h4>
           <div class="social-icons">
-            <a href="#" class="social-icon" title="Facebook"><img src="{% static 'img/icones/fb.svg' %}" alt="Facebook" /></a>
-            <a href="#" class="social-icon" title="Instagram"><img src="{% static 'img/icones/inst.svg' %}" alt="Instagram" /></a>
+            <a href="#" class="social-icon" title="Facebook"><img src="{% static 'frontoffice/img/icones/fb.svg' %}" alt="Facebook" /></a>
+            <a href="#" class="social-icon" title="Instagram"><img src="{% static 'frontoffice/img/icones/inst.svg' %}" alt="Instagram" /></a>
           </div>
         </div>
         <div class="contact-info">
           <div class="contact-item">
-            <img class="contact-icon" src="{% static 'img/icones/mail.svg' %}" alt="Mail" />
+            <img class="contact-icon" src="{% static 'frontoffice/img/icones/mail.svg' %}" alt="Mail" />
             <span>contact@mlunch.com</span>
           </div>
           <div class="contact-item">
-            <img class="contact-icon" src="{% static 'img/icones/phone.svg' %}" alt="Téléphone" />
+            <img class="contact-icon" src="{% static 'frontoffice/img/icones/phone.svg' %}" alt="Téléphone" />
             <span>+261 34 00 000 00</span>
           </div>
         </div>
@@ -186,232 +187,6 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Load restaurant images for infinite carousel
-      function loadCarouselImages() {
-        fetch('/api/all_restaurants/')
-          .then(response => response.json())
-          .then(data => {
-            const carouselTrack = document.getElementById('carousel-track');
-
-            // Clear existing slides
-            carouselTrack.innerHTML = '';
-
-            // Filter restaurants that have images
-            const restaurantsWithImages = data.features.filter(restaurant =>
-              restaurant.properties.image_url
-            );
-
-            if (restaurantsWithImages.length > 0) {
-              // Create slides from restaurant images (duplicate for infinite effect)
-              const slides = [];
-              restaurantsWithImages.forEach(restaurant => {
-                slides.push(`
-                  <div class="slide">
-                    <img src="${restaurant.properties.image_url}" alt="${restaurant.properties.nom}" />
-                  </div>
-                `);
-              });
-
-              // Duplicate slides for infinite scroll effect
-              carouselTrack.innerHTML = slides.join('') + slides.join('');
-            } else {
-              // Fallback to default images if no restaurant images available
-              const defaultSlides = [
-                '<div class="slide"><img src="assets/img/img1.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img2.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img3.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img4.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img5.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img6.jpg" alt="" /></div>'
-              ];
-              carouselTrack.innerHTML = defaultSlides.join('') + defaultSlides.join('');
-            }
-          })
-          .catch(error => {
-            console.error('Error loading carousel images:', error);
-            // Fallback to default images on error
-            const carouselTrack = document.getElementById('carousel-track');
-            const defaultSlides = [
-              '<div class="slide"><img src="assets/img/img1.jpg" alt="" /></div>',
-              '<div class="slide"><img src="assets/img/img2.jpg" alt="" /></div>',
-              '<div class="slide"><img src="assets/img/img3.jpg" alt="" /></div>',
-              '<div class="slide"><img src="assets/img/img4.jpg" alt="" /></div>',
-              '<div class="slide"><img src="assets/img/img5.jpg" alt="" /></div>',
-              '<div class="slide"><img src="assets/img/img6.jpg" alt="" /></div>'
-            ];
-            carouselTrack.innerHTML = defaultSlides.join('') + defaultSlides.join('');
-          });
-      }
-
-      // Load carousel images first
-      loadCarouselImages();
-
-      // Initialize Swiper
-      const swiper = new Swiper('.mySwiper', {
-        loop: true,
-        slidesPerView: 3,
-        spaceBetween: 30,
-        centeredSlides: true,
-        autoplay: {
-          delay: 3000,
-          disableOnInteraction: false,
-        },
-        pagination: {
-          el: '.swiper-pagination',
-          clickable: true,
-        },
-        navigation: {
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev',
-        },
-        breakpoints: {
-          320: {
-            slidesPerView: 1,
-            spaceBetween: 20
-          },
-          768: {
-            slidesPerView: 2,
-            spaceBetween: 30
-          },
-          1024: {
-            slidesPerView: 3,
-            spaceBetween: 40
-          }
-        }
-      });
-
-      // Hamburger menu toggle
-      const menuToggle = document.getElementById('menu-toggle');
-      const hamburgerMenu = document.getElementById('hamburger-menu');
-      const submenuParents = document.querySelectorAll('.has-submenu');
-
-      menuToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        hamburgerMenu.classList.toggle('active');
-      });
-
-      document.addEventListener('click', function(e) {
-        if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
-          hamburgerMenu.classList.remove('active');
-        }
-      });
-
-      submenuParents.forEach(function(parent) {
-        parent.addEventListener('click', function(e) {
-          e.stopPropagation();
-          parent.classList.toggle('open');
-        });
-      });
-
-      // Map and API functionality from accueil.html
-      const map = L.map('map-container').setView([-18.8792, 47.5079], 13);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(map);
-
-      // Load restaurants for Swiper
-      fetch('/api/all_restaurants/')
-        .then(response => response.json())
-        .then(data => {
-          const swiperWrapper = document.querySelector('.swiper-wrapper');
-
-          data.features.forEach(restaurant => {
-            const slide = document.createElement('div');
-            slide.className = 'swiper-slide';
-
-            slide.innerHTML = `
-              <div class="restaurant-item">
-                ${restaurant.properties.image_url ?
-                  `<img src="${restaurant.properties.image_url}" alt="${restaurant.properties.nom}" class="restaurant-image" />` :
-                  '<div class="restaurant-image placeholder"></div>'}
-                <h2 class="restaurant-name">${restaurant.properties.nom}</h2>
-                <p class="restaurant-description">${restaurant.properties.description}</p>
-              </div>
-            `;
-
-            swiperWrapper.appendChild(slide);
-          });
-
-          // Update Swiper after adding slides
-          swiper.update();
-        })
-        .catch(error => {
-          console.error('Error fetching restaurants:', error);
-        });
-
-      // Map selector functionality
-      const viewSelector = document.getElementById('view-selector');
-
-      viewSelector.addEventListener('change', function() {
-        const selectedOption = this.value;
-
-        if (selectedOption === 'restaurants') {
-          loadRestaurants();
-        } else if (selectedOption === 'pickup-points') {
-          loadPickupPoints();
-        }
-      });
-
-      function loadRestaurants() {
-        map.eachLayer(layer => {
-          if (layer instanceof L.Marker) {
-            map.removeLayer(layer);
-          }
-        });
-
-        fetch('/api/all_restaurants/')
-          .then(response => response.json())
-          .then(data => {
-            const bounds = [];
-            data.features && data.features.forEach(restaurant => {
-              if (restaurant.geometry?.coordinates) {
-                const [lng, lat] = restaurant.geometry.coordinates;
-                const marker = L.marker([lat, lng]).addTo(map);
-                marker.bindPopup(`<b>${restaurant.properties.nom}</b><br>${restaurant.properties.description}`);
-                bounds.push([lat, lng]);
-              }
-            });
-            if (bounds.length > 0) {
-              map.fitBounds(bounds, {padding: [50, 50]});
-            }
-          });
-      }
-
-      function loadPickupPoints() {
-        map.eachLayer(layer => {
-          if (layer instanceof L.Marker) {
-            map.removeLayer(layer);
-          }
-        });
-
-        fetch('/api/points_de_recuperation/')
-          .then(response => response.json())
-          .then(data => {
-            const bounds = [];
-            data.features && data.features.forEach(point => {
-              if (point.geometry?.coordinates) {
-                const [lng, lat] = point.geometry.coordinates;
-                const marker = L.marker([lat, lng]).addTo(map);
-                marker.bindPopup(`<b>${point.properties.nom}</b>`);
-                bounds.push([lat, lng]);
-              }
-            });
-            if (bounds.length > 0) {
-              map.fitBounds(bounds, {padding: [50, 50]});
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching pickup points:', error);
-          });
-      }
-
-      // Load pickup points by default
-      loadPickupPoints();
-    });
-  </script>
+<script src="{% static 'frontoffice/js/accueil.js' %}"></script>
 </body>
 </html>

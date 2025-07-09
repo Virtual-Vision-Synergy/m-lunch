@@ -5,19 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ restaurant.nom }} - M'Lunch</title>
-    <link rel="stylesheet" href="{% static 'css/header.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/resto.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontoffice/css/header.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontoffice/css/resto.css' %}" />
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-    <style>
-        .menu-item.unavailable .add-to-cart {
-            cursor: not-allowed;
-        }
-        /* Remove rating-related styles if any existed */
-        .rating, .rating-wrapper, #stars-container {
-            display: none !important;
-        }
-    </style>
 </head>
 <body>
 <!-- HEADER -->  
@@ -26,7 +17,7 @@
     <div class="overlap-2">
       <div class="group-8">
         <div class="overlap-group-3">
-          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <img class="rectangle-4" src="{% static 'frontoffice/img/icones/logo.png' %}" alt="Logo" />
           <div class="group-11">
             <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
             <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
@@ -34,9 +25,9 @@
             <a href="#about" class="text-wrapper-12">A propos</a>
           </div>
           <div class="icons-right">
-            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
-            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
-            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+            <a href="login.html" class="icon-button"><img src="{% static 'frontoffice/img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'frontoffice/img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'frontoffice/img/icones/menu.svg' %}" alt="Menu" /></button>
 
             <nav id="hamburger-menu" class="hamburger-menu">
               <ul>
@@ -65,7 +56,7 @@
         </div>
         <div class="name-location">
             <h2>{{ restaurant.nom }}</h2>
-            <p><span class="location"><img src="{% static 'img/icones/group-420.svg' %}" alt="Location Icon">{{ restaurant.adresse }}</span></p>
+            <p><span class="location"><img src="{% static 'frontoffice/img/icones/group-420.svg' %}" alt="Location Icon">{{ restaurant.adresse }}</span></p>
         </div>
         <div class="details">
             
@@ -89,18 +80,18 @@
     <div class="menu">
         {% for r in repas %}
         <div class="menu-item {% if not r.est_dispo %}unavailable{% endif %}">
-            <img src="{% static 'img/plats/' %}{{ r.image }}" alt="{{ r.nom }}">
+            <img src="{% static 'frontoffice/img/plats/' %}{{ r.image }}" alt="{{ r.nom }}">
             <h3>{{ r.nom }}</h3>
             <p>{{ r.description }}</p>
             <div class="price-line">
                 <div class="price">{{ r.prix }} Ar</div>
                 {% if r.est_dispo %}
                 <button class="add-to-cart" onclick="addToCart({{ r.id }})">
-                    <img src="{% static 'img/icones/typcn-shopping-cart0.svg' %}" alt="Add to Cart Icon">
+                    <img src="{% static 'frontoffice/img/icones/typcn-shopping-cart0.svg' %}" alt="Add to Cart Icon">
                 </button>
                 {% else %}
                 <button class="add-to-cart" disabled>
-                    <img src="{% static 'img/icones/typcn-shopping-cart0.svg' %}" alt="Add to Cart Icon">
+                    <img src="{% static 'frontoffice/img/icones/typcn-shopping-cart0.svg' %}" alt="Add to Cart Icon">
                 </button>
                 {% endif %}
             </div>
@@ -114,65 +105,7 @@
         </div>
         {% endfor %}
     </div>
+    <script src="{% static 'frontoffice/js/restaurant_detail.js' %}"></script>
 
-    <script>
-        // Category filter buttons
-        const buttons = document.querySelectorAll('.category-btn');
-        buttons.forEach(button => {
-            button.addEventListener('click', () => {
-                buttons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-            });
-        });
-
-        // Add to cart function using add_to_panier endpoint
-        function addToCart(mealId) {
-            fetch("{% url 'add_to_panier' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: JSON.stringify({ repas_id: mealId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert("Ajouté au panier !");
-                } else {
-                    alert(data.message || "Erreur lors de l'ajout au panier.");
-                }
-            })
-            .catch(error => {
-                alert("Erreur réseau lors de l'ajout au panier.");
-                console.error(error);
-            });
-        }
-
-        // Hamburger menu toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuToggle = document.getElementById('menu-toggle');
-            const hamburgerMenu = document.getElementById('hamburger-menu');
-            const submenuParents = document.querySelectorAll('.has-submenu');
-
-            menuToggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-                hamburgerMenu.classList.toggle('active');
-            });
-
-            document.addEventListener('click', function(e) {
-                if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
-                    hamburgerMenu.classList.remove('active');
-                }
-            });
-
-            submenuParents.forEach(function(parent) {
-                parent.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    parent.classList.toggle('open');
-                });
-            });
-        });
-    </script>
 </body>
 </html>

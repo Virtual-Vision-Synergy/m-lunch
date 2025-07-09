@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mes Commandes - M'Lunch</title>
-    <link rel="stylesheet" href="{% static 'css/header.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/mes_commandes.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontoffice/css/header.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontoffice/css/mes_commandes.css' %}" />
 </head>
 <body>
     <!-- HEADER -->
@@ -15,7 +15,7 @@
     <div class="overlap-2">
       <div class="group-8">
         <div class="overlap-group-3">
-          <img class="rectangle-4" src="{% static 'img/icones/logo.png' %}" alt="Logo" />
+          <img class="rectangle-4" src="{% static 'frontoffice/img/icones/logo.png' %}" alt="Logo" />
           <div class="group-11">
             <a href="{% url 'frontoffice_index' %}" class="text-wrapper-10">Accueil</a>
             <a href="{% url 'mes_commandes' %}" class="text-wrapper-11">Commandes</a>
@@ -23,9 +23,9 @@
             <a href="#about" class="text-wrapper-12">A propos</a>
           </div>
           <div class="icons-right">
-            <a href="login.html" class="icon-button"><img src="{% static 'img/icones/user.svg' %}" alt="Profil" /></a>
-            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'img/icones/panier.svg' %}" alt="Panier" /></a>
-            <button class="icon-button" id="menu-toggle"><img src="{% static 'img/icones/menu.svg' %}" alt="Menu" /></button>
+            <a href="login.html" class="icon-button"><img src="{% static 'frontoffice/img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'frontoffice/img/icones/panier.svg' %}" alt="Panier" /></a>
+            <button class="icon-button" id="menu-toggle"><img src="{% static 'frontoffice/img/icones/menu.svg' %}" alt="Menu" /></button>
 
             <nav id="hamburger-menu" class="hamburger-menu">
               <ul>
@@ -74,28 +74,6 @@
             {% endfor %}
         </table>
     </div>
-    <script>
-        // Hamburger menu functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuToggle = document.getElementById('menu-toggle');
-            const hamburgerMenu = document.getElementById('hamburger-menu');
-            const submenuParents = document.querySelectorAll('.has-submenu');
-            menuToggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-                hamburgerMenu.classList.toggle('active');
-            });
-            document.addEventListener('click', function(e) {
-                if (!hamburgerMenu.contains(e.target) && e.target !== menuToggle) {
-                    hamburgerMenu.classList.remove('active');
-                }
-            });
-            submenuParents.forEach(function(parent) {
-                parent.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    parent.classList.toggle('open');
-                });
-            });
-        });
-    </script>
+  <script src="{% static 'frontoffice/js/mes_commandes.js' %}"></script>
 </body>
 </html>
