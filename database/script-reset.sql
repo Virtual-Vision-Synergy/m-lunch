@@ -3,6 +3,7 @@
 
 -- Nettoyage des données existantes (en ordre inverse des dépendances)
 DELETE FROM core_commanderepas;
+DELETE FROM core_admin;
 DELETE FROM core_historiquestatutlivraison;
 DELETE FROM core_livraison;
 DELETE FROM core_historiquestatutcommande;
@@ -43,6 +44,7 @@ DELETE FROM core_statutentite;
 -- Réinitialisation des séquences
 ALTER SEQUENCE core_client_id_seq RESTART WITH 1;
 ALTER SEQUENCE core_zone_id_seq RESTART WITH 1;
+ALTER SEQUENCE core_admin_id_seq RESTART WITH 1;
 ALTER SEQUENCE core_pointrecup_id_seq RESTART WITH 1;
 ALTER SEQUENCE core_restaurant_id_seq RESTART WITH 1;
 ALTER SEQUENCE core_typerepas_id_seq RESTART WITH 1;

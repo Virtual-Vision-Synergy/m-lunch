@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -35,12 +36,12 @@
             color: white;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar-header {
             padding: 25px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
         }
 
@@ -65,7 +66,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             opacity: 0.8;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             margin-bottom: 10px;
         }
 
@@ -79,13 +80,13 @@
         }
 
         .sidebar-item:hover {
-            background-color: rgba(255,255,255,0.1);
+            background-color: rgba(255, 255, 255, 0.1);
             color: white;
-            border-left-color: rgba(255,255,255,0.5);
+            border-left-color: rgba(255, 255, 255, 0.5);
         }
 
         .sidebar-item.active {
-            background-color: rgba(255,255,255,0.15);
+            background-color: rgba(255, 255, 255, 0.15);
             border-left-color: white;
             font-weight: 500;
         }
@@ -108,7 +109,7 @@
             border-radius: 10px;
             padding: 25px 30px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             border-left: 4px solid var(--primary-orange);
         }
 
@@ -137,14 +138,14 @@
             background: white;
             border-radius: 12px;
             padding: 25px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
             border-left: 4px solid var(--primary-orange);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
         }
 
         .stat-card-header {
@@ -185,7 +186,7 @@
         .content-card {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
             overflow: hidden;
             margin-bottom: 30px;
         }
@@ -208,7 +209,7 @@
             border-radius: 12px;
             padding: 20px 25px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         .filters-title {
@@ -222,7 +223,7 @@
             background: white;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
         }
 
         .table-header {
@@ -337,80 +338,90 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h3><i class="fas fa-utensils me-2"></i>Admin</h3>
-        </div>
-        <div class="sidebar-menu">
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Tableau</div>
-                <a href="{% url 'index' %}" class="sidebar-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
-                    <i class="fas fa-chart-pie"></i>Dashboard
-                </a>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header"
+         style="background: #fff; border-radius: 18px; border: 3px solid var(--primary-orange); box-shadow: 0 2px 10px rgba(0,0,0,0.04); color: var(--primary-orange); margin: 20px 10px;">
+        <h3 style="color: var(--primary-orange);">
+            <img src="{% static 'frontoffice/img/icones/logo.png' %}" alt="Logo" class="me-2"
+                 style="height: 3.5em; vertical-align: middle;">
+            Admin
+        </h3>
+    </div>
+    <div class="sidebar-menu">
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Tableau</div>
+            <a href="{% url 'index' %}"
+               class="sidebar-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i>Dashboard
+            </a>
 
-                <a href="{% url 'backoffice_restaurant_list' %}" class="sidebar-item {% if 'restaurant' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-store"></i>Restaurants
-                </a>
-                <a href="{% url 'zone_list' %}" class="sidebar-item {% if 'zone' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-map-marked-alt"></i>Zones
-                </a>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Gestion</div>
-                <a href="{% url 'stats_dashboard' %}" class="sidebar-item {% if 'stats' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-chart-bar"></i>Statistiques
-                </a>
-                <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item">
-                    <i class="fas fa-shipping-fast"></i>Livraisons
-                </a>
-            </div>
+            <a href="{% url 'backoffice_restaurant_list' %}"
+               class="sidebar-item {% if 'restaurant' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-store"></i>Restaurants
+            </a>
+            <a href="{% url 'zone_list' %}"
+               class="sidebar-item {% if 'zone' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-map-marked-alt"></i>Zones
+            </a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Gestion</div>
+            <a href="{% url 'stats_dashboard' %}"
+               class="sidebar-item {% if 'stats' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i>Statistiques
+            </a>
+            <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item">
+                <i class="fas fa-shipping-fast"></i>Livraisons et livreurs
+            </a>
         </div>
     </div>
+</div>
 
-    <!-- Main Content -->
-    <div class="main-content">
+<!-- Main Content -->
+<div class="main-content">
 
 
-        <!-- Messages -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
-        <!-- Content -->
-        {% block content %}
-        {% endblock %}
-    </div>
+    <!-- Content -->
+    {% block content %}
+    {% endblock %}
+</div>
 
-    <!-- Mobile Menu Toggle -->
-    <button class="btn btn-orange d-md-none" style="position: fixed; top: 20px; left: 20px; z-index: 1001;" onclick="toggleSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
+<!-- Mobile Menu Toggle -->
+<button class="btn btn-orange d-md-none" style="position: fixed; top: 20px; left: 20px; z-index: 1001;"
+        onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('show');
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('show');
+    }
+
+    // Close sidebar on mobile when clicking outside
+    document.addEventListener('click', function (e) {
+        const sidebar = document.querySelector('.sidebar');
+        const toggleBtn = document.querySelector('[onclick="toggleSidebar()"]');
+
+        if (window.innerWidth <= 768 &&
+            !sidebar.contains(e.target) &&
+            !toggleBtn.contains(e.target) &&
+            sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
         }
-
-        // Close sidebar on mobile when clicking outside
-        document.addEventListener('click', function(e) {
-            const sidebar = document.querySelector('.sidebar');
-            const toggleBtn = document.querySelector('[onclick="toggleSidebar()"]');
-
-            if (window.innerWidth <= 768 &&
-                !sidebar.contains(e.target) &&
-                !toggleBtn.contains(e.target) &&
-                sidebar.classList.contains('show')) {
-                sidebar.classList.remove('show');
-            }
-        });
-    </script>
-    {% block extra_js %}{% endblock %}
+    });
+</script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

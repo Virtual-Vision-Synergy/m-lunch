@@ -4,8 +4,10 @@ from datetime import datetime
 from django.db import transaction
 from ..models import (
     Restaurant, StatutRestaurant, HistoriqueStatutRestaurant, HistoriqueStatutCommande, Commission, Horaire, Zone,
-    ZoneRestaurant, ZoneClient, Repas, Commande, StatutCommande, RestaurantRepas, DisponibiliteRepas, TypeRepas, HoraireSpecial
+    ZoneRestaurant, ZoneClient, Repas, Commande, StatutCommande, RestaurantRepas, DisponibiliteRepas, TypeRepas,
+    HoraireSpecial
 )
+
 
 class RestaurantService:
     @staticmethod
@@ -44,7 +46,7 @@ class RestaurantService:
                     }
                 }
         except Exception as e:
-            return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}    
+            return {"error": f"Erreur lors de la création du restaurant : {str(e)}"}
 
     @staticmethod
     def update_restaurant(restaurant_id, data):
@@ -153,24 +155,25 @@ class RestaurantService:
             return f"Erreur : {str(e)}"
 
     def list_restaurants_actifs():
-            # pdb.set_trace()
-            """Liste tous les restaurants actifs (dernier statut = actif)."""
-            try:
-                actifs = []
-                for r in Restaurant.objects.all():
-                    dernier_statut = r.historiques.order_by('-mis_a_jour_le').first()
-                    if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
-                        actifs.append({
-                            "id": r.id,
-                            "nom": r.nom,
-                            "adresse": r.adresse,
-                            "description": r.description,
-                            "image": r.image,
-                            "geo_position": r.geo_position
-                        })
-                return actifs
-            except Exception as e:
-                return {"error": f"Erreur lors de la récupération des restaurants actifs : {str(e)}"}
+        # pdb.set_trace()
+        """Liste tous les restaurants actifs (dernier statut = actif)."""
+        try:
+            actifs = []
+            for r in Restaurant.objects.all():
+                dernier_statut = r.historiques.order_by('-mis_a_jour_le').first()
+                if dernier_statut and dernier_statut.statut.appellation and dernier_statut.statut.appellation.lower() == "actif":
+                    actifs.append({
+                        "id": r.id,
+                        "nom": r.nom,
+                        "adresse": r.adresse,
+                        "description": r.description,
+                        "image": r.image,
+                        "geo_position": r.geo_position
+                    })
+            return actifs
+        except Exception as e:
+            return {"error": f"Erreur lors de la récupération des restaurants actifs : {str(e)}"}
+
     @staticmethod
     def list_repas_by_restaurant(restaurant_id):
         # pdb.set_trace()
@@ -341,24 +344,33 @@ class RestaurantService:
 
     @staticmethod
     def get_restaurants_by_client_zones(client_id):
+        from .geo_distance_service import GeoDistanceService
+
         zones = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
-        zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
+
+        # Si l'utilisateur n'a pas de zones spécifiques, afficher tous les restaurants
+        if zones.exists():
+            zone_restaurants = ZoneRestaurant.objects.filter(zone_id__in=zones).select_related('restaurant')
+            restaurants = [zr.restaurant for zr in zone_restaurants]
+        else:
+            # Afficher tous les restaurants si pas de zones spécifiques
+            restaurants = Restaurant.objects.all()
 
         from datetime import datetime, date
         features = []
         today = datetime.now().weekday()
         today_date = date.today()
-        for zr in zone_restaurants:
-            r = zr.restaurant
+
+        for r in restaurants:
             if not r.geo_position:
                 continue
-            try:
-                # Format: "POINT(47.5310 -18.9120)"
-                coords_str = r.geo_position.replace("POINT(", "").replace(")", "")
-                x_str, y_str = coords_str.split()
-                x, y = float(x_str), float(y_str)
-            except Exception:
+
+            # Utiliser la fonction de parsing améliorée
+            coords = GeoDistanceService.parse_coordinates(r.geo_position)
+            if not coords:
                 continue
+
+            lat, lng = coords
 
             # Get today's horaires (special or normal)
             horaires = []
@@ -383,7 +395,7 @@ class RestaurantService:
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
-                    "coordinates": [x, y],
+                    "coordinates": [lng, lat],  # GeoJSON format: [longitude, latitude]
                 },
                 "properties": {
                     "id": r.id,
@@ -401,7 +413,6 @@ class RestaurantService:
 
     @staticmethod
     def get_repas_for_restaurant(restaurant_id, selected_type=None):
-
         try:
             restaurant = Restaurant.objects.get(id=restaurant_id)
         except Restaurant.DoesNotExist:
@@ -412,14 +423,15 @@ class RestaurantService:
             repas_qs = repas_qs.filter(repas__type__id=selected_type)
 
         repas_list = []
-        current_time = now()
         for rr in repas_qs:
             r = rr.repas
-            is_dispo = DisponibiliteRepas.objects.filter(
-                repas=r,
-                est_dispo=True
-            ).exists()
-            #print(f"Checking availability for repas {r.nom}: {is_dispo}")
+            # Get the latest DisponibiliteRepas for this repas
+            dispo = DisponibiliteRepas.objects.filter(repas=r).order_by('-mis_a_jour_le').first()
+            if dispo is not None:
+                is_dispo = dispo.est_dispo
+            else:
+                is_dispo = True  # Default to True if no availability found
+
             repas_list.append({
                 "id": r.id,
                 "nom": r.nom,
@@ -441,23 +453,26 @@ class RestaurantService:
 
     @staticmethod
     def get_all_restaurants_geojson():
+        from .geo_distance_service import GeoDistanceService
+
         restaurants = Restaurant.objects.all()
         features = []
         for r in restaurants:
             if not r.geo_position:
                 continue
-            try:
-                # Format: "POINT(47.5310 -18.9120)"
-                coords_str = r.geo_position.replace("POINT(", "").replace(")", "")
-                x_str, y_str = coords_str.split()
-                x, y = float(x_str), float(y_str)
-            except Exception:
+
+            # Utiliser la fonction de parsing améliorée
+            coords = GeoDistanceService.parse_coordinates(r.geo_position)
+            if not coords:
                 continue
+
+            lat, lng = coords
+
             features.append({
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
-                    "coordinates": [x, y],
+                    "coordinates": [lng, lat],  # GeoJSON format: [longitude, latitude]
                 },
                 "properties": {
                     "id": r.id,
@@ -465,8 +480,7 @@ class RestaurantService:
                     "note": "N/A",
                     "image_url": r.image,
                     "adresse": r.adresse,
-                    "description": r.description if hasattr(r,
-                                                            'description') and r.description else "Aucune description disponible",
+                    "description": r.description if hasattr(r, 'description') and r.description else "Aucune description disponible",
                 }
             })
 
@@ -474,9 +488,10 @@ class RestaurantService:
             "type": "FeatureCollection",
             "features": features
         }
-        
-    @staticmethod   
-    def get_commandes_by_restaurant_filtrer(restaurant_id, date_debut=None, date_fin=None, idstatut=None, idmodepaiement=None):
+
+    @staticmethod
+    def get_commandes_by_restaurant_filtrer(restaurant_id, date_debut=None, date_fin=None, idstatut=None,
+                                            idmodepaiement=None):
         """
         Retourne les commandes associées à un restaurant donné, filtrées par période (date_debut, date_fin),
         statut de commande (idstatut), et mode de paiement (idmodepaiement).
@@ -504,7 +519,8 @@ class RestaurantService:
             if idstatut:
                 commandes_ids = []
                 for commande in commandes:
-                    historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                    historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by(
+                        '-mis_a_jour_le').first()
                     if historique and historique.statut_id == int(idstatut):
                         commandes_ids.append(commande.id)
                 commandes = commandes.filter(id__in=commandes_ids)
@@ -513,7 +529,8 @@ class RestaurantService:
             for commande in commandes:
                 details = CommandeService.get_commande_details(commande.id)
                 # Récupérer le dernier statut
-                historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by('-mis_a_jour_le').first()
+                historique = HistoriqueStatutCommande.objects.filter(commande=commande).order_by(
+                    '-mis_a_jour_le').first()
                 statut = None
                 if historique and hasattr(historique, 'statut') and historique.statut:
                     statut = historique.statut.appellation
@@ -536,7 +553,7 @@ class RestaurantService:
         """
         try:
             from django.db.models import Q, Avg
-            from django.contrib.gis.geos import Point
+            from .geo_distance_service import GeoDistanceService
             import re
 
             # Base queryset avec les restaurants actifs
@@ -559,15 +576,12 @@ class RestaurantService:
 
             result = []
             for restaurant in restaurants:
-                # Récupérer les coordonnées
+                # Récupérer les coordonnées en utilisant le parser amélioré
                 longitude = latitude = None
                 if restaurant.geo_position:
-                    try:
-                        # Format: "POINT(longitude latitude)"
-                        coords_str = restaurant.geo_position.replace("POINT(", "").replace(")", "")
-                        longitude, latitude = map(float, coords_str.split())
-                    except Exception:
-                        pass
+                    coords = GeoDistanceService.parse_coordinates(restaurant.geo_position)
+                    if coords:
+                        latitude, longitude = coords
 
                 # Récupérer le nom de la zone
                 zone_nom = None

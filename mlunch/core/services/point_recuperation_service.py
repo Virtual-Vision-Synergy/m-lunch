@@ -4,23 +4,26 @@ from mlunch.core.models import PointRecup
 class PointRecupService:
     @staticmethod
     def get_all_points_recup_geojson():
+        from .geo_distance_service import GeoDistanceService
+
         points = PointRecup.objects.all()
         features = []
         for point in points:
             if not point.geo_position:
                 continue
-            try:
-                # Ex: "POINT(47.5310 -18.9120)"
-                coords_str = point.geo_position.replace("POINT(", "").replace(")", "")
-                x_str, y_str = coords_str.split()
-                x, y = float(x_str), float(y_str)
-            except Exception:
+
+            # Utiliser la fonction de parsing améliorée
+            coords = GeoDistanceService.parse_coordinates(point.geo_position)
+            if not coords:
                 continue
+
+            lat, lng = coords
+
             features.append({
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
-                    "coordinates": [x, y],
+                    "coordinates": [lng, lat],  # GeoJSON format: [longitude, latitude]
                 },
                 "properties": {
                     "id": point.id,
@@ -31,4 +34,3 @@ class PointRecupService:
             "type": "FeatureCollection",
             "features": features
         }
-

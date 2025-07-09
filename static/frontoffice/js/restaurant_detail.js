@@ -31,7 +31,6 @@
             });
         }
 
-        // Hamburger menu toggle
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.getElementById('menu-toggle');
             const hamburgerMenu = document.getElementById('hamburger-menu');

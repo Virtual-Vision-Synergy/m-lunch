@@ -61,7 +61,6 @@ def add_to_panier(request):
                 'message': 'Vous devez être connecté pour ajouter au panier'
             })
 
-        # Appel du service
         result = PanierService.add_to_panier(client_id, repas_id, quantite)
 
         if 'error' in result:

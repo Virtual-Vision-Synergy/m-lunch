@@ -45,16 +45,6 @@ def restaurant_detail(request, restaurant_id):
         'selected_type': data['selected_type']
     })
 
-
-def restaurants_geojson(request):
-    client_id = request.session.get('client_id')
-    if not client_id:
-        return JsonResponse({'error': 'Non connecté'}, status=401)
-
-    data = RestaurantService.get_restaurants_by_client_zones(client_id)
-    return JsonResponse(data)
-
-
 def all_restaurants(request):
     data = RestaurantService.get_all_restaurants_geojson()
     return JsonResponse(data)

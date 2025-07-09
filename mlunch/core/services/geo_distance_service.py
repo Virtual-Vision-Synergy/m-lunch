@@ -43,10 +43,12 @@ class GeoDistanceService:
     @staticmethod
     def parse_coordinates(geo_position: str) -> Optional[Tuple[float, float]]:
         """
-        Parse une chaîne de coordonnées au format "latitude,longitude"
+        Parse une chaîne de coordonnées dans différents formats :
+        - "latitude,longitude" (ex: "-18.9078,47.5234")
+        - "POINT(longitude latitude)" (ex: "POINT(47.5310 -18.9120)")
 
         Args:
-            geo_position: Chaîne au format "lat,lng"
+            geo_position: Chaîne de coordonnées dans un des formats supportés
 
         Returns:
             Tuple (latitude, longitude) ou None si erreur
@@ -55,18 +57,32 @@ class GeoDistanceService:
             if not geo_position or geo_position == "0,0":
                 return None
 
-            coords = geo_position.split(',')
-            if len(coords) != 2:
-                return None
+            # Format POINT(longitude latitude)
+            if geo_position.startswith("POINT(") and geo_position.endswith(")"):
+                coords_str = geo_position.replace("POINT(", "").replace(")", "")
+                coords = coords_str.split()
+                if len(coords) == 2:
+                    lng = float(coords[0].strip())
+                    lat = float(coords[1].strip())
+                    # Vérification des limites valides
+                    if -90 <= lat <= 90 and -180 <= lng <= 180:
+                        return (lat, lng)
+                    else:
+                        return None
 
-            lat = float(coords[0].strip())
-            lng = float(coords[1].strip())
+            # Format latitude,longitude
+            elif ',' in geo_position:
+                coords = geo_position.split(',')
+                if len(coords) == 2:
+                    lat = float(coords[0].strip())
+                    lng = float(coords[1].strip())
+                    # Vérification des limites valides
+                    if -90 <= lat <= 90 and -180 <= lng <= 180:
+                        return (lat, lng)
+                    else:
+                        return None
 
-            # Vérification des limites valides
-            if -90 <= lat <= 90 and -180 <= lng <= 180:
-                return (lat, lng)
-            else:
-                return None
+            return None
 
         except (ValueError, AttributeError):
             return None
