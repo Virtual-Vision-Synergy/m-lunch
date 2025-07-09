@@ -4,12 +4,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from mlunch.core.services.restaurant_service import RestaurantService
 from mlunch.core.services.zone_service import ZoneService
-from mlunch.core.models import Commission, Horaire, ModePaiement, Restaurant, StatutCommande, Zone, StatutRestaurant, ZoneRestaurant
+from mlunch.core.models import Commission, Horaire, ModePaiement, Restaurant, StatutCommande, Zone, StatutRestaurant, ZoneRestaurant, Commande, CommandeRepas, Repas, TypeRepas
+from django.db.models import Sum, Count, F, Q, DecimalField, Avg
+from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 import json
 import os
 from django.conf import settings
 from math import radians, cos, sin, asin, sqrt
 from django.db import transaction
+from decimal import Decimal
 
 def restaurant(request):
     """Page de liste des restaurants avec filtres."""
@@ -305,3 +308,134 @@ def restaurant_update_statut(request, restaurant_id):
             return JsonResponse({'success': False, 'message': str(e)})
 
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+def restaurant_detail_financier(request, restaurant_id):
+    """Détails financiers d'un restaurant spécifique"""
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    # Statistiques générales du restaurant
+    total_commandes = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).values('commande').distinct().count()
+
+    # Chiffre d'affaires total
+    ca_total = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).aggregate(
+        total=Sum(F('repas__prix') * F('quantite'), output_field=DecimalField())
+    )['total'] or Decimal('0')
+
+    # Nombre de repas vendus
+    total_repas_vendus = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).aggregate(total=Sum('quantite'))['total'] or 0
+
+    # Prix moyen par commande
+    prix_moyen = ca_total / total_commandes if total_commandes > 0 else Decimal('0')
+
+    # Commission du restaurant
+    try:
+        commission = Commission.objects.filter(restaurant=restaurant).latest('mis_a_jour_le')
+        commission_value = commission.valeur
+        ca_apres_commission = ca_total * (100 - commission_value) / 100
+    except Commission.DoesNotExist:
+        commission_value = 0
+        ca_apres_commission = ca_total
+
+    # Top 5 des repas les plus vendus
+    top_repas = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).values('repas__nom', 'repas__prix').annotate(
+        total_vendu=Sum('quantite'),
+        ca_repas=Sum(F('repas__prix') * F('quantite'), output_field=DecimalField())
+    ).order_by('-total_vendu')[:5]
+
+    # Répartition par type de repas
+    repas_par_type = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).values('repas__type__nom').annotate(
+        total_vendu=Sum('quantite'),
+        ca_type=Sum(F('repas__prix') * F('quantite'), output_field=DecimalField())
+    ).order_by('-ca_type')
+
+    # Évolution mensuelle du CA
+    ca_mensuel = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).annotate(
+        mois=TruncMonth('ajoute_le')
+    ).values('mois').annotate(
+        ca=Sum(F('repas__prix') * F('quantite'), output_field=DecimalField()),
+        nb_commandes=Count('commande', distinct=True)
+    ).order_by('mois')
+
+    return render(request, 'backoffice/restaurant_detail_financier.html', {
+        'restaurant': restaurant,
+        'total_commandes': total_commandes,
+        'ca_total': ca_total,
+        'total_repas_vendus': total_repas_vendus,
+        'prix_moyen': prix_moyen,
+        'commission_value': commission_value,
+        'ca_apres_commission': ca_apres_commission,
+        'top_repas': top_repas,
+        'repas_par_type': repas_par_type,
+        'ca_mensuel': ca_mensuel,
+    })
+
+def restaurant_financier_api(request, restaurant_id):
+    """API pour les données financières d'un restaurant"""
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    periode = request.GET.get('periode', 'mois')
+
+    if periode == 'jour':
+        truncate_func = TruncDay
+        date_format = '%Y-%m-%d'
+    elif periode == 'mois':
+        truncate_func = TruncMonth
+        date_format = '%Y-%m'
+    else:
+        truncate_func = TruncYear
+        date_format = '%Y'
+
+    # Évolution du CA par période
+    ca_evolution = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).annotate(
+        periode=truncate_func('ajoute_le')
+    ).values('periode').annotate(
+        ca=Sum(F('repas__prix') * F('quantite'), output_field=DecimalField()),
+        nb_commandes=Count('commande', distinct=True),
+        nb_repas=Sum('quantite')
+    ).order_by('periode')
+
+    data = []
+    for stat in ca_evolution:
+        data.append({
+            'periode': stat['periode'].strftime(date_format),
+            'ca': float(stat['ca'] or 0),
+            'nb_commandes': stat['nb_commandes'],
+            'nb_repas': stat['nb_repas']
+        })
+
+    return JsonResponse(data, safe=False)
+
+def restaurant_repas_api(request, restaurant_id):
+    """API pour les statistiques des repas d'un restaurant"""
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    # Répartition par type de repas
+    repas_par_type = CommandeRepas.objects.filter(
+        repas__restaurantrepas__restaurant=restaurant
+    ).values('repas__type__nom').annotate(
+        total_vendu=Sum('quantite'),
+        ca_type=Sum(F('repas__prix') * F('quantite'), output_field=DecimalField())
+    ).order_by('-ca_type')
+
+    data = []
+    for stat in repas_par_type:
+        data.append({
+            'type': stat['repas__type__nom'],
+            'total_vendu': stat['total_vendu'],
+            'ca': float(stat['ca_type'] or 0)
+        })
+
+    return JsonResponse(data, safe=False)

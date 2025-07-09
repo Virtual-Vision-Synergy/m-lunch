@@ -150,3 +150,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Ensure the session cookie is marked as temporary
 SESSION_SAVE_EVERY_REQUEST = True  # Optional but recommended
+
