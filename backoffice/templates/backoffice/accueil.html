@@ -5,34 +5,34 @@
     <title>Statistique</title>
 </head>
 <body>
-    <h1>Bienvenue Admin</h1>
-    <header>
-        <ul>
-            <li><a href="{% url 'index' %}">Logo</a></li>
-            <li><a href="{% url 'stats_dashboard' %}">Statistiques</a></li>
-            <li><a href="{% url 'backoffice_restaurant_list' %}">Restaurant</a></li>
-            <li><a href="{% url 'zone_list' %}">Secteur</a></li>
-            {% comment %} <li><a href="{% url 'livreur_list' %}">Livreurs</a></li> {% endcomment %}
-        </ul>
-    </header>
+    {% extends 'backoffice/base.html' %}
 
-    <section>
-        <h2>Filtrer par statut</h2>
-        <form method="get">
-            <select name="statut" onchange="this.form.submit()">
-                <option value="">-- Tous les statuts --</option>
-                {% for statut in statuts %}
-                    <option value="{{ statut.appellation }}" {% if request.GET.statut == statut.appellation %}selected{% endif %}>
-                        {{ statut.appellation }}
-                    </option>
-                {% endfor %}
-            </select>
+    {% block title %}Accueil - M'Lunch Backoffice{% endblock %}
+
+    {% block page_title %}Bienvenue Admin{% endblock %}
+
+    {% block page_subtitle %}Vue d'ensemble et gestion des commandes{% endblock %}
+
+    {% block content %}
+    <div class="filters-section mb-4">
+        <div class="filters-title">Filtrer par statut</div>
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <select name="statut" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tous les statuts --</option>
+                    {% for statut in statuts %}
+                        <option value="{{ statut.appellation }}" {% if request.GET.statut == statut.appellation %}selected{% endif %}>
+                            {{ statut.appellation }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
         </form>
-    </section>
+    </div>
 
-    <section>
-        <h2>Liste des commandes</h2>
-        <table border="1">
+    <div class="table-container">
+        <div class="table-header">Liste des commandes</div>
+        <table class="table custom-table">
             <thead>
                 <tr>
                     <th>Client</th>
@@ -60,12 +60,11 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="5">Aucune commande trouvée.</td>
-                </tr>
+                <tr><td colspan="5" class="text-center">Aucune commande trouvée.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
-    </section>
+    </div>
+    {% endblock %}
 </body>
 </html>

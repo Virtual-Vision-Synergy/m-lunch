@@ -348,14 +348,9 @@
                 <a href="{% url 'index' %}" class="sidebar-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
                     <i class="fas fa-chart-pie"></i>Dashboard
                 </a>
-                <a href="{% url 'commande_list' %}" class="sidebar-item {% if 'commande' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-shopping-cart"></i>Clients
-                </a>
-                <a href="{% url 'restaurant_list' %}" class="sidebar-item {% if 'restaurant' in request.resolver_match.url_name %}active{% endif %}">
+
+                <a href="{% url 'backoffice_restaurant_list' %}" class="sidebar-item {% if 'restaurant' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-store"></i>Restaurants
-                </a>
-                <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item {% if 'livra' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-truck"></i>Livreurs
                 </a>
                 <a href="{% url 'zone_list' %}" class="sidebar-item {% if 'zone' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-map-marked-alt"></i>Zones
@@ -365,9 +360,6 @@
                 <div class="sidebar-section-title">Gestion</div>
                 <a href="{% url 'stats_dashboard' %}" class="sidebar-item {% if 'stats' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-chart-bar"></i>Statistiques
-                </a>
-                <a href="{% url 'commande_list' %}" class="sidebar-item">
-                    <i class="fas fa-list"></i>Commandes
                 </a>
                 <a href="{% url 'livraison_livreur_dashboard' %}" class="sidebar-item">
                     <i class="fas fa-shipping-fast"></i>Livraisons

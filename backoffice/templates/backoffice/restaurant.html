@@ -5,91 +5,124 @@
     <title>Restaurant</title>
 </head>
 <body>
-    <h1>Bienvenue Admin</h1>
+    {% extends 'backoffice/base.html' %}
 
-    <header>
-        <ul>
-            <li><a href="{% url 'index' %}">Logo</a></li>
-            <li><a href="{% url 'index' %}">Statistiques</a></li>
-            <li><a href="{% url 'restaurant_list' %}">Restaurant</a></li>
-            <li><a href="{% url 'zone_list' %}">Secteur</a></li>
-            {% comment %} <li><a href="{% url 'livraison_list' %}">Livraison</a></li> {% endcomment %}
-        </ul>
-    </header>
+    {% block title %}Restaurants - M'Lunch Backoffice{% endblock %}
 
-    <section>
-        <h2>Filtrer les Restaurants</h2>
+    {% block page_title %}Gestion des Restaurants{% endblock %}
 
-        <form method="get" action="" id="filtre-form">
-            <label for="zone">Zone :</label>
-            <select name="zone" id="zone" onchange="document.getElementById('filtre-form').submit();">
-                <option value="">-- Toutes les zones --</option>
-                {% for zone in zones %}
-                    <option value="{{ zone.id }}" {% if zone.id == selected_zone %}selected{% endif %}>{{ zone.nom }}</option>
-                {% endfor %}
-            </select>
+    {% block page_subtitle %}Gérez les restaurants partenaires et leurs informations{% endblock %}
 
-            <label for="statut">Statut :</label>
-            <select name="statut" id="statut" onchange="document.getElementById('filtre-form').submit();">
-                <option value="">-- Tous les statuts --</option>
-                {% for s in statuts %}
-                    <option value="{{ s.id }}" {% if s.id == selected_statut %}selected{% endif %}>{{ s.appellation }}</option>
-                {% endfor %}
-            </select>
-        </form>
-    </section>
-
-    <section>
-        <h2>Liste des Restaurants</h2>
-
-        {% for restaurant in restaurants %}
-        <div>
-            <h3>{{ restaurant.nom }}</h3>
-
-            {% if restaurant.image %}
-                <img src="{{ restaurant.image.url }}" alt="Image du restaurant {{ restaurant.nom }}">
-            {% endif %}
-
-            <p><strong>Secteurs desservis :</strong> {{ restaurant.secteurs|join:", " }}</p>
-            <p><strong>Commission actuelle :</strong> {{ restaurant.commission }} %</p>
-            <p><strong>Statut :</strong> {{ restaurant.statut }}</p>
-
-            <p><strong>Horaires :</strong></p>
-            <ul>
-                {% for horaire in restaurant.horaire %}
-                    <li>
-                        {% if horaire.le_jour == 0 %}Lundi
-                        {% elif horaire.le_jour == 1 %}Mardi
-                        {% elif horaire.le_jour == 2 %}Mercredi
-                        {% elif horaire.le_jour == 3 %}Jeudi
-                        {% elif horaire.le_jour == 4 %}Vendredi
-                        {% elif horaire.le_jour == 5 %}Samedi
-                        {% elif horaire.le_jour == 6 %}Dimanche
-                        {% else %}Jour {{ horaire.le_jour }}
-                        {% endif %}
-                        : {{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}
-                    </li>
-                {% endfor %}
-            </ul>
-
-            <!-- Boutons d'action -->
-            <form action="{% url 'restaurant_commandes' restaurant.id %}" method="get" style="display:inline;">
-                <button type="submit">Info commande</button>
-            </form>
-
-            <form action="{% url 'restaurant_detail_financier' restaurant.id %}" method="get" style="display:inline;">
-                <button type="submit">Détail financier</button>
-            </form>
-
-            <hr>
-        </div>
-        {% endfor %}
-
-    </section>
-    <div style="text-align:center; margin-top: 20px;">
-        <form action="{% url 'restaurant_add_form' %}" method="get">
-            <button type="submit">Ajouter un restaurant</button>
+    {% block content %}
+    <div class="filters-section mb-4">
+        <div class="filters-title">Filtrer les Restaurants</div>
+        <form method="get" action="" id="filtre-form" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="zone" class="form-label">Zone :</label>
+                <select name="zone" id="zone" class="form-select" onchange="document.getElementById('filtre-form').submit();">
+                    <option value="">-- Toutes les zones --</option>
+                    {% for zone in zones %}
+                        <option value="{{ zone.id }}" {% if zone.id == selected_zone %}selected{% endif %}>{{ zone.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label for="statut" class="form-label">Statut :</label>
+                <select name="statut" id="statut" class="form-select" onchange="document.getElementById('filtre-form').submit();">
+                    <option value="">-- Tous les statuts --</option>
+                    {% for s in statuts %}
+                        <option value="{{ s.id }}" {% if s.id == selected_statut %}selected{% endif %}>{{ s.appellation }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </form>
     </div>
+
+    <div class="row">
+        {% for restaurant in restaurants %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="content-card h-100">
+                <div class="content-card-header">
+                    <i class="fas fa-store me-2"></i>{{ restaurant.nom }}
+                </div>
+                <div class="content-card-body">
+                    {% if restaurant.image %}
+                        <div class="text-center mb-3">
+                            <img src="{{ restaurant.image.url }}" alt="Image du restaurant {{ restaurant.nom }}"
+                                 class="img-fluid rounded" style="max-height: 150px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <p class="mb-2"><strong><i class="fas fa-map-marker-alt me-2 text-muted"></i>Secteurs desservis :</strong></p>
+                        <span class="badge bg-secondary">{{ restaurant.secteurs|join:", " }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="mb-1"><strong><i class="fas fa-percentage me-2 text-muted"></i>Commission :</strong> {{ restaurant.commission }} %</p>
+                        <p class="mb-1"><strong><i class="fas fa-info-circle me-2 text-muted"></i>Statut :</strong>
+                            <span class="badge bg-primary">{{ restaurant.statut }}</span>
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="mb-2"><strong><i class="fas fa-clock me-2 text-muted"></i>Horaires :</strong></p>
+                        <div class="small">
+                            {% for horaire in restaurant.horaire %}
+                                <div class="d-flex justify-content-between border-bottom py-1">
+                                    <span>
+                                        {% if horaire.le_jour == 0 %}Lundi
+                                        {% elif horaire.le_jour == 1 %}Mardi
+                                        {% elif horaire.le_jour == 2 %}Mercredi
+                                        {% elif horaire.le_jour == 3 %}Jeudi
+                                        {% elif horaire.le_jour == 4 %}Vendredi
+                                        {% elif horaire.le_jour == 5 %}Samedi
+                                        {% elif horaire.le_jour == 6 %}Dimanche
+                                        {% else %}Jour {{ horaire.le_jour }}
+                                        {% endif %}
+                                    </span>
+                                    <span>{{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <form action="{% url 'restaurant_commandes' restaurant.id %}" method="get">
+                            <button type="submit" class="btn btn-orange w-100">
+                                <i class="fas fa-shopping-cart me-2"></i>Info commande
+                            </button>
+                        </form>
+
+                        <form action="{% url 'restaurant_detail_financier' restaurant.id %}" method="get">
+                            <button type="submit" class="btn btn-orange-outline w-100">
+                                <i class="fas fa-chart-line me-2"></i>Détail financier
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="content-card">
+                <div class="content-card-body text-center py-5">
+                    <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucun restaurant trouvé</h5>
+                    <p class="text-muted">Aucun restaurant ne correspond aux critères sélectionnés.</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <form action="{% url 'restaurant_add_form' %}" method="get">
+            <button type="submit" class="btn btn-orange btn-lg">
+                <i class="fas fa-plus me-2"></i>Ajouter un restaurant
+            </button>
+        </form>
+    </div>
+    {% endblock %}
 </body>
 </html>
