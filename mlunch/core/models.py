@@ -45,7 +45,7 @@ class PointRecup(models.Model):
 
 class Commande(models.Model):
     client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='commandes')
-    point_recup = models.ForeignKey('PointRecup', on_delete=models.CASCADE)
+    point_recup = models.ForeignKey('PointRecup', on_delete=models.CASCADE,null=True, blank=True)
     cree_le = models.DateTimeField(default=now)
     mode_paiement = models.ForeignKey('ModePaiement', on_delete=models.SET_NULL, null=True, blank=True)
 
