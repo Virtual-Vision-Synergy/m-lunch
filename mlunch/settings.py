@@ -130,13 +130,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# Configuration des répertoires statiques
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'restaurant', 'static'),
-    os.path.join(BASE_DIR, 'frontoffice', 'static'),
-    os.path.join(BASE_DIR, 'backoffice', 'static'),
+    os.path.join(BASE_DIR, 'static'),  # Dossier static global
 ]
+
+# Configuration des finders pour que Django trouve les fichiers statiques de chaque app
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
