@@ -356,3 +356,4 @@ INSERT INTO core_historiquestatutlivreur (livreur_id, statut_id, mis_a_jour_le) 
 (4, 1, NOW()),
 (5, 1, NOW()),
 (6, 1, NOW());
+
