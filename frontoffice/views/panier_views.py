@@ -22,7 +22,7 @@ def panier_view(request):
     items = PanierService.get_panier_items(client_id)
     totals = PanierService.calculate_totals(client_id)
 
-    points_recuperation = PanierService.get_points_recuperation()
+    points_recuperation = PanierService.get_points_recuperation(client_id)
     if isinstance(items, dict) and 'error' in items:
         items = []
 

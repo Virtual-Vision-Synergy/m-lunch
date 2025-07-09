@@ -9,7 +9,7 @@
 
         // Add to cart function using add_to_panier endpoint
         function addToCart(mealId) {
-            fetch("{% url 'add_to_panier' %}", {
+            fetch("/api/panier/ajouter/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
