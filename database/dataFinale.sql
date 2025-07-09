@@ -69,18 +69,18 @@ INSERT INTO core_typerepas (nom) VALUES
 ('Dessert'),
 ('Boisson');
 
-INSERT INTO core_restaurant (nom, adresse, description, image, geo_position, mot_de_passe, date_inscri) VALUES
+INSERT INTO core_restaurant (nom, adresse, description, image, geo_position, mot_de_passe) VALUES
 -- Antanimena
-('La Varangue', 'Rue Andrianary Ratianarivo, Antanimena', 'Cuisine raffinee franco malgache dans un cadre elegant', 'lavarangue.jpg', '-18.9078,47.5234', 0, '2024-03-12 12:00:00'),
-('Le Rossini', 'Rue de Russie, Antanimena', 'Restaurant italien chic, pates maison et grillades', 'lerossini.jpg', '-18.9065,47.5210', 0, '2024-02-20 19:00:00'),
-('No Comment Bar', 'Rue Ravelojaona, Antanimena', 'Bar restaurant branche, musique live et tapas', 'nocomment.jpg', '-18.9042,47.5198', 0, '2024-04-01 21:00:00'),
-('Le Buffet du Jardin', 'Jardin Antaninarenina', 'Buffet a volonte en plein air, specialites locales', 'buffetjardin.jpg', '-18.9085,47.5241', 0, '2024-03-05 11:00:00'),
+('La Varangue', 'Rue Andrianary Ratianarivo, Antanimena', 'Cuisine raffinee franco malgache dans un cadre elegant', 'lavarangue.jpg', '-18.9078,47.5234', 'pbkdf2_sha256$600000$default$password1'),
+('Le Rossini', 'Rue de Russie, Antanimena', 'Restaurant italien chic, pates maison et grillades', 'lerossini.jpg', '-18.9065,47.5210', 'pbkdf2_sha256$600000$default$password2'),
+('No Comment Bar', 'Rue Ravelojaona, Antanimena', 'Bar restaurant branche, musique live et tapas', 'nocomment.jpg', '-18.9042,47.5198', 'pbkdf2_sha256$600000$default$password3'),
+('Le Buffet du Jardin', 'Jardin Antaninarenina', 'Buffet a volonte en plein air, specialites locales', 'buffetjardin.jpg', '-18.9085,47.5241', 'pbkdf2_sha256$600000$default$password4'),
 
 -- Andohalo
-('La Table d Andohalo', 'Place Andohalo', 'Cuisine traditionnelle avec vue sur la ville', 'tabledandohalo.jpg', '-18.9172,47.5309', 0, '2024-03-18 13:00:00'),
-('Andohalo Cafe', 'Rue du Lycee Andohalo', 'Cafe convivial avec patisseries artisanales', 'andohalocafe.jpg', '-18.9184,47.5321', 0, '2024-04-06 08:30:00'),
-('Rova Grill', 'Pres du Palais de la Reine, Andohalo', 'Viandes grillees et plats malgaches traditionnels', 'rovagrill.jpg', '-18.9168,47.5317', 0, '2024-02-28 14:00:00'),
-('Maison des Saveurs', 'Rue de la Cathedrale, Andohalo', 'Fusion de saveurs europeennes et malgaches', 'maisonsaveurs.jpg', '-18.9175,47.5303', 0, '2024-01-22 18:30:00');
+('La Table d Andohalo', 'Place Andohalo', 'Cuisine traditionnelle avec vue sur la ville', 'tabledandohalo.jpg', '-18.9172,47.5309', 'pbkdf2_sha256$600000$default$password5'),
+('Andohalo Cafe', 'Rue du Lycee Andohalo', 'Cafe convivial avec patisseries artisanales', 'andohalocafe.jpg', '-18.9184,47.5321', 'pbkdf2_sha256$600000$default$password6'),
+('Rova Grill', 'Pres du Palais de la Reine, Andohalo', 'Viandes grillees et plats malgaches traditionnels', 'rovagrill.jpg', '-18.9168,47.5317', 'pbkdf2_sha256$600000$default$password7'),
+('Maison des Saveurs', 'Rue de la Cathedrale, Andohalo', 'Fusion de saveurs europeennes et malgaches', 'maisonsaveurs.jpg', '-18.9175,47.5303', 'pbkdf2_sha256$600000$default$password8');
 
 INSERT INTO core_repas (nom, description, image, type_id, prix) VALUES
 -- Plats principaux (16)
@@ -157,14 +157,14 @@ INSERT INTO core_repas (nom, description, image, type_id, prix) VALUES
 
 INSERT INTO core_livreur (nom, contact, position, geo_position, date_inscri) VALUES
 -- Antanimena
-('Randria Thierry', '+261 34 11 222 33', 'Antanimena - Centre', '-18.8985,47.5210', '2024-01-10 08:00:00'),
-('Rakoto Hery', '+261 33 22 333 44', 'Antanimena - Marché', '-18.8980,47.5205', '2024-01-12 09:00:00'),
-('Rajaonarison Lala', '+261 32 55 666 77', 'Antanimena - Gare', '-18.8975,47.5215', '2024-01-14 07:45:00'),
+('Randria Thierry', '+261 34 11 222 33', 'Antanimena - Centre', '-18.8985,47.5210', NOW()),
+('Rakoto Hery', '+261 33 22 333 44', 'Antanimena - Marché', '-18.8980,47.5205', NOW()),
+('Rajaonarison Lala', '+261 32 55 666 77', 'Antanimena - Gare', '-18.8975,47.5215', NOW()),
 
 -- Andohalo
-('Razaka Joseph', '+261 33 44 555 66', 'Andohalo - Cathédrale', '-18.9170,47.5310', '2024-01-15 09:30:00'),
-('Ramanantsoa Eric', '+261 32 77 888 99', 'Andohalo - Palais', '-18.9175,47.5318', '2024-02-01 10:15:00'),
-('Rakotovao Mamy', '+261 34 88 999 00', 'Andohalo - Lycée', '-18.9168,47.5305', '2024-02-05 08:45:00');
+('Razaka Joseph', '+261 33 44 555 66', 'Andohalo - Cathédrale', '-18.9170,47.5310', NOW()),
+('Ramanantsoa Eric', '+261 32 77 888 99', 'Andohalo - Palais', '-18.9175,47.5318', NOW()),
+('Rakotovao Mamy', '+261 34 88 999 00', 'Andohalo - Lycée', '-18.9168,47.5305', NOW());
 
 INSERT INTO core_horaire (restaurant_id, le_jour, horaire_debut, horaire_fin, mis_a_jour_le) VALUES
 -- Antanimena restaurants (id 1 à 4 supposés)
@@ -347,7 +347,7 @@ INSERT INTO core_historiquestatutrestaurant (restaurant_id, statut_id, mis_a_jou
 (5, 1, NOW()),
 (6, 1, NOW()),
 (7, 1, NOW()),
-(8, 1, NOW());
+(8, 1, NOW());  
 
 INSERT INTO core_historiquestatutlivreur (livreur_id, statut_id, mis_a_jour_le) VALUES
 (1, 1, NOW()),

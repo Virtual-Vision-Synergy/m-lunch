@@ -13,7 +13,7 @@ def authentification_requise(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.session.get('client_id'):
-            return redirect('frontoffice:connexion')
+            return redirect('connexion')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
