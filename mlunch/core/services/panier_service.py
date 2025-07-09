@@ -2,7 +2,8 @@ from django.db.models import Sum, F
 from django.utils.timezone import now
 from ..models import (
     Repas, RestaurantRepas, PointRecup, DisponibiliteRepas,
-    Commande, CommandeRepas, HistoriqueStatutCommande, StatutCommande, ModePaiement
+    Commande, CommandeRepas, HistoriqueStatutCommande, StatutCommande, ModePaiement, ZoneClient,
+    HistoriqueZonesRecuperation
 )
 
 
@@ -146,12 +147,25 @@ class PanierService:
             return {"error": f"Erreur lors de l'ajout au panier : {str(e)}"}
         
     @staticmethod
-    def get_points_recuperation():
+    def get_points_recuperation(client_id):
         """
-        Récupère tous les points de récupération disponibles
+        Récupère les points de récupération liés aux zones du client.
         """
         try:
-            points = PointRecup.objects.all().values('id', 'nom', 'geo_position')
+            # 1️⃣ Zones du client
+            zone_ids = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
+
+            if not zone_ids:
+                return {"error": "Le client n'a aucune zone associée."}
+
+            # 2️⃣ Points de récupération associés aux zones
+            points_ids = HistoriqueZonesRecuperation.objects.filter(
+                zone_id__in=zone_ids
+            ).values_list('point_recup_id', flat=True).distinct()
+
+            # 3️⃣ Récupération des infos des points
+            points = PointRecup.objects.filter(id__in=points_ids).values('id', 'nom', 'geo_position')
+
             return list(points)
 
         except Exception as e:

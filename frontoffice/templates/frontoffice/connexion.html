@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="main-container login-flex-container">
-    <img class="illustration" src="{% static 'img/Humans/log.png' %}" alt="illustration">
+    <img class="illustration" src="{% static 'frontoffice/img/Humans/log.png' %}" alt="illustration">
     <div class="login-container">
       <div class="login-title">Welcome to</div>
       <div class="login-subtitle">M'Lunch</div>
@@ -25,7 +25,7 @@
         <div class="form-group">
           <label for="email">Email</label>
           <div class="input-wrapper">
-            <img src="{% static 'img/icones/mail.svg' %}" alt="email icon">
+            <img src="{% static 'frontoffice/img/icones/mail.svg' %}" alt="email icon">
             <input type="email" id="email" name="email" placeholder="example@gmail.com" required />
           </div>
         </div>
@@ -33,7 +33,7 @@
         <div class="form-group">
           <label for="password-field">Mot de passe</label>
           <div class="input-wrapper">
-            <img src="{% static 'img/icones/cle.svg' %}" alt="password icon">
+            <img src="{% static 'frontoffice/img/icones/cle.svg' %}" alt="password icon">
             <input type="password" id="password-field" name="password" placeholder="***********" required />
             <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
           </div>
@@ -68,46 +68,6 @@
     </div>
   </div>
 
-  <script>
-    // Password toggle function
-    function togglePassword() {
-      const passwordField = document.getElementById("password-field");
-      passwordField.type = passwordField.type === "password" ? "text" : "password";
-    }
-
-    // JavaScript pour gérer l'ouverture et la fermeture du popup
-    const openDeliveryPopupButton = document.getElementById('open-delivery-popup');
-    const deliveryPopup = document.getElementById('delivery-popup');
-    const closePopupButton = document.querySelector('.close-popup');
-    const verifyZonesCheckbox = document.getElementById('verify-zones-checkbox');
-    const continueDeliveryButton = document.querySelector('.btn-delivery-continue');
-
-    if (openDeliveryPopupButton) {
-      openDeliveryPopupButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        deliveryPopup.classList.add('active');
-      });
-    }
-
-    if (closePopupButton) {
-      closePopupButton.addEventListener('click', function() {
-        deliveryPopup.classList.remove('active');
-      });
-    }
-
-    if (deliveryPopup) {
-      deliveryPopup.addEventListener('click', function(event) {
-        if (event.target === deliveryPopup) {
-          deliveryPopup.classList.remove('active');
-        }
-      });
-    }
-
-    if (verifyZonesCheckbox) {
-      verifyZonesCheckbox.addEventListener('change', function() {
-        continueDeliveryButton.disabled = !this.checked;
-      });
-    }
-  </script>
+  <script src="{% static 'frontoffice/js/connexion.js' %}"></script>
 </body>
 </html>

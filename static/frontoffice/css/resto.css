@@ -283,3 +283,11 @@ body {
   color: #1e1e1e;
   margin: 0;
 }
+
+.menu-item.unavailable .add-to-cart {
+    cursor: not-allowed;
+}
+/* Remove rating-related styles if any existed */
+.rating, .rating-wrapper, #stars-container {
+    display: none !important;
+}

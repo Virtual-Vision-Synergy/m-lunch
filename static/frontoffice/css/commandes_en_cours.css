@@ -1,0 +1,80 @@
+ .commande-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .commande-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .statut-badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .statut-recu { background-color: #e3f2fd; color: #1976d2; }
+        .statut-preparation { background-color: #fff3e0; color: #f57c00; }
+        .statut-pret { background-color: #e8f5e8; color: #388e3c; }
+        .statut-disponible { background-color: #f3e5f5; color: #7b1fa2; }
+
+        .commande-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 15px 20px;
+        }
+
+        .btn-annuler {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.85rem;
+        }
+
+        .btn-annuler:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+            color: white;
+        }
+
+        .btn-detail {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.85rem;
+        }
+
+        .btn-detail:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+            color: white;
+        }
+
+        .temps-estime {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 500;
+        }
+
+        .no-commandes {
+            text-align: center;
+            padding: 60px 20px;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }

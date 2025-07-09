@@ -135,6 +135,7 @@ body {
 
 .texte-gauche {
     width: 50%;
+    padding-left: 145px; /* Move text even more to the right */
 }
 
 .texte-gauche h1 {
@@ -172,7 +173,8 @@ body {
 .image-droite {
     width: 45%;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start; /* Move image to the left */
+    padding-left: 0; /* Remove any left padding */
 }
 
 .image-droite img {
@@ -181,6 +183,7 @@ body {
     position: relative;
     top: -10%;
     z-index: 2;
+    margin-left: 140px; /* Move image further to the left */
 }
 
 /* Styles pour le menu Hamburger */

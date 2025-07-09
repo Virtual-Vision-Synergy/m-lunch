@@ -5,92 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mes Commandes en Cours - MLunch</title>
-    <link rel="stylesheet" href="{% static 'frontoffice/css/header.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontoffice/css/en_cours.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontoffice/css/commandes_en_cours.css' %}" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .commande-card {
-            border: 1px solid #dee2e6;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            transition: box-shadow 0.3s ease;
-        }
-        
-        .commande-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .statut-badge {
-            font-size: 0.85rem;
-            padding: 6px 12px;
-            border-radius: 20px;
-        }
-        
-        .statut-recu { background-color: #e3f2fd; color: #1976d2; }
-        .statut-preparation { background-color: #fff3e0; color: #f57c00; }
-        .statut-pret { background-color: #e8f5e8; color: #388e3c; }
-        .statut-disponible { background-color: #f3e5f5; color: #7b1fa2; }
-        
-        .commande-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px 12px 0 0;
-            padding: 15px 20px;
-        }
-        
-        .btn-annuler {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            color: white;
-            border-radius: 20px;
-            padding: 5px 15px;
-            font-size: 0.85rem;
-        }
-        
-        .btn-annuler:hover {
-            background-color: #c82333;
-            border-color: #bd2130;
-            color: white;
-        }
-        
-        .btn-detail {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-            color: white;
-            border-radius: 20px;
-            padding: 5px 15px;
-            font-size: 0.85rem;
-        }
-        
-        .btn-detail:hover {
-            background-color: #138496;
-            border-color: #117a8b;
-            color: white;
-        }
-        
-        .temps-estime {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-weight: 500;
-        }
-        
-        .no-commandes {
-            text-align: center;
-            padding: 60px 20px;
-            background-color: #f8f9fa;
-            border-radius: 12px;
-            margin-top: 20px;
-        }
-        
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 30px;
-        }
-    </style>
 </head>
 <body>
     <div class="page-header">
@@ -267,71 +184,6 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let commandeAAnuller = null;
-        
-        function confirmerAnnulation(commandeId) {
-            commandeAAnuller = commandeId;
-            const modal = new bootstrap.Modal(document.getElementById('modalAnnulation'));
-            modal.show();
-        }
-        
-        document.getElementById('btnConfirmerAnnulation').addEventListener('click', function() {
-            if (commandeAAnuller) {
-                annulerCommande(commandeAAnuller);
-            }
-        });
-        
-        async function annulerCommande(commandeId) {
-            try {
-                const response = await fetch(`/annuler-commande/${commandeId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Masquer le modal
-                    bootstrap.Modal.getInstance(document.getElementById('modalAnnulation')).hide();
-                    
-                    // Afficher un message de succès
-                    showAlert('success', 'Commande annulée avec succès !');
-                    
-                    // Recharger la page après 1 seconde
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    showAlert('danger', data.message || 'Erreur lors de l\'annulation');
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                showAlert('danger', 'Erreur de connexion');
-            }
-        }
-        
-        function showAlert(type, message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss après 5 secondes
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);   
-        }
-    </script>
+    <script src="{% static 'frontoffice/js/commandes_en_cours.js' %}"></script>
 </body>
 </html>

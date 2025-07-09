@@ -154,11 +154,11 @@
         flex-direction: column;
         gap: 0;
       }
-      
+
       .inscription-container {
         padding: 25px 20px;
       }
-      
+
       .submit-btn {
         width: 100%;
       }
@@ -236,7 +236,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.12);
       border-left: 4px solid #007bff;
     }
-    
+
     .error-message {
       background: #f8d7da;
       color: #721c24;
@@ -245,7 +245,7 @@
       margin-bottom: 20px;
       border: 1px solid #f5c6cb;
     }
-    
+
     /* Sector input styling */
     .sector-input {
       background-color: #f8f9fa;

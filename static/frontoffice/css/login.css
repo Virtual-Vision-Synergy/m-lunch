@@ -232,11 +232,11 @@ body {
     gap: 40px;
     padding: 40px 20px;
   }
-  
+
   .illustration {
     width: 400px;
   }
-  
+
   .login-container {
     max-width: 500px;
   }
@@ -247,20 +247,20 @@ body {
     padding: 20px;
     gap: 30px;
   }
-  
+
   .illustration {
     width: 300px;
   }
-  
+
   .login-container {
     padding: 30px 25px;
     max-width: 400px;
   }
-  
+
   .login-title {
     font-size: 24px;
   }
-  
+
   .login-subtitle {
     font-size: 30px;
   }
@@ -270,19 +270,19 @@ body {
   .login-container {
     padding: 25px 20px;
   }
-  
+
   .illustration {
     width: 250px;
   }
-  
+
   .login-title {
     font-size: 22px;
   }
-  
+
   .login-subtitle {
     font-size: 26px;
   }
-  
+
   .btn-login {
     padding: 16px;
     font-size: 16px;
