@@ -27,16 +27,8 @@
             <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'frontoffice/img/icones/panier.svg' %}" alt="Panier" /></a>
             <button class="icon-button" id="menu-toggle"><img src="{% static 'frontoffice/img/icones/menu.svg' %}" alt="Menu" /></button>
 
-            <nav id="hamburger-menu" class="hamburger-menu">
+           <nav id="hamburger-menu" class="hamburger-menu">
               <ul>
-                <li class="has-submenu">
-                  <a href="#">Commande <span class="arrow">&#x2304;</span></a>
-                  <ul class="submenu">
-                    <li><a href="en_cours.html">En Cours</a></li>
-                    <li><a href="historique.html">Historique</a></li>
-                  </ul>
-                </li>
-                <li><a href="panier.html">Panier</a></li>
                 <li><a href="#about">A propos</a></li>
                 <li><a href="{% url 'frontoffice_logout' %}">Deconnexion</a></li>
               </ul>
