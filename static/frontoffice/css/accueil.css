@@ -47,15 +47,12 @@ body {
 /* ==== Header ==== */
 .site-header {
     width: 100%;
-    background-color: transparent; /* blanc semi-transparent */
+    background-color: #fff;
     display: flex;
     justify-content: center;
     position: relative;
     z-index: 10;
-    /* backdrop-filter: blur(5px);  */
-    /* optionnel : ajoute un flou pour l'effet verre */
 }
-
 
 .overlap-wrapper {
     width: 100%; 
@@ -357,8 +354,7 @@ body {
     margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
-    /* background-color: #f9f9f9; */
-    background-color: #fcfcfc;
+    background-color: #ffffff;
     border-radius: 20px;
     overflow: hidden;
 }
@@ -1009,5 +1005,3 @@ body {
     justify-content: flex-start;
   }
 }
-
-
