@@ -25,7 +25,7 @@
             <a href="#about" class="text-wrapper-12">A propos</a>
           </div>
           <div class="icons-right">
-            <a href="login.html" class="icon-button"><img src="{% static 'frontoffice/img/icones/user.svg' %}" alt="Profil" /></a>
+            <a href="#" class="icon-button"><img src="{% static 'frontoffice/img/icones/user.svg' %}" alt="Profil" /></a>
             <a href="{% url 'panier' %}" class="icon-button"><img src="{% static 'frontoffice/img/icones/panier.svg' %}" alt="Panier" /></a>
             <button class="icon-button" id="menu-toggle"><img src="{% static 'frontoffice/img/icones/menu.svg' %}" alt="Menu" /></button>
 
@@ -51,8 +51,6 @@
             <p><span class="location"><img src="{% static 'frontoffice/img/icones/group-420.svg' %}" alt="Location Icon">{{ restaurant.adresse }}</span></p>
         </div>
         <div class="details">
-            
-            <a href="tel:{{ restaurant.telephone }}" class="contact">{{ restaurant.telephone }}</a>
         </div>
     </div>
 

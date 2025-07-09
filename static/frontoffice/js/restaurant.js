@@ -77,7 +77,7 @@ fetch('/api/restaurants/')
             <div class="rating">${horaireText}</div>
             ${props.image_url ? `<img src="/static/frontoffice/img/restologo/${props.image_url}" alt="${props.nom}">` : ''}
             <div style="margin: 10px 0; color: #666; font-size: 14px;">
-              📍 ${props.adresse || 'Adresse non disponible'}
+              <!--📍 ${props.adresse || 'Adresse non disponible'}-->
             </div>
             <a href="/menu/${props.id}/"><button class="menu-button">Voir le menu</button></a>
           </div>
