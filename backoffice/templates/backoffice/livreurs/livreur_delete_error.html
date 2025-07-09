@@ -2,24 +2,39 @@
 
 {% block title %}Erreur de suppression - M'Lunch{% endblock %}
 
+{% block extra_css %}
+<style>
+    .card-header-orange {
+        background: var(--primary-orange) !important;
+        color: white !important;
+    }
+
+    .alert-orange {
+        background-color: rgba(204, 85, 0, 0.1);
+        border: 1px solid var(--primary-orange);
+        color: var(--dark-orange);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-6 mx-auto">
         <div class="card">
-            <div class="card-header bg-danger text-white">
+            <div class="card-header card-header-orange">
                 <h4 class="mb-0">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Erreur de suppression
                 </h4>
             </div>
             <div class="card-body">
-                <div class="alert alert-danger">
+                <div class="alert alert-orange">
                     <h5>Impossible de supprimer ce livreur</h5>
                     <p>{{ reason }}</p>
                 </div>
 
                 <div class="text-center">
-                    <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-primary">
+                    <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-orange">
                         <i class="fas fa-arrow-left me-1"></i>Retour au dashboard
                     </a>
                 </div>

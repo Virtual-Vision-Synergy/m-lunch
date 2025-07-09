@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header card-header-orange">
                 <h4 class="mb-0">
                     <i class="fas fa-truck me-2"></i>
                     Détails de la livraison #{{ livraison.id }}
@@ -47,9 +47,9 @@
                                     {% if livraison.statut == 'Livrée' %}
                                         <span class="badge bg-success">{{ livraison.statut }}</span>
                                     {% elif livraison.statut == 'En cours' %}
-                                        <span class="badge bg-warning">{{ livraison.statut }}</span>
+                                        <span class="badge badge-orange">{{ livraison.statut }}</span>
                                     {% elif livraison.statut == 'Assignée' %}
-                                        <span class="badge bg-info">{{ livraison.statut }}</span>
+                                        <span class="badge badge-orange-light">{{ livraison.statut }}</span>
                                     {% else %}
                                         <span class="badge bg-secondary">{{ livraison.statut }}</span>
                                     {% endif %}
@@ -68,7 +68,7 @@
                             <div class="timeline">
                                 {% for hist in livraison.historique %}
                                     <div class="timeline-item">
-                                        <span class="badge bg-primary">{{ hist.statut.appellation }}</span>
+                                        <span class="badge badge-orange">{{ hist.statut.appellation }}</span>
                                         <small class="text-muted ms-2">{{ hist.mis_a_jour_le|date:"d/m/Y H:i" }}</small>
                                     </div>
                                 {% endfor %}
@@ -85,10 +85,10 @@
                     </a>
                     <div>
                         {% if livraison.statut not in 'Livrée,Annulée' %}
-                            <a href="{% url 'livraison_edit' livraison.id %}" class="btn btn-warning me-2">
+                            <a href="{% url 'livraison_edit' livraison.id %}" class="btn btn-orange-outline me-2">
                                 <i class="fas fa-edit me-1"></i>Modifier
                             </a>
-                            <a href="{% url 'livraison_delete' livraison.id %}" class="btn btn-danger">
+                            <a href="{% url 'livraison_delete' livraison.id %}" class="btn btn-orange">
                                 <i class="fas fa-times me-1"></i>Annuler
                             </a>
                         {% endif %}
@@ -98,16 +98,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-.timeline-item {
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-.timeline-item:last-child {
-    border-bottom: none;
-}
-</style>
 {% endblock %}

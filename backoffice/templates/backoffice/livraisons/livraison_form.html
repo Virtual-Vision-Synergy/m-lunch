@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header card-header-orange">
                 <h4 class="mb-0">
                     <i class="fas fa-truck me-2"></i>
                     {{ action }} une Livraison
@@ -72,9 +72,9 @@
                     <div class="modal fade" id="changementsModal" tabindex="-1">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                                <div class="modal-header">
+                                <div class="modal-header modal-header-orange">
                                     <h5 class="modal-title">Confirmer les modifications</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
                                     <p>Voici les changements qui seront effectués :</p>
@@ -82,7 +82,7 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                    <button type="button" class="btn btn-primary" id="confirmerChangements">Confirmer</button>
+                                    <button type="button" class="btn btn-confirm-orange" id="confirmerChangements">Confirmer</button>
                                 </div>
                             </div>
                         </div>
@@ -92,7 +92,7 @@
                         <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
                             <i class="fas fa-times me-1"></i>Annuler
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-orange">
                             <i class="fas fa-save me-1"></i>{{ action }}
                         </button>
                     </div>

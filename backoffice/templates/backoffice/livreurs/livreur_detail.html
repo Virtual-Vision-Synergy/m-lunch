@@ -2,11 +2,30 @@
 
 {% block title %}Détails du livreur {{ livreur.nom }} - M'Lunch{% endblock %}
 
+{% block extra_css %}
+<style>
+    .card-header-orange {
+        background: var(--primary-orange) !important;
+        color: white !important;
+    }
+
+    .badge-orange {
+        background: var(--primary-orange);
+        color: white;
+    }
+
+    .badge-orange-light {
+        background: var(--light-orange);
+        color: white;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header card-header-orange">
                 <h4 class="mb-0">
                     <i class="fas fa-user me-2"></i>
                     Détails du livreur
@@ -27,7 +46,7 @@
                             </tr>
                             <tr>
                                 <td><strong>Secteur:</strong></td>
-                                <td><span class="badge bg-info">{{ livreur.secteur }}</span></td>
+                                <td><span class="badge badge-orange-light">{{ livreur.secteur }}</span></td>
                             </tr>
                             <tr>
                                 <td><strong>Statut:</strong></td>
@@ -37,7 +56,7 @@
                                     {% elif livreur.statut == 'Inactif' %}
                                         <span class="badge bg-secondary">{{ livreur.statut }}</span>
                                     {% else %}
-                                        <span class="badge bg-warning">{{ livreur.statut }}</span>
+                                        <span class="badge badge-orange">{{ livreur.statut }}</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -69,9 +88,13 @@
                                                     </a>
                                                 </td>
                                                 <td>
-                                                    <span class="badge badge-sm {% if livraison.statut == 'Livrée' %}bg-success{% elif livraison.statut == 'En cours' %}bg-warning{% else %}bg-info{% endif %}">
-                                                        {{ livraison.statut }}
-                                                    </span>
+                                                    {% if livraison.statut == 'Livrée' %}
+                                                        <span class="badge badge-sm bg-success">{{ livraison.statut }}</span>
+                                                    {% elif livraison.statut == 'En cours' %}
+                                                        <span class="badge badge-sm badge-orange">{{ livraison.statut }}</span>
+                                                    {% else %}
+                                                        <span class="badge badge-sm badge-orange-light">{{ livraison.statut }}</span>
+                                                    {% endif %}
                                                 </td>
                                                 <td>{{ livraison.attribue_le|date:"d/m" }}</td>
                                             </tr>
@@ -93,7 +116,7 @@
                         <a href="{% url 'livreur_assigner_commande' livreur.id %}" class="btn btn-success me-2">
                             <i class="fas fa-plus me-1"></i>Assigner une commande
                         </a>
-                        <a href="{% url 'livreur_edit' livreur.id %}" class="btn btn-warning">
+                        <a href="{% url 'livreur_edit' livreur.id %}" class="btn btn-orange">
                             <i class="fas fa-edit me-1"></i>Modifier
                         </a>
                     </div>

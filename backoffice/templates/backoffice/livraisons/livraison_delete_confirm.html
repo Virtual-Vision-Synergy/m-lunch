@@ -6,14 +6,14 @@
 <div class="row">
     <div class="col-md-6 mx-auto">
         <div class="card">
-            <div class="card-header bg-warning text-dark">
+            <div class="card-header card-header-orange">
                 <h4 class="mb-0">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Confirmer l'annulation
                 </h4>
             </div>
             <div class="card-body">
-                <div class="alert alert-warning">
+                <div class="alert alert-orange">
                     <p><strong>Attention !</strong></p>
                     <p>Êtes-vous sûr de vouloir annuler cette livraison ?</p>
                     <p>Cette action ne peut pas être annulée.</p>
@@ -32,7 +32,7 @@
                         <a href="{% url 'livraison_livreur_dashboard' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-1"></i>Annuler
                         </a>
-                        <button type="submit" class="btn btn-warning">
+                        <button type="submit" class="btn btn-cancel-delivery">
                             <i class="fas fa-times me-1"></i>Annuler la livraison
                         </button>
                     </div>
