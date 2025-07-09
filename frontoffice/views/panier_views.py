@@ -340,3 +340,102 @@ def get_modes_paiement(request):
         return JsonResponse({'success': True, 'modes': list(modes)})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+@staticmethod
+def get_points_recuperation(client_id):
+    """
+    Récupère les points de récupération dans un rayon de 3.5 km du centre des zones du client.
+    """
+    try:
+        from shapely import wkt
+        from shapely.geometry import Point
+        import math
+
+        # 1️⃣ Zones du client
+        zones = ZoneClient.objects.filter(client_id=client_id).select_related('zone')
+        if not zones:
+            return {"error": "Le client n'a aucune zone associée."}
+
+        points_dans_rayon = []
+        rayon_km = 3.5
+
+        # 2️⃣ Pour chaque zone du client
+        for zone_client in zones:
+            zone = zone_client.zone
+            
+            try:
+                # Calculer le centre de la zone (centroïde du polygone)
+                if zone.zone:
+                    poly = wkt.loads(zone.zone)
+                    centre_zone = poly.centroid
+                    centre_lat = centre_zone.y
+                    centre_lon = centre_zone.x
+                    
+                    # 3️⃣ Récupérer tous les points de récupération
+                    tous_points = PointRecup.objects.all()
+                    
+                    for point in tous_points:
+                        if point.geo_position and point.geo_position != "0,0":
+                            try:
+                                # Extraire les coordonnées du point (format: "lat,lon")
+                                coords = point.geo_position.split(',')
+                                if len(coords) == 2:
+                                    point_lat = float(coords[0])
+                                    point_lon = float(coords[1])
+                                    
+                                    # Calculer la distance en km en utilisant la formule de Haversine
+                                    distance_km = PanierService._calculate_distance(
+                                        centre_lat, centre_lon, point_lat, point_lon
+                                    )
+                                    
+                                    # Si le point est dans le rayon, l'ajouter
+                                    if distance_km <= rayon_km:
+                                        point_info = {
+                                            'id': point.id,
+                                            'nom': point.nom,
+                                            'geo_position': point.geo_position,
+                                            'distance_km': round(distance_km, 2),
+                                            'zone_nom': zone.nom
+                                        }
+                                        # Éviter les doublons
+                                        if not any(p['id'] == point.id for p in points_dans_rayon):
+                                            points_dans_rayon.append(point_info)
+                            except (ValueError, IndexError):
+                                continue
+            except Exception as e:
+                print(f"Erreur lors du traitement de la zone {zone.nom}: {str(e)}")
+                continue
+
+        # 4️⃣ Trier par distance
+        points_dans_rayon.sort(key=lambda x: x['distance_km'])
+        
+        return points_dans_rayon
+
+    except Exception as e:
+        return {"error": f"Erreur lors de la récupération des points de récupération : {str(e)}"}
+
+@staticmethod
+def _calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calcule la distance entre deux points géographiques en utilisant la formule de Haversine.
+    Retourne la distance en kilomètres.
+    """
+    # Rayon de la Terre en km
+    R = 6371.0
+    
+    # Convertir les degrés en radians
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    # Différences
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    # Formule de Haversine
+    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    
+    # Distance en km
+    distance = R * c
+    return distance

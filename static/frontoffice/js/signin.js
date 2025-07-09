@@ -42,7 +42,8 @@ document.addEventListener('DOMContentLoaded', function() {
           .then(data => {
             const secteurInput = document.getElementById('secteur');
             if (data.success) {
-              secteurInput.value = data.nom;
+              secteurInput.value = data.zone_id;
+              console.log(data);
               showToast(`Zone sélectionnée : ${data.nom}`, 'success');
             } else {
               secteurInput.value = '';

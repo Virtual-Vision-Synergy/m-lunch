@@ -71,10 +71,10 @@ INSERT INTO core_typerepas (nom) VALUES
 
 INSERT INTO core_restaurant (nom, adresse, description, image, geo_position, mot_de_passe) VALUES
 -- Antanimena
-('La Varangue', 'Rue Andrianary Ratianarivo, Antanimena', 'Cuisine raffinee franco malgache dans un cadre elegant', 'lavarangue.png', 'POINT(47.5234 -18.9078)', 'lavarangue'),
-('Le Rossini', 'Rue de Russie, Antanimena', 'Restaurant italien chic, pates maison et grillades', 'lerossini.jpg', 'POINT(47.5210 -18.9065)', 'pbkdf2_sha256$600000$default$password2'),
-('No Comment Bar', 'Rue Ravelojaona, Antanimena', 'Bar restaurant branche, musique live et tapas', 'nocomment.jpg', 'POINT(47.5198 -18.9042)', 'pbkdf2_sha256$600000$default$password3'),
-('Le Buffet du Jardin', 'Jardin Antaninarenina', 'Buffet a volonte en plein air, specialites locales', 'buffetjardin.jpg', 'POINT(47.5241 -18.9085)', 'pbkdf2_sha256$600000$default$password4'),
+('La Varangue', 'Rue Andrianary Ratianarivo, Antanimena', 'Cuisine raffinee franco malgache dans un cadre elegant', 'lavarangue.png', 'POINT(47.5234 -18.9078)', 'mdp'),
+('Le Rossini', 'Rue de Russie, Antanimena', 'Restaurant italien chic, pates maison et grillades', 'lerossini.jpg', 'POINT(47.5210 -18.9065)', 'mdp'),
+('No Comment Bar', 'Rue Ravelojaona, Antanimena', 'Bar restaurant branche, musique live et tapas', 'nocomment.jpg', 'POINT(47.5198 -18.9042)', 'mdp'),
+('Le Buffet du Jardin', 'Jardin Antaninarenina', 'Buffet a volonte en plein air, specialites locales', 'buffetjardin.jpg', 'POINT(47.5241 -18.9085)', 'mdp'),
 
 -- Andohalo
 ('La Table d Andohalo', 'Place Andohalo', 'Cuisine traditionnelle avec vue sur la ville', 'tabledandohalo.jpg', 'POINT(47.5309 -18.9172)', 'pbkdf2_sha256$600000$default$password5'),

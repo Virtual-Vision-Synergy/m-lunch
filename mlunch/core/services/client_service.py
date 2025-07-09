@@ -1,13 +1,13 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import validate_email
-from ..models import Client, Commande, ZoneClient
+from ..models import Client, Commande, ZoneClient, Zone
 from datetime import datetime
 from django.utils.timezone import now
 import pdb
 
 class ClientService:
     @staticmethod
-    def create_client(email, mot_de_passe, contact=None, prenom=None, nom=None):
+    def create_client(email, mot_de_passe, contact=None, prenom=None, nom=None, zone_id=None):
         #pdb.set_trace()
         try:
             validate_email(email)
@@ -15,6 +15,14 @@ class ClientService:
             return {"error": "Email invalide"}
         if not mot_de_passe:
             return {"error": "Mot de passe invalide"}
+        
+        # Vérifier que la zone existe si zone_id est fourni
+        if zone_id:
+            try:
+                zone = Zone.objects.get(id=zone_id)
+            except ObjectDoesNotExist:
+                return {"error": "Zone non trouvée"}
+        
         try:
             client = Client.objects.create(
                 email=email,
@@ -23,13 +31,27 @@ class ClientService:
                 prenom=prenom,
                 nom=nom
             )
+            
+            # Associer le client à la zone si zone_id est fourni
+            if zone_id:
+                try:
+                    ZoneClient.objects.create(
+                        client=client,
+                        zone=zone
+                    )
+                except Exception as e:
+                    # Si l'association échoue, on pourrait supprimer le client créé
+                    # ou juste retourner une erreur
+                    return {"error": f"Erreur lors de l'association à la zone : {str(e)}"}
+            
             return {"client": {
                 "id": client.id,
                 "email": client.email,
                 "contact": client.contact,
                 "prenom": client.prenom,
                 "nom": client.nom,
-                "date_inscri": client.date_inscri
+                "date_inscri": client.date_inscri,
+                "zone_id": zone_id if zone_id else None
             }}
         except Exception as e:
             return {"error": f"Erreur lors de la création du client : {str(e)}"}

@@ -1,3 +1,5 @@
+import math
+
 from django.db.models import Sum, F
 from django.utils.timezone import now
 from ..models import (
@@ -52,7 +54,7 @@ class PanierService:
 
         except Exception as e:
             return {"error": f"Erreur lors de la récupération du panier : {str(e)}"}
-        
+
     @staticmethod
     def calculate_totals(client_id):
         """
@@ -93,8 +95,8 @@ class PanierService:
                 est_dispo=True
             ).exists()
 
-            if not is_dispo:
-                return {"error": "Ce repas n'est pas disponible actuellement"}
+            # if not is_dispo:
+            #   return {"error": "Ce repas n'est pas disponible actuellement"}
 
             # Récupérer le restaurant qui propose ce repas
             restaurant_repas = RestaurantRepas.objects.filter(repas=repas).first()
@@ -105,7 +107,7 @@ class PanierService:
 
             # --- Nouvelle logique pour commande/statut ---
             from django.db import transaction
-            
+
             with transaction.atomic():
                 # Chercher une commande existante avec statut_id=1 (dernier statut)
                 commande = None
@@ -116,9 +118,7 @@ class PanierService:
                         commande = c
                         break
                 if not commande:
-                    # Créer une nouvelle commande
                     commande = Commande.objects.create(client_id=client_id, point_recup_id=None)
-                    # Ajouter le statut initial (id=1)
                     HistoriqueStatutCommande.objects.create(commande=commande, statut_id=1)
                 # Ajouter ou mettre à jour le repas dans commande_repas
                 cr, created = CommandeRepas.objects.get_or_create(
@@ -145,33 +145,151 @@ class PanierService:
             return {"error": "Repas non trouvé"}
         except Exception as e:
             return {"error": f"Erreur lors de l'ajout au panier : {str(e)}"}
-        
+
     @staticmethod
     def get_points_recuperation(client_id):
         """
-        Récupère les points de récupération liés aux zones du client.
+        Récupère les points de récupération dans un rayon de 3.5 km du centre des zones du client.
         """
         try:
-            # 1️⃣ Zones du client
-            zone_ids = ZoneClient.objects.filter(client_id=client_id).values_list('zone_id', flat=True)
+            from shapely import wkt
+            from shapely.geometry import Point
+            import math
+            import re
 
-            if not zone_ids:
+            # 1️⃣ Zones du client
+            zones = ZoneClient.objects.filter(client_id=client_id).select_related('zone')
+            if not zones:
                 return {"error": "Le client n'a aucune zone associée."}
 
-            # 2️⃣ Points de récupération associés aux zones
-            points_ids = HistoriqueZonesRecuperation.objects.filter(
-                zone_id__in=zone_ids
-            ).values_list('point_recup_id', flat=True).distinct()
+            points_dans_rayon = []
+            rayon_km = 2
 
-            # 3️⃣ Récupération des infos des points
-            points = PointRecup.objects.filter(id__in=points_ids).values('id', 'nom', 'geo_position')
+            # 2️⃣ Pour chaque zone du client
+            for zone_client in zones:
+                zone = zone_client.zone
 
-            return list(points)
+                try:
+                    # Calculer le centre de la zone (centroïde du polygone)
+                    if zone.zone:
+                        poly = wkt.loads(zone.zone)
+                        centre_zone = poly.centroid
+                        centre_lat = centre_zone.y
+                        centre_lon = centre_zone.x
+
+                        # 3️⃣ Récupérer tous les points de récupération
+                        tous_points = PointRecup.objects.all()
+
+                        for point in tous_points:
+                            if point.geo_position and point.geo_position != "0,0":
+                                try:
+                                    # Extraire les coordonnées du point
+                                    point_lat, point_lon = PanierService._parse_geo_position(point.geo_position)
+
+                                    if point_lat is not None and point_lon is not None:
+                                        # Calculer la distance en km en utilisant la formule de Haversine
+                                        distance_km = PanierService._calculate_distance(
+                                            centre_lat, centre_lon, point_lat, point_lon
+                                        )
+
+                                        # Si le point est dans le rayon, l'ajouter
+                                        if distance_km <= rayon_km:
+                                            point_info = {
+                                                'id': point.id,
+                                                'nom': point.nom,
+                                                'geo_position': point.geo_position,
+                                                'distance_km': round(distance_km, 2),
+                                                'zone_nom': zone.nom
+                                            }
+                                            # Éviter les doublons
+                                            if not any(p['id'] == point.id for p in points_dans_rayon):
+                                                points_dans_rayon.append(point_info)
+                                except (ValueError, IndexError):
+                                    continue
+                except Exception as e:
+                    print(f"Erreur lors du traitement de la zone {zone.nom}: {str(e)}")
+                    continue
+
+            # 4️⃣ Trier par distance
+            points_dans_rayon.sort(key=lambda x: x['distance_km'])
+
+            return points_dans_rayon
 
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des points de récupération : {str(e)}"}
 
-    
+    @staticmethod
+    def _parse_geo_position(geo_position):
+        """
+        Parse les coordonnées géographiques depuis différents formats :
+        - Format 1: "lat,lon" (ex: "47.5220,-18.9000")
+        - Format 2: "POINT(lon lat)" (ex: "POINT(47.5220 -18.9000)")
+
+        Retourne (lat, lon) ou (None, None) si erreur
+        """
+        try:
+            import re
+
+            # Nettoyer la chaîne
+            geo_position = geo_position.strip()
+
+            # Format POINT(lon lat)
+            if geo_position.startswith('POINT('):
+                # Extraire les coordonnées du format POINT(lon lat)
+                match = re.match(r'POINT\(\s*([+-]?\d+\.?\d*)\s+([+-]?\d+\.?\d*)\s*\)', geo_position)
+                if match:
+                    lon = float(match.group(1))
+                    lat = float(match.group(2))
+                    return lat, lon
+
+            # Format lat,lon
+            elif ',' in geo_position:
+                coords = geo_position.split(',')
+                if len(coords) == 2:
+                    lat = float(coords[0])
+                    lon = float(coords[1])
+                    return lat, lon
+
+            # Format lon lat (sans virgule)
+            elif ' ' in geo_position:
+                coords = geo_position.split()
+                if len(coords) == 2:
+                    lon = float(coords[0])
+                    lat = float(coords[1])
+                    return lat, lon
+
+            return None, None
+
+        except (ValueError, AttributeError, IndexError):
+            return None, None
+
+    @staticmethod
+    def _calculate_distance(lat1, lon1, lat2, lon2):
+        """
+        Calcule la distance entre deux points géographiques en utilisant la formule de Haversine.
+        Retourne la distance en kilomètres.
+        """
+        # Rayon de la Terre en km
+        R = 6371.0
+
+        # Convertir les degrés en radians
+        lat1_rad = math.radians(lat1)
+        lon1_rad = math.radians(lon1)
+        lat2_rad = math.radians(lat2)
+        lon2_rad = math.radians(lon2)
+
+        # Différences
+        dlat = lat2_rad - lat1_rad
+        dlon = lon2_rad - lon1_rad
+
+        # Formule de Haversine
+        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        # Distance en km
+        distance = R * c
+        return distance
+
     @staticmethod
     def remove_from_panier(client_id, item_id):
         """
@@ -186,17 +304,17 @@ class PanierService:
                 if last_statut and last_statut.statut_id == 1:
                     commande = c
                     break
-    
+
             if not commande:
                 return {"error": "Aucune commande en cours trouvée."}
-    
+
             # Supprimer l'article CommandeRepas correspondant
             deleted, _ = CommandeRepas.objects.filter(id=item_id, commande=commande).delete()
             if deleted == 0:
                 return {"error": "Article non trouvé dans le panier."}
-    
+
             return {"success": True, "message": "Article supprimé du panier"}
-    
+
         except Exception as e:
             return {"error": f"Erreur lors de la suppression : {str(e)}"}
 
@@ -305,7 +423,8 @@ class PanierService:
         Valide une commande et la crée en base de données
         """
         try:
-            from ..models import Commande, CommandeRepas, PointRecup, ModePaiement, StatutCommande, HistoriqueStatutCommande
+            from ..models import Commande, CommandeRepas, PointRecup, ModePaiement, StatutCommande, \
+                HistoriqueStatutCommande
             from django.db import transaction
 
             # Vérifier que le panier n'est pas vide
@@ -391,7 +510,7 @@ class PanierService:
         et met à jour le point de récupération et le mode de paiement.
         """
         try:
-            
+
             from django.db import transaction
 
             with transaction.atomic():
@@ -402,7 +521,7 @@ class PanierService:
                     if last_statut and last_statut.statut_id == 1:
                         commande = c
                         break
-            
+
                 # Mettre à jour le point de récupération et le mode de paiement
                 commande.point_recup_id = point_recup_id
                 if hasattr(commande, 'mode_paiement_id'):
@@ -424,7 +543,7 @@ class PanierService:
             return {"error": "Statut de commande non trouvé."}
         except Exception as e:
             return {"error": f"Erreur lors de la finalisation de la commande : {str(e)}"}
-        
+
     @staticmethod
     def get_all_modes_paiement():
         """

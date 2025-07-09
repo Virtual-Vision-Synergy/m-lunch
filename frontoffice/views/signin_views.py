@@ -5,6 +5,7 @@ from mlunch.core.services import ClientService
 
 def signin_view(request):
     return render(request, 'frontoffice/signin.html')
+
 def signin(request):
     if request.method == 'POST':
         try:
@@ -14,6 +15,9 @@ def signin(request):
             prenom = request.POST.get('prenom')
             nom = request.POST.get('nom')
             contact = request.POST.get('telephone')  # Changé de 'contact' à 'telephone'
+            zone_id = request.POST.get('secteur')  # Nouveau paramètre
+
+            print(zone_id)
 
             if mot_de_passe != confirm_password:
                 messages.error(request, 'Les mots de passe ne correspondent pas')
@@ -24,7 +28,8 @@ def signin(request):
                 mot_de_passe=mot_de_passe,
                 prenom=prenom,
                 nom=nom,
-                contact=contact
+                contact=contact,
+                zone_id=zone_id  # Ajout du paramètre zone_id
             )
 
             if 'error' in result:
