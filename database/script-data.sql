@@ -1,7 +1,4 @@
--- Script d'insertion des données de test pour M-Lunch - Antananarivo, Madagascar
--- PostgreSQL + PostGIS - Version mise à jour avec nouvelles tables
 
--- 1. Statuts
 INSERT INTO core_statutcommande (appellation) VALUES
 ('En attente'),
 ('En cours'),
