@@ -1,120 +1,192 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8" />
-    <title>Commandes du Restaurant</title>
-</head>
-<body>
+{% extends 'backoffice/base.html' %}
 
-<h1>Commandes du Restaurant</h1>
+{% block title %}Commandes du Restaurant - M'Lunch Backoffice{% endblock %}
 
-<!-- Formulaire de filtres -->
-<form method="get">
-    <fieldset>
-        <legend>Filtres des commandes</legend>
-        <label for="date_debut">Période du</label>
-        <input type="date" name="date_debut" id="date_debut" value="{{ date_debut|default_if_none:'' }}" onchange="this.form.submit()">
-        
-        <label for="date_fin">au</label>
-        <input type="date" name="date_fin" id="date_fin" value="{{ date_fin|default_if_none:'' }}" onchange="this.form.submit()">
-        
-        <label for="statut">Statut :</label>
-        <select name="statut" id="statut" onchange="this.form.submit()">
-            <option value="">Tous</option>
-            {% for s in statuts %}
-                <option value="{{ s.id }}" {% if selected_statut == s.id %}selected{% endif %}>{{ s.appellation }}</option>
-            {% endfor %}
-        </select>
+{% block content %}
+<div class="page-header">
+    <h1>Commandes du Restaurant</h1>
+    <p class="page-subtitle">Gestion et consultation des commandes par restaurant</p>
+</div>
 
-        <label for="mode_paiement">Mode de paiement :</label>
-        <select name="mode_paiement" id="mode_paiement" onchange="this.form.submit()">
-            <option value="">Tous</option>
-            {% for mode in modes_paiement %}
-                <option value="{{ mode.id }}" {% if selected_mode_paiement == mode.id %}selected{% endif %}>{{ mode.nom }}</option>
-            {% endfor %}
-        </select>
-        <!-- Bouton filtrer supprimé -->
-    </fieldset>
-</form>
+<!-- Section des filtres -->
+<div class="filters-section">
+    <div class="filters-title">Filtres des commandes</div>
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="date_debut" class="form-label">Période du</label>
+            <input type="date" name="date_debut" id="date_debut" class="form-control"
+                   value="{{ date_debut|default_if_none:'' }}" onchange="this.form.submit()">
+        </div>
+
+        <div class="col-md-3">
+            <label for="date_fin" class="form-label">au</label>
+            <input type="date" name="date_fin" id="date_fin" class="form-control"
+                   value="{{ date_fin|default_if_none:'' }}" onchange="this.form.submit()">
+        </div>
+
+        <div class="col-md-3">
+            <label for="statut" class="form-label">Statut</label>
+            <select name="statut" id="statut" class="form-select" onchange="this.form.submit()">
+                <option value="">Tous</option>
+                {% for s in statuts %}
+                    <option value="{{ s.id }}" {% if selected_statut == s.id %}selected{% endif %}>{{ s.appellation }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="mode_paiement" class="form-label">Mode de paiement</label>
+            <select name="mode_paiement" id="mode_paiement" class="form-select" onchange="this.form.submit()">
+                <option value="">Tous</option>
+                {% for mode in modes_paiement %}
+                    <option value="{{ mode.id }}" {% if selected_mode_paiement == mode.id %}selected{% endif %}>{{ mode.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
 
 {% if commandes_resto.error %}
-    <p style="color:red;">{{ commandes_resto.error }}</p>
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ commandes_resto.error }}
+    </div>
 {% else %}
-    <h2>Informations sur le restaurant</h2>
-    <ul>
-        <li><strong>ID :</strong> {{ commandes_resto.restaurant.id }}</li>
-        <li><strong>Nom :</strong> {{ commandes_resto.restaurant.nom }}</li>
-        <li><strong>Image :</strong> <img src="/media/{{ commandes_resto.restaurant.image }}" alt="Image du restaurant" width="150" /></li>
-        <li><strong>Secteurs desservis :</strong>
-            <ul>
-                {% for secteur in commandes_resto.restaurant.secteurs %}
-                    <li>{{ secteur }}</li>
-                {% endfor %}
-            </ul>
-        </li>
-        <li><strong>Commission :</strong> {{ commandes_resto.restaurant.commission }}%</li>
-        <li><strong>Horaires :</strong>
-            <ul>
-                {% for horaire in commandes_resto.restaurant.horaire %}
-                    <li>
-                        {% if horaire.le_jour == 0 %}Lundi
-                        {% elif horaire.le_jour == 1 %}Mardi
-                        {% elif horaire.le_jour == 2 %}Mercredi
-                        {% elif horaire.le_jour == 3 %}Jeudi
-                        {% elif horaire.le_jour == 4 %}Vendredi
-                        {% elif horaire.le_jour == 5 %}Samedi
-                        {% elif horaire.le_jour == 6 %}Dimanche
-                        {% else %}Jour {{ horaire.le_jour }}
-                        {% endif %}
-                        : {{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </li>
-        <li><strong>Statut :</strong> {{ commandes_resto.restaurant.statut }}</li>
-    </ul>
+    <!-- Informations du restaurant -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <i class="fas fa-store me-2"></i>Informations sur le restaurant
+        </div>
+        <div class="content-card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>ID :</strong></div>
+                        <div class="col-sm-9">{{ commandes_resto.restaurant.id }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>Nom :</strong></div>
+                        <div class="col-sm-9">{{ commandes_resto.restaurant.nom }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>Commission :</strong></div>
+                        <div class="col-sm-9">{{ commandes_resto.restaurant.commission }}%</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>Statut :</strong></div>
+                        <div class="col-sm-9">
+                            <span class="badge bg-success">{{ commandes_resto.restaurant.statut }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>Secteurs desservis :</strong></div>
+                        <div class="col-sm-9">
+                            {% for secteur in commandes_resto.restaurant.secteurs %}
+                                <span class="badge bg-primary me-1">{{ secteur }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    {% if commandes_resto.restaurant.image %}
+                        <img src="/media/{{ commandes_resto.restaurant.image }}"
+                             alt="Image du restaurant"
+                             class="img-fluid rounded shadow-sm"
+                             style="max-width: 200px;">
+                    {% endif %}
+                </div>
+            </div>
 
-    <h2>Liste des commandes</h2>
-    {% if commandes_resto.commandes %}
-        <table border="1" cellpadding="5" cellspacing="0">
-            <thead>
-                <tr>
-                    <th>Client</th>
-                    <th>Secteur</th>
-                    <th>Restaurant</th>
-                    <th>Date & Heure</th>
-                    <th>Nombre de repas</th>
-                    <th>Prix total</th>
-                    <th>Statut</th>
-                    <th>Mode de paiement</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for commande in commandes_resto.commandes %}
+            <!-- Horaires -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h6><i class="fas fa-clock me-2"></i>Horaires d'ouverture</h6>
+                    <div class="row">
+                        {% for horaire in commandes_resto.restaurant.horaire %}
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex justify-content-between p-2 bg-light rounded">
+                                    <span>
+                                        {% if horaire.le_jour == 0 %}Lundi
+                                        {% elif horaire.le_jour == 1 %}Mardi
+                                        {% elif horaire.le_jour == 2 %}Mercredi
+                                        {% elif horaire.le_jour == 3 %}Jeudi
+                                        {% elif horaire.le_jour == 4 %}Vendredi
+                                        {% elif horaire.le_jour == 5 %}Samedi
+                                        {% elif horaire.le_jour == 6 %}Dimanche
+                                        {% else %}Jour {{ horaire.le_jour }}
+                                        {% endif %}
+                                    </span>
+                                    <span class="text-muted">{{ horaire.horaire_debut }} - {{ horaire.horaire_fin }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des commandes -->
+    <div class="table-container">
+        <div class="table-header">
+            <i class="fas fa-list me-2"></i>Liste des commandes
+        </div>
+        {% if commandes_resto.commandes %}
+            <table class="table custom-table">
+                <thead>
                     <tr>
-                        <td>{{ commande.client }}</td>
-                        <td>{{ commande.secteur }}</td>
-                        <td>{{ commande.restaurant }}</td>
-                        <td>{{ commande.date_heure_commande }}</td>
-                        <td>{{ commande.nombre_repas }}</td>
-                        <td>{{ commande.prix_total }}</td>
-                        <td>{{ commande.statut }}</td>
-                        <td>
-                            {% if commande.mode_paiement %}
-                                {{ commande.mode_paiement }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
+                        <th><i class="fas fa-user me-1"></i>Client</th>
+                        <th><i class="fas fa-map-marker-alt me-1"></i>Secteur</th>
+                        <th><i class="fas fa-store me-1"></i>Restaurant</th>
+                        <th><i class="fas fa-calendar me-1"></i>Date & Heure</th>
+                        <th><i class="fas fa-utensils me-1"></i>Nb repas</th>
+                        <th><i class="fas fa-euro-sign me-1"></i>Prix total</th>
+                        <th><i class="fas fa-info-circle me-1"></i>Statut</th>
+                        <th><i class="fas fa-credit-card me-1"></i>Paiement</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Aucune commande trouvée pour ce restaurant.</p>
-    {% endif %}
+                </thead>
+                <tbody>
+                    {% for commande in commandes_resto.commandes %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-card-icon me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {{ commande.client }}
+                                </div>
+                            </td>
+                            <td>{{ commande.secteur }}</td>
+                            <td>{{ commande.restaurant }}</td>
+                            <td>
+                                <small class="text-muted">{{ commande.date_heure_commande }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ commande.nombre_repas }}</span>
+                            </td>
+                            <td>
+                                <strong class="text-success">{{ commande.prix_total }} Ar</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">{{ commande.statut }}</span>
+                            </td>
+                            <td>
+                                {% if commande.mode_paiement %}
+                                    <span class="badge bg-secondary">{{ commande.mode_paiement }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="content-card-body text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucune commande trouvée</h5>
+                <p class="text-muted">Aucune commande ne correspond aux critères de recherche pour ce restaurant.</p>
+            </div>
+        {% endif %}
+    </div>
 {% endif %}
-
-</body>
-</html>
-</html>
+{% endblock %}

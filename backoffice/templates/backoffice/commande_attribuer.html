@@ -1,294 +1,607 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attribuer une commande</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #007bff;
-        }
-        .commande-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 30px;
-        }
-        .commande-info h3 {
-            margin-top: 0;
-            color: #495057;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #6c757d;
-        }
-        .livreur-selection {
-            margin-bottom: 30px;
-        }
-        .livreur-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Attribution de commande - M'Lunch Backoffice{% endblock %}
+
+{% block extra_css %}
+<style>
+    .commande-info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        border-left: 4px solid var(--primary-orange);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        background: var(--bg-light);
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid var(--primary-orange);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--text-light);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        color: var(--text-dark);
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .zone-info {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+        border-left: 4px solid #2196f3;
+    }
+
+    .zone-info h5 {
+        color: #1976d2;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+    .zone-badge {
+        background-color: #2196f3;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin-right: 8px;
+        margin-bottom: 5px;
+        display: inline-block;
+    }
+
+    /* Carrousel des livreurs */
+    .livreurs-carousel-container {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .carousel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .carousel-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .carousel-controls {
+        display: flex;
+        gap: 10px;
+    }
+
+    .carousel-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: var(--primary-orange);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .carousel-btn:hover {
+        background: var(--dark-orange);
+        transform: scale(1.1);
+    }
+
+    .carousel-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .livreurs-carousel {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .livreurs-track {
+        display: flex;
+        transition: transform 0.5s ease;
+        gap: 20px;
+    }
+
+    .livreur-card {
+        flex: 0 0 300px;
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        position: relative;
+    }
+
+    .livreur-card:hover {
+        border-color: var(--primary-orange);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(204, 85, 0, 0.15);
+    }
+
+    .livreur-card.selected {
+        border-color: var(--primary-orange);
+        background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(204, 85, 0, 0.2);
+    }
+
+    .livreur-card.selected::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, var(--primary-orange), var(--light-orange));
+        border-radius: 12px;
+        z-index: -1;
+    }
+
+    .livreur-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .livreur-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-orange), var(--light-orange));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+
+    .livreur-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .livreur-zones {
+        margin-bottom: 15px;
+    }
+
+    .livreur-zones-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .zone-tag {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        color: #1976d2;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin-right: 5px;
+        margin-bottom: 3px;
+        display: inline-block;
+        font-weight: 500;
+    }
+
+    .livreur-contact {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .livreur-position {
+        display: flex;
+        align-items: center;
+        color: var(--text-light);
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+    }
+
+    .position-icon {
+        color: #28a745;
+        margin-right: 5px;
+    }
+
+    .distance-info {
+        background: var(--bg-light);
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+
+    .distance-total {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-orange);
+        margin-bottom: 8px;
+    }
+
+    .distance-details {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+
+    .calcul-type {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--text-light);
+        font-style: italic;
+        margin-top: 8px;
+    }
+
+    .calcul-type i {
+        margin-right: 5px;
+    }
+
+    .distance-error {
+        background: #fff5f5;
+        color: #dc3545;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        margin-top: 10px;
+        border-left: 3px solid #dc3545;
+    }
+
+    .radio-input {
+        display: none;
+    }
+
+    .no-livreurs {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+
+    .no-livreurs-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+
+    .no-livreurs h3 {
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+
+    .no-livreurs p {
+        color: var(--text-light);
+        margin-bottom: 30px;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, var(--primary-orange), var(--light-orange));
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(204, 85, 0, 0.3);
+    }
+
+    .btn-cancel {
+        background: transparent;
+        color: var(--text-light);
+        border: 2px solid var(--border-color);
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-cancel:hover {
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
         .livreur-card {
-            border: 2px solid #e9ecef;
-            padding: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
-        .livreur-card:hover {
-            border-color: #007bff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,123,255,0.15);
-        }
-        .livreur-card.selected {
-            border-color: #007bff;
-            background-color: #e3f2fd;
-        }
-        .livreur-name {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: #212529;
-        }
-        .livreur-contact {
-            color: #6c757d;
-            font-size: 14px;
-        }
-        .radio-input {
-            display: none;
-        }
-        .buttons {
-            text-align: center;
-            margin-top: 30px;
-        }
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 0 10px;
-            transition: background-color 0.3s;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-        .zone-info {
-            background: #e7f3ff;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border-left: 4px solid #007bff;
-        }
-        .no-livreurs {
-            text-align: center;
-            color: #dc3545;
-            font-style: italic;
-            padding: 20px;
-        }
-        .distance-info {
-            margin-top: 10px;
-            padding: 10px;
-            border-top: 1px solid #e9ecef;
-        }
-        .distance-total {
-            font-weight: bold;
-            color: #212529;
-        }
-        .distance-details, .temps-estime {
-            color: #6c757d;
-            font-size: 14px;
-        }
-        .distance-error {
-            margin-top: 10px;
-            color: #dc3545;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Attribution de commande</h1>
-            <p>Sélectionnez un livreur pour la commande #{{ commande.id }}</p>
+            flex: 0 0 280px;
+
+
+        .action-buttons {
+            flex-direction: column;
+
+
+        .btn-confirm, .btn-cancel {
+            width: 100%;
+            justify-content: center;
+
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-shipping-fast me-3"></i>Attribution de commande</h1>
+    <p class="page-subtitle">Sélectionnez un livreur pour la commande #{{ commande.id }}</p>
+</div>
+
+<div class="commande-info-card">
+    <h3><i class="fas fa-info-circle me-2"></i>Détails de la commande</h3>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Client</div>
+            <div class="info-value">{{ commande.client }}</div>
         </div>
-
-        <div class="commande-info">
-            <h3>Détails de la commande</h3>
-            <div class="info-row">
-                <span class="info-label">Client :</span>
-                <span>{{ commande.client }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Point de récupération :</span>
-                <span>{{ commande.point_recup }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Date de commande :</span>
-                <span>{{ commande.cree_le|date:"d/m/Y H:i" }}</span>
-            </div>
-
-            {% if zones_couvertes %}
-            <div class="zone-info">
-                <strong>Zone(s) de couverture :</strong>
-                {% if nombre_zones == 1 %}
-                    {{ zones_couvertes.0.nom }}
-                    {% if zones_couvertes.0.distance > 0 %}
-                        <small>({{ zones_couvertes.0.distance|floatformat:0 }}m du centre)</small>
-                    {% endif %}
-                {% else %}
-                    <ul style="margin: 5px 0 0 20px;">
-                    {% for zone in zones_couvertes %}
-                        <li>{{ zone.nom }}
-                            {% if zone.distance > 0 %}
-                                <small>({{ zone.distance|floatformat:0 }}m du centre)</small>
-                            {% else %}
-                                <small>(dans la zone)</small>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-                <br><small><strong>{{ nombre_livreurs }}</strong> livreur(s) disponible(s) dans {{ nombre_zones }} zone(s)</small>
-            </div>
-            {% endif %}
+        <div class="info-item">
+            <div class="info-label">Point de récupération</div>
+            <div class="info-value">{{ commande.point_recup }}</div>
         </div>
-
-        <div class="livreur-selection">
-            <h3>Sélectionner un livreur</h3>
-
-            {% if livreurs_avec_distance %}
-                <form method="post" action="{% url 'commande_attribuer_confirmer' commande.id %}">
-                    {% csrf_token %}
-                    <div class="livreur-list">
-                        {% for livreur_data in livreurs_avec_distance %}
-                        <div class="livreur-card" onclick="selectLivreur({{ livreur_data.livreur.id }})">
-                            <input type="radio" name="livreur_id" value="{{ livreur_data.livreur.id }}" id="livreur_{{ livreur_data.livreur.id }}" class="radio-input">
-                            <div class="livreur-name">{{ livreur_data.livreur.nom }}</div>
-
-                            <!-- Affichage des zones du livreur -->
-                            {% if livreur_data.zones %}
-                            <div class="livreur-contact">
-                                <strong>Zone(s):</strong>
-                                {% for zone_nom in livreur_data.zones %}
-                                    <span class="badge" style="background-color: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 12px; font-size: 11px; margin-right: 4px;">{{ zone_nom }}</span>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-
-                            {% if livreur_data.livreur.contact %}
-                            <div class="livreur-contact">Contact: {{ livreur_data.livreur.contact }}</div>
-                            {% endif %}
-
-                            {% if livreur_data.livreur.geo_position and livreur_data.livreur.geo_position != "0,0" %}
-                            <div class="livreur-contact">
-                                <i class="fas fa-map-marker-alt" style="color: #28a745;"></i>
-                                Position GPS: {{ livreur_data.livreur.geo_position }}
-                            </div>
-                            {% elif livreur_data.livreur.position %}
-                            <div class="livreur-contact">Position: {{ livreur_data.livreur.position }}</div>
-                            {% endif %}
-
-                            {% if not livreur_data.error %}
-                            <div class="distance-info">
-                                <div class="distance-total">
-                                    <strong>Distance totale: {{ livreur_data.distance_totale }} km</strong>
-                                </div>
-                                <div class="distance-details">
-                                    <small>{{ livreur_data.nombre_restaurants }} restaurant(s) à visiter</small>
-                                </div>
-                                <div class="temps-estime">
-                                    <small>Temps estimé: {{ livreur_data.temps_estime }} min</small>
-                                </div>
-                                {% if livreur_data.calcul_type %}
-                                <div class="calcul-type" style="margin-top: 5px;">
-                                    <small style="color: #6c757d; font-style: italic;">
-                                        {% if livreur_data.calcul_type == 'géographique' %}
-                                            <i class="fas fa-satellite" style="color: #28a745;"></i> Calcul GPS
-                                        {% elif livreur_data.calcul_type == 'ancien système' %}
-                                            <i class="fas fa-calculator" style="color: #ffc107;"></i> Calcul estimé
-                                        {% else %}
-                                            <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> {{ livreur_data.calcul_type }}
-                                        {% endif %}
-                                    </small>
-                                </div>
-                                {% endif %}
-                            </div>
-                            {% else %}
-                            <div class="distance-error">
-                                <small style="color: #dc3545;">{{ livreur_data.error }}</small>
-                                {% if livreur_data.calcul_type %}
-                                <br><small style="color: #6c757d; font-style: italic;">{{ livreur_data.calcul_type }}</small>
-                                {% endif %}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="buttons">
-                        <button type="submit" class="btn btn-primary">Confirmer l'attribution</button>
-                        <a href="{% url 'index' %}" class="btn btn-secondary">Annuler</a>
-                    </div>
-                </form>
-            {% else %}
-                <div class="no-livreurs">
-                    <p>Aucun livreur disponible pour cette zone.</p>
-                    <a href="{% url 'index' %}" class="btn btn-secondary">Retour</a>
-                </div>
-            {% endif %}
+        <div class="info-item">
+            <div class="info-label">Date de commande</div>
+            <div class="info-value">{{ commande.cree_le|date:"d/m/Y H:i" }}</div>
         </div>
     </div>
 
-    <script>
-        function selectLivreur(livreurId) {
-            // Désélectionner toutes les cartes
-            document.querySelectorAll('.livreur-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+    {% if zones_couvertes %}
+    <div class="zone-info">
+        <h5><i class="fas fa-map-marked-alt me-2"></i>Zone(s) de couverture</h5>
+        {% if nombre_zones == 1 %}
+            <span class="zone-badge">{{ zones_couvertes.0.nom }}</span>
+            {% if zones_couvertes.0.distance > 0 %}
+                <small>({{ zones_couvertes.0.distance|floatformat:0 }}m du centre)</small>
+            {% endif %}
+        {% else %}
+            {% for zone in zones_couvertes %}
+                <span class="zone-badge">
+                    {{ zone.nom }}
+                    {% if zone.distance > 0 %}
+                        ({{ zone.distance|floatformat:0 }}m)
+                    {% endif %}
+                </span>
+            {% endfor %}
+        {% endif %}
+        <div style="margin-top: 10px;">
+            <small><strong>{{ nombre_livreurs }}</strong> livreur(s) disponible(s) dans {{ nombre_zones }} zone(s)</small>
+        </div>
+    </div>
+    {% endif %}
+</div>
 
-            // Sélectionner la carte cliquée
-            event.currentTarget.classList.add('selected');
+{% if livreurs_avec_distance %}
+<form method="post" action="{% url 'commande_attribuer_confirmer' commande.id %}">
+    {% csrf_token %}
 
-            // Cocher le radio button correspondant
-            document.getElementById('livreur_' + livreurId).checked = true;
-        }
-    </script>
-</body>
-</html>
+    <div class="livreurs-carousel-container">
+        <div class="carousel-header">
+            <h3 class="carousel-title"><i class="fas fa-users me-2"></i>Sélectionner un livreur</h3>
+            <div class="carousel-controls">
+                <button type="button" class="carousel-btn" id="prevBtn" onclick="moveCarousel(-1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" class="carousel-btn" id="nextBtn" onclick="moveCarousel(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="livreurs-carousel">
+            <div class="livreurs-track" id="livreursTrack">
+                {% for livreur_data in livreurs_avec_distance %}
+                <div class="livreur-card" onclick="selectLivreur({{ livreur_data.livreur.id }})">
+                    <input type="radio" name="livreur_id" value="{{ livreur_data.livreur.id }}" id="livreur_{{ livreur_data.livreur.id }}" class="radio-input">
+
+                    <div class="livreur-header">
+                        <div class="livreur-avatar">
+                            {{ livreur_data.livreur.nom|first|upper }}
+                        </div>
+                        <h4 class="livreur-name">{{ livreur_data.livreur.nom }}</h4>
+                    </div>
+
+                    {% if livreur_data.zones %}
+                    <div class="livreur-zones">
+                        <div class="livreur-zones-title">Zones de livraison</div>
+                        {% for zone_nom in livreur_data.zones %}
+                            <span class="zone-tag">{{ zone_nom }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if livreur_data.livreur.contact %}
+                    <div class="livreur-contact">
+                        <i class="fas fa-phone me-2"></i>{{ livreur_data.livreur.contact }}
+                    </div>
+                    {% endif %}
+
+                    {% if livreur_data.livreur.geo_position and livreur_data.livreur.geo_position != "0,0" %}
+                    <div class="livreur-position">
+                        <i class="fas fa-map-marker-alt position-icon"></i>
+                        Position GPS: {{ livreur_data.livreur.geo_position }}
+                    </div>
+                    {% elif livreur_data.livreur.position %}
+                    <div class="livreur-position">
+                        <i class="fas fa-map-marker-alt position-icon"></i>
+                        {{ livreur_data.livreur.position }}
+                    </div>
+                    {% endif %}
+
+                    {% if not livreur_data.error %}
+                    <div class="distance-info">
+                        <div class="distance-total">
+                            <i class="fas fa-route me-2"></i>{{ livreur_data.distance_totale }} km
+                        </div>
+                        <div class="distance-details">
+                            <span><i class="fas fa-store me-1"></i>{{ livreur_data.nombre_restaurants }} restaurant(s)</span>
+                            <span><i class="fas fa-clock me-1"></i>{{ livreur_data.temps_estime }} min</span>
+                        </div>
+                        {% if livreur_data.calcul_type %}
+                        <div class="calcul-type">
+                            {% if livreur_data.calcul_type == 'géographique' %}
+                                <i class="fas fa-satellite" style="color: #28a745;"></i>Calcul GPS
+                            {% elif livreur_data.calcul_type == 'ancien système' %}
+                                <i class="fas fa-calculator" style="color: #ffc107;"></i>Calcul estimé
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>{{ livreur_data.calcul_type }}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="distance-error">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ livreur_data.error }}
+                        {% if livreur_data.calcul_type %}
+                        <br><small>{{ livreur_data.calcul_type }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn-confirm">
+            <i class="fas fa-check"></i>
+            Confirmer l'attribution
+        </button>
+        <a href="{% url 'index' %}" class="btn-cancel">
+            <i class="fas fa-times"></i>
+            Annuler
+        </a>
+    </div>
+</form>
+
+{% else %}
+<div class="no-livreurs">
+    <div class="no-livreurs-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h3>Aucun livreur disponible</h3>
+    <p>Il n'y a actuellement aucun livreur disponible pour cette zone de livraison.</p>
+    <a href="{% url 'index' %}" class="btn btn-orange">
+        <i class="fas fa-arrow-left me-2"></i>Retour au tableau de bord
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentIndex = 0;
+const cardsPerView = window.innerWidth > 768 ? 3 : 1;
+const totalCards = document.querySelectorAll('.livreur-card').length;
+const maxIndex = Math.max(0, totalCards - cardsPerView);
+
+function updateCarousel() {
+    const track = document.getElementById('livreursTrack');
+    const cardWidth = window.innerWidth > 768 ? 320 : 300; // largeur carte + gap
+    track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+
+    // Mise à jour des boutons
+    document.getElementById('prevBtn').disabled = currentIndex === 0;
+    document.getElementById('nextBtn').disabled = currentIndex >= maxIndex;
+}
+
+function moveCarousel(direction) {
+    currentIndex += direction;
+    currentIndex = Math.max(0, Math.min(currentIndex, maxIndex));
+    updateCarousel();
+}
+
+function selectLivreur(livreurId) {
+    // Désélectionner toutes les cartes
+    document.querySelectorAll('.livreur-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Sélectionner la carte cliquée
+    event.currentTarget.classList.add('selected');
+
+    // Cocher le radio button correspondant
+    document.getElementById('livreur_' + livreurId).checked = true;
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    updateCarousel();
+
+    // Responsive
+    window.addEventListener('resize', function() {
+        updateCarousel();
+    });
+});
+
+// Navigation au clavier
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') {
+        moveCarousel(-1);
+    } else if (e.key === 'ArrowRight') {
+        moveCarousel(1);
+    }
+});
+</script>
+{% endblock %}

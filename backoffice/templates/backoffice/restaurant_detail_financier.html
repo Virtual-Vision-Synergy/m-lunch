@@ -1,341 +1,433 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Détails Financiers - {{ restaurant.nom }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="icon" href="data:,">
-</head>
-<body class="bg-gray-100 min-h-screen">
-    <!-- Menu de navigation -->
-    <nav class="bg-blue-600 text-white p-4">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold">M'Lunch - Détails Financiers</h1>
-            <div class="flex space-x-4">
-                <a href="{% url 'backoffice_restaurant_list' %}" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800 transition">Retour aux restaurants</a>
-                <a href="{% url 'restaurant_commandes' restaurant.id %}" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800 transition">Commandes</a>
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Détails Financiers - {{ restaurant.nom }} - M'Lunch Backoffice{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+
+    .period-btn {
+        transition: all 0.3s ease;
+    }
+
+    .period-btn.active {
+        background: var(--primary-orange);
+        color: white;
+    }
+
+    .period-btn:not(.active) {
+        background: #f8f9fa;
+        color: var(--text-dark);
+        border: 1px solid var(--border-color);
+    }
+
+    .period-btn:not(.active):hover {
+        background: rgba(204, 85, 0, 0.1);
+        color: var(--primary-orange);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Détails Financiers - {{ restaurant.nom }}</h1>
+            <p class="page-subtitle">Analyse financière et statistiques de vente</p>
+        </div>
+        <div>
+            <a href="{% url 'backoffice_restaurant_list' %}" class="btn btn-orange-outline me-2">
+                <i class="fas fa-arrow-left me-1"></i>Retour aux restaurants
+            </a>
+            <a href="{% url 'restaurant_commandes' restaurant.id %}" class="btn btn-orange">
+                <i class="fas fa-list me-1"></i>Commandes
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Informations du restaurant -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <i class="fas fa-store me-2"></i>Informations du restaurant
+    </div>
+    <div class="content-card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="mb-0">{{ restaurant.nom }}</h5>
+                <p class="text-muted">{{ restaurant.adresse }}</p>
             </div>
         </div>
-    </nav>
+    </div>
+</div>
 
-    <div class="max-w-6xl mx-auto p-6">
-        <!-- En-tête du restaurant -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ restaurant.nom }}</h2>
-            <p class="text-gray-600">{{ restaurant.adresse }}</p>
-        </div>
-
-        <!-- Statistiques générales -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Commandes</h3>
-                <p class="text-3xl font-bold text-blue-600">{{ total_commandes }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Chiffre d'affaires</h3>
-                <p class="text-3xl font-bold text-green-600">{{ ca_total|floatformat:0 }} Ar</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">CA après commission</h3>
-                <p class="text-3xl font-bold text-purple-600">{{ ca_apres_commission|floatformat:0 }} Ar</p>
-                <p class="text-sm text-gray-500">Commission: {{ commission_value }}%</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Repas vendus</h3>
-                <p class="text-3xl font-bold text-orange-600">{{ total_repas_vendus }}</p>
-                <p class="text-sm text-gray-500">Moy/commande: {{ prix_moyen|floatformat:0 }} Ar</p>
+<!-- Statistiques générales -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-card-title">Total Commandes</div>
+            <div class="stat-card-icon" style="background: linear-gradient(135deg, #3B82F6, #60A5FA);">
+                <i class="fas fa-shopping-cart"></i>
             </div>
         </div>
+        <div class="stat-card-value" style="color: #3B82F6;">{{ total_commandes }}</div>
+    </div>
 
-        <!-- Filtres de période -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 class="text-lg font-semibold mb-4">Période d'analyse</h3>
-            <div class="flex space-x-4">
-                <button id="btn-jour" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Par jour</button>
-                <button id="btn-mois" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">Par mois</button>
-                <button id="btn-annee" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">Par année</button>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-card-title">Chiffre d'affaires</div>
+            <div class="stat-card-icon" style="background: linear-gradient(135deg, #10B981, #34D399);">
+                <i class="fas fa-euro-sign"></i>
             </div>
         </div>
+        <div class="stat-card-value" style="color: #10B981;">{{ ca_total|floatformat:0 }} Ar</div>
+    </div>
 
-        <!-- Graphiques -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Évolution du CA -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold mb-4">Évolution du Chiffre d'Affaires</h3>
-                <div style="position: relative; height: 400px; width: 100%;">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-card-title">CA après commission</div>
+            <div class="stat-card-icon" style="background: linear-gradient(135deg, #8B5CF6, #A78BFA);">
+                <i class="fas fa-percentage"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" style="color: #8B5CF6;">{{ ca_apres_commission|floatformat:0 }} Ar</div>
+        <small class="text-muted">Commission: {{ commission_value }}%</small>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-card-title">Repas vendus</div>
+            <div class="stat-card-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
+                <i class="fas fa-utensils"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" style="color: #F59E0B;">{{ total_repas_vendus }}</div>
+        <small class="text-muted">Moy/commande: {{ prix_moyen|floatformat:0 }} Ar</small>
+    </div>
+</div>
+
+<!-- Filtres de période -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <i class="fas fa-calendar me-2"></i>Période d'analyse
+    </div>
+    <div class="content-card-body">
+        <div class="d-flex gap-2">
+            <button id="btn-jour" class="btn period-btn active" style="padding: 8px 16px;">
+                <i class="fas fa-calendar-day me-1"></i>Par jour
+            </button>
+            <button id="btn-mois" class="btn period-btn" style="padding: 8px 16px;">
+                <i class="fas fa-calendar-alt me-1"></i>Par mois
+            </button>
+            <button id="btn-annee" class="btn period-btn" style="padding: 8px 16px;">
+                <i class="fas fa-calendar me-1"></i>Par année
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row mb-4">
+    <!-- Évolution du CA -->
+    <div class="col-lg-6 mb-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <i class="fas fa-chart-line me-2"></i>Évolution du Chiffre d'Affaires
+            </div>
+            <div class="content-card-body">
+                <div class="chart-container">
                     <canvas id="caChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Répartition par type de repas -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold mb-4">Répartition par type de repas</h3>
-                <div style="position: relative; height: 400px; width: 100%;">
-                    <canvas id="typeChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top repas et statistiques détaillées -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Top 5 des repas -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold mb-4">Top 5 des repas les plus vendus</h3>
-                <div class="space-y-4">
-                    {% for repas in top_repas %}
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                            <p class="font-medium">{{ repas.repas__nom }}</p>
-                            <p class="text-sm text-gray-600">{{ repas.repas__prix }} Ar / unité</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-blue-600">{{ repas.total_vendu }} vendus</p>
-                            <p class="text-sm text-green-600">{{ repas.ca_repas|floatformat:0 }} Ar CA</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Répartition détaillée par type -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold mb-4">Détail par type de repas</h3>
-                <div class="space-y-4">
-                    {% for type in repas_par_type %}
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                            <p class="font-medium">{{ type.repas__type__nom }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-blue-600">{{ type.total_vendu }} vendus</p>
-                            <p class="text-sm text-green-600">{{ type.ca_type|floatformat:0 }} Ar CA</p>
-                        </div>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let caChart = null;
-        let typeChart = null;
-        let currentPeriod = 'mois';
+    <!-- Répartition par type de repas -->
+    <div class="col-lg-6 mb-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <i class="fas fa-chart-pie me-2"></i>Répartition par type de repas
+            </div>
+            <div class="content-card-body">
+                <div class="chart-container">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Gestion des boutons de période
-        document.getElementById('btn-jour').addEventListener('click', () => changePeriod('jour'));
-        document.getElementById('btn-mois').addEventListener('click', () => changePeriod('mois'));
-        document.getElementById('btn-annee').addEventListener('click', () => changePeriod('annee'));
+<!-- Top repas et statistiques détaillées -->
+<div class="row">
+    <!-- Top 5 des repas -->
+    <div class="col-lg-6 mb-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <i class="fas fa-trophy me-2"></i>Top 5 des repas les plus vendus
+            </div>
+            <div class="content-card-body">
+                {% for repas in top_repas %}
+                <div class="d-flex justify-content-between align-items-center p-3 mb-3 bg-light rounded">
+                    <div>
+                        <div class="fw-medium">{{ repas.repas__nom }}</div>
+                        <small class="text-muted">{{ repas.repas__prix }} Ar / unité</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-primary">{{ repas.total_vendu }} vendus</div>
+                        <small class="text-success">{{ repas.ca_repas|floatformat:0 }} Ar CA</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
-        function changePeriod(period) {
-            currentPeriod = period;
+    <!-- Répartition détaillée par type -->
+    <div class="col-lg-6 mb-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <i class="fas fa-list me-2"></i>Détail par type de repas
+            </div>
+            <div class="content-card-body">
+                {% for type in repas_par_type %}
+                <div class="d-flex justify-content-between align-items-center p-3 mb-3 bg-light rounded">
+                    <div>
+                        <div class="fw-medium">{{ type.repas__type__nom }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-primary">{{ type.total_vendu }} vendus</div>
+                        <small class="text-success">{{ type.ca_type|floatformat:0 }} Ar CA</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-            // Mise à jour des styles des boutons
-            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
-                btn.className = 'px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition';
-            });
-            document.getElementById(`btn-${period}`).className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition';
+{% block extra_js %}
+<script>
+    let caChart = null;
+    let typeChart = null;
+    let currentPeriod = 'mois';
 
-            // Recharger les graphiques
-            loadCAChart();
-        }
+    // Gestion des boutons de période
+    document.getElementById('btn-jour').addEventListener('click', () => changePeriod('jour'));
+    document.getElementById('btn-mois').addEventListener('click', () => changePeriod('mois'));
+    document.getElementById('btn-annee').addEventListener('click', () => changePeriod('annee'));
 
-        // Chargement du graphique d'évolution du CA
-        function loadCAChart() {
-            fetch(`/staff/restaurants/{{ restaurant.id }}/financier/api/?periode=${currentPeriod}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Données CA reçues:', data); // Debug
-                    const ctx = document.getElementById('caChart').getContext('2d');
+    function changePeriod(period) {
+        currentPeriod = period;
 
-                    if (caChart) {
-                        caChart.destroy();
-                    }
-
-                    if (data.length === 0) {
-                        // Afficher un message si pas de données
-                        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                        ctx.font = '16px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Aucune donnée disponible pour cette période', ctx.canvas.width/2, ctx.canvas.height/2);
-                        return;
-                    }
-
-                    caChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: data.map(d => d.periode),
-                            datasets: [{
-                                label: 'Chiffre d\'affaires (Ar)',
-                                data: data.map(d => d.ca),
-                                borderColor: 'rgb(59, 130, 246)',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                tension: 0.1,
-                                fill: true
-                            }, {
-                                label: 'Nombre de commandes',
-                                data: data.map(d => d.nb_commandes),
-                                borderColor: 'rgb(16, 185, 129)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                yAxisID: 'y1',
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            interaction: {
-                                mode: 'index',
-                                intersect: false,
-                            },
-                            scales: {
-                                y: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'left',
-                                    title: {
-                                        display: true,
-                                        text: 'CA (Ar)'
-                                    },
-                                    ticks: {
-                                        callback: function(value) {
-                                            return value.toLocaleString() + ' Ar';
-                                        }
-                                    }
-                                },
-                                y1: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'right',
-                                    title: {
-                                        display: true,
-                                        text: 'Nb commandes'
-                                    },
-                                    grid: {
-                                        drawOnChartArea: false,
-                                    },
-                                }
-                            },
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            let label = context.dataset.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.datasetIndex === 0) {
-                                                label += context.parsed.y.toLocaleString() + ' Ar';
-                                            } else {
-                                                label += context.parsed.y;
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                })
-                .catch(error => {
-                    console.error('Erreur lors du chargement des données CA:', error);
-                    // Afficher un message d'erreur dans le graphique
-                    const ctx = document.getElementById('caChart').getContext('2d');
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                    ctx.font = '16px Arial';
-                    ctx.fillStyle = '#ff4444';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Erreur de chargement des données', ctx.canvas.width/2, ctx.canvas.height/2);
-                });
-        }
-
-        // Chargement du graphique par type de repas
-        function loadTypeChart() {
-            fetch(`/staff/restaurants/{{ restaurant.id }}/repas/api/`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Données types reçues:', data); // Debug
-                    const ctx = document.getElementById('typeChart').getContext('2d');
-
-                    if (typeChart) {
-                        typeChart.destroy();
-                    }
-
-                    if (data.length === 0) {
-                        // Afficher un message si pas de données
-                        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                        ctx.font = '16px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Aucune donnée de vente disponible', ctx.canvas.width/2, ctx.canvas.height/2);
-                        return;
-                    }
-
-                    typeChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: data.map(d => d.type),
-                            datasets: [{
-                                data: data.map(d => d.ca),
-                                backgroundColor: [
-                                    '#3B82F6',
-                                    '#10B981',
-                                    '#F59E0B',
-                                    '#EF4444',
-                                    '#8B5CF6',
-                                    '#06B6D4',
-                                    '#84CC16',
-                                    '#F97316',
-                                    '#EC4899'
-                                ]
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        padding: 20,
-                                        usePointStyle: true
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const label = context.label || '';
-                                            const value = context.raw || 0;
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            const percentage = ((value / total) * 100).toFixed(1);
-                                            return `${label}: ${value.toLocaleString()} Ar (${percentage}%)`;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                })
-                .catch(error => {
-                    console.error('Erreur lors du chargement des données types:', error);
-                    // Afficher un message d'erreur dans le graphique
-                    const ctx = document.getElementById('typeChart').getContext('2d');
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                    ctx.font = '16px Arial';
-                    ctx.fillStyle = '#ff4444';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Erreur de chargement des données', ctx.canvas.width/2, ctx.canvas.height/2);
-                });
-        }
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCAChart();
-            loadTypeChart();
+        // Mise à jour des styles des boutons
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.classList.remove('active');
         });
-    </script>
-</body>
-</html>
+        document.getElementById(`btn-${period}`).classList.add('active');
+
+        // Recharger les graphiques
+        loadCAChart();
+    }
+
+    // Chargement du graphique d'évolution du CA
+    function loadCAChart() {
+        fetch(`/staff/restaurants/{{ restaurant.id }}/financier/api/?periode=${currentPeriod}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Données CA reçues:', data); // Debug
+                const ctx = document.getElementById('caChart').getContext('2d');
+
+                if (caChart) {
+                    caChart.destroy();
+                }
+
+                if (data.length === 0) {
+                    // Afficher un message si pas de données
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#666';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Aucune donnée disponible pour cette période', ctx.canvas.width/2, ctx.canvas.height/2);
+                    return;
+                }
+
+                caChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.periode),
+                        datasets: [{
+                            label: 'Chiffre d\'affaires (Ar)',
+                            data: data.map(d => d.ca),
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        }, {
+                            label: 'Nombre de commandes',
+                            data: data.map(d => d.nb_commandes),
+                            borderColor: 'rgb(16, 185, 129)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'CA (Ar)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' Ar';
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Nb commandes'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.datasetIndex === 0) {
+                                            label += context.parsed.y.toLocaleString() + ' Ar';
+                                        } else {
+                                            label += context.parsed.y;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des données CA:', error);
+                // Afficher un message d'erreur dans le graphique
+                const ctx = document.getElementById('caChart').getContext('2d');
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#ff4444';
+                ctx.textAlign = 'center';
+                ctx.fillText('Erreur de chargement des données', ctx.canvas.width/2, ctx.canvas.height/2);
+            });
+    }
+
+    // Chargement du graphique par type de repas
+    function loadTypeChart() {
+        fetch(`/staff/restaurants/{{ restaurant.id }}/repas/api/`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Données types reçues:', data); // Debug
+                const ctx = document.getElementById('typeChart').getContext('2d');
+
+                if (typeChart) {
+                    typeChart.destroy();
+                }
+
+                if (data.length === 0) {
+                    // Afficher un message si pas de données
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#666';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Aucune donnée de vente disponible', ctx.canvas.width/2, ctx.canvas.height/2);
+                    return;
+                }
+
+                typeChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.map(d => d.type),
+                        datasets: [{
+                            data: data.map(d => d.ca),
+                            backgroundColor: [
+                                '#3B82F6',
+                                '#10B981',
+                                '#F59E0B',
+                                '#EF4444',
+                                '#8B5CF6',
+                                '#06B6D4',
+                                '#84CC16',
+                                '#F97316',
+                                '#EC4899'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value.toLocaleString()} Ar (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des données types:', error);
+                // Afficher un message d'erreur dans le graphique
+                const ctx = document.getElementById('typeChart').getContext('2d');
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#ff4444';
+                ctx.textAlign = 'center';
+                ctx.fillText('Erreur de chargement des données', ctx.canvas.width/2, ctx.canvas.height/2);
+            });
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCAChart();
+        loadTypeChart();
+    });
+</script>
+{% endblock %}
