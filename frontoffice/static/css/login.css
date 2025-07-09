@@ -5,7 +5,7 @@
   --gray-light: #EBEBEB;
   --gray-border: #D9D9D9;
   --gray-bg: #F9F9F9;
-  --link-color: #2563EB;
+  --link-color: #6257DB;
   --white: #FFFFFF;
 }
 
@@ -29,7 +29,7 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 40px;
-  background: var(--gray-bg); /* Fond gris très clair au lieu du dégradé bleu */
+  /* background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); */
 }
 
 /* Conteneur du formulaire */
@@ -39,8 +39,7 @@ body {
   padding: 50px 40px;
   width: 100%;
   max-width: 550px;
-  /* Nouveau box-shadow plus visible et moderne */
-  box-shadow: 0 8px 32px 0 rgba(44, 62, 80, 0.18), 0 1.5px 8px 0 rgba(44, 62, 80, 0.10);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   margin-left: 0;
   position: relative;
   backdrop-filter: blur(10px);
@@ -52,8 +51,8 @@ body {
   align-items: center;
   justify-content: space-between;
   min-height: 100vh;
-  padding: 0;
-  background: none; /* Suppression du fond dégradé bleu */
+  padding: 40;
+  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
   gap: 60px;
   max-width: 1400px;
   margin: 0 auto;
@@ -358,7 +357,7 @@ body {
 
 .popup-header h2 {
   font-size: 28px;
-  color: #2563EB;
+  color: #043C4E; /* Nouvelle couleur pour le titre */
   margin-bottom: 0;
   font-weight: 600; /* Ajustement du poids de la police */
 }
@@ -422,8 +421,8 @@ body {
 }
 
 .checkbox-container input:checked ~ .checkmark {
-  background-color: #2563EB; /* Couleur de la checkbox cochée */
-  border-color: #2563EB;
+  background-color: #043C4E; /* Couleur de la checkbox cochée */
+  border-color: #043C4E;
 }
 
 .checkmark:after {
@@ -449,7 +448,7 @@ body {
 }
 
 .btn-delivery-continue {
-  background-color: #2563EB; /* Nouvelle couleur pour le bouton */
+  background-color: #043C4E; /* Nouvelle couleur pour le bouton */
   color: #ffffff;
   padding: 14px 20px;
   border: none;
@@ -463,7 +462,7 @@ body {
 }
 
 .btn-delivery-continue:hover:not(:disabled) {
-  background-color: #1d4ed8; /* Légèrement plus foncé au survol */
+  background-color: #03303d; /* Légèrement plus foncé au survol */
   transform: translateY(-2px);
 }
 
@@ -472,7 +471,7 @@ body {
 }
 
 .btn-delivery-continue:disabled {
-  background-color: #3b82f6; /* Couleur pour le bouton désactivé */
+  background-color: #165c6f; /* Couleur pour le bouton désactivé */
   cursor: not-allowed;
   opacity: 0.7;
 }
