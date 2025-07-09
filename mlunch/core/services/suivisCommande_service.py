@@ -1,6 +1,6 @@
 from django.utils.timezone import now
 from django.db import transaction
-from mlunch.core.models import SuivisCommande, Commande, Restaurant
+from mlunch.core.models import SuivisCommande
 
 
 class SuivisCommandeService:
@@ -25,7 +25,7 @@ class SuivisCommandeService:
                     "mis_a_jour_le": suivi.mis_a_jour_le
                 }
         except Exception as e:
-            return {"error": f"Erreur lors de l'ajout du suivi : {str(e)}"}
+            return {"error": f"Erreur lors de l'ajout du suivi oaaa: {str(e)}"}
 
     @staticmethod
     def changer_statut(commande_id, restaurant_id):

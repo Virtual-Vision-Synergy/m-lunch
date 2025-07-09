@@ -97,7 +97,7 @@ def dashboard_view(request):
         from mlunch.core.models import StatutCommande, HistoriqueStatutCommande, Commande
 
         # Récupérer tous les statuts "en preparation" et "en cours"
-        statuts_cibles = StatutCommande.objects.filter(appellation__in=["en preparation", "en cours"])
+        statuts_cibles = StatutCommande.objects.filter(appellation__in=["En preparation", "En cours","En attente"])
 
         # Sous-requête : statut du dernier historique pour chaque commande
         dernier_historique_statut = HistoriqueStatutCommande.objects.filter(
