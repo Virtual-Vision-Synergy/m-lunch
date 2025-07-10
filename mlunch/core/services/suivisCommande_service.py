@@ -5,18 +5,32 @@ from mlunch.core.models import SuivisCommande
 
 class SuivisCommandeService:
     @staticmethod
-    def ajouter_suivi(commande_id, restaurant_id, statut="En attente"):
+    def ajouter_suivi(commande_id, restaurant_id, statut=False):
         """
         Ajoute un nouveau suivi pour une commande et un restaurant.
         """
         try:
             with transaction.atomic():
-                suivi = SuivisCommande.objects.create(
+                # Vérifier si un suivi existe déjà pour cette commande et ce restaurant
+                existing_suivi = SuivisCommande.objects.filter(
                     commande_id=commande_id,
-                    restaurant_id=restaurant_id,
-                    statut=statut,
-                    mis_a_jour_le=now()
-                )
+                    restaurant_id=restaurant_id
+                ).first()
+                
+                if existing_suivi:
+                    # Mettre à jour le suivi existant
+                    existing_suivi.statut = statut
+                    existing_suivi.mis_a_jour_le = now()
+                    existing_suivi.save()
+                    suivi = existing_suivi
+                else:
+                    # Créer un nouveau suivi
+                    suivi = SuivisCommande.objects.create(
+                        commande_id=commande_id,
+                        restaurant_id=restaurant_id,
+                        statut=statut
+                    )
+                
                 return {
                     "id": suivi.id,
                     "commande_id": suivi.commande_id,
@@ -25,7 +39,7 @@ class SuivisCommandeService:
                     "mis_a_jour_le": suivi.mis_a_jour_le
                 }
         except Exception as e:
-            return {"error": f"Erreur lors de l'ajout du suivi oaaa: {str(e)}"}
+            return {"error": f"Erreur lors de l'ajout du suivi: {str(e)}"}
 
     @staticmethod
     def changer_statut(commande_id, restaurant_id):

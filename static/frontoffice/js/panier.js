@@ -56,8 +56,21 @@ let panierModifications = {};
     }
 
     function submitOrder() {
-      const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
-      const pickupPoint = document.getElementById('point_recuperation').value;
+      const paymentMethodElement = document.querySelector('input[name="payment-method"]:checked');
+      const pickupPointElement = document.getElementById('point_recuperation');
+
+      if (!pickupPointElement) {
+        alert('Élément point de récupération non trouvé');
+        return;
+      }
+
+      if (!paymentMethodElement) {
+        alert('Veuillez sélectionner une méthode de paiement');
+        return;
+      }
+
+      const paymentMethod = paymentMethodElement.value;
+      const pickupPoint = pickupPointElement.value;
 
       if (!pickupPoint) {
         alert('Veuillez sélectionner un point de récupération');
@@ -82,46 +95,55 @@ let panierModifications = {};
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          window.location.href = '/panier/';
+          alert('Commande validée avec succès ! Votre commande est maintenant en cours de traitement.');
+          // Recharger la page du panier pour afficher l'état vide
+          location.reload();
         } else {
           alert('Erreur lors de la commande: ' + data.message);
         }
       });
     }
     document.addEventListener('DOMContentLoaded', function() {
-        // Charger dynamiquement les modes de paiement
-        fetch('/api/panier/modes-paiement/')
-            .then(response => response.json())
-            .then(data => {
-            if (data.success && Array.isArray(data.modes)) {
-                const container = document.getElementById('payment-methods-container');
-                container.innerHTML = '';
-                data.modes.forEach((mode, idx) => {
-                const id = `mode-paiement-${mode.id}`;
-                const checked = idx === 0 ? 'checked' : '';
-                container.innerHTML += `
-                    <div class="payment-option">
-                    <input type="radio" id="${id}" name="payment-method" value="${mode.id}" ${checked}>
-                    <label for="${id}">
-                        <span>${mode.nom}</span>
-                    </label>
-                    </div>
-                `;
+        // Charger dynamiquement les modes de paiement seulement si le conteneur existe
+        const paymentContainer = document.getElementById('payment-methods-container');
+        if (paymentContainer) {
+            fetch('/api/panier/modes-paiement/')
+                .then(response => response.json())
+                .then(data => {
+                if (data.success && Array.isArray(data.modes)) {
+                    paymentContainer.innerHTML = '';
+                    data.modes.forEach((mode, idx) => {
+                    const id = `mode-paiement-${mode.id}`;
+                    const checked = idx === 0 ? 'checked' : '';
+                    paymentContainer.innerHTML += `
+                        <div class="payment-option">
+                        <input type="radio" id="${id}" name="payment-method" value="${mode.id}" ${checked}>
+                        <label for="${id}">
+                            <span>${mode.nom}</span>
+                        </label>
+                        </div>
+                    `;
+                    });
+                } else {
+                    paymentContainer.innerHTML = '<div style="color:red;">Aucun mode de paiement disponible</div>';
+                }
+                })
+                .catch(() => {
+                paymentContainer.innerHTML = '<div style="color:red;">Erreur lors du chargement des modes de paiement</div>';
                 });
-            } else {
-                document.getElementById('payment-methods-container').innerHTML = '<div style="color:red;">Aucun mode de paiement disponible</div>';
-            }
-            })
-            .catch(() => {
-            document.getElementById('payment-methods-container').innerHTML = '<div style="color:red;">Erreur lors du chargement des modes de paiement</div>';
-            });
+        }
         });
     // Hamburger menu functionality
-    document.getElementById('menu-toggle').addEventListener('click', function(e) {
-      e.stopPropagation();
-      const menu = document.getElementById('hamburger-menu');
-      menu.classList.toggle('active');
-    });
+    const menuToggle = document.getElementById('menu-toggle');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const menu = document.getElementById('hamburger-menu');
+          if (menu) {
+            menu.classList.toggle('active');
+          }
+        });
+    }
 
     document.querySelectorAll('.has-submenu').forEach(item => {
       item.addEventListener('click', function(e) {

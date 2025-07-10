@@ -143,6 +143,24 @@
     </div>
     {% endif %}
   </div>
+  {% if items %}
   <script src="{% static 'frontoffice/js/panier.js' %}"></script>
+  {% else %}
+  <script>
+    // Script minimal pour les fonctionnalités de base (menu hamburger)
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuToggle = document.getElementById('menu-toggle');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const menu = document.getElementById('hamburger-menu');
+              if (menu) {
+                menu.classList.toggle('active');
+              }
+            });
+        }
+    });
+  </script>
+  {% endif %}
 </body>
 </html>

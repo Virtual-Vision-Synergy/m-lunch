@@ -2,6 +2,9 @@ import math
 
 from django.db.models import Sum, F
 from django.utils.timezone import now
+
+from mlunch.core.services.commande_service import CommandeService
+from mlunch.core.services.suivisCommande_service import SuivisCommandeService
 from ..models import (
     Repas, RestaurantRepas, PointRecup, DisponibiliteRepas,
     Commande, CommandeRepas, HistoriqueStatutCommande, StatutCommande, ModePaiement, ZoneClient,
@@ -321,10 +324,23 @@ class PanierService:
     @staticmethod
     def clear_panier(client_id):
         """
-        Vide le panier
+        Vide le panier en supprimant tous les articles de la commande en cours
         """
         try:
-            # Logique de vidage à implémenter
+            # Trouver la commande en cours (statut_id=1)
+            commande = None
+            commandes = Commande.objects.filter(client_id=client_id)
+            for c in commandes:
+                last_statut = c.historiques.order_by('-mis_a_jour_le').first()
+                if last_statut and last_statut.statut_id == 1:
+                    commande = c
+                    break
+
+            if commande:
+                # Supprimer tous les articles de la commande
+                CommandeRepas.objects.filter(commande=commande).delete()
+                print(f"Panier vidé pour le client {client_id}, commande {commande.id}")
+            
             return {"success": True, "message": "Panier vidé"}
 
         except Exception as e:
@@ -407,11 +423,6 @@ class PanierService:
                 if not is_dispo:
                     return {"error": f"Le repas '{item['nom']}' n'est plus disponible"}
 
-            # Vérifier qu'il n'y a qu'un seul restaurant dans le panier
-            restaurants = PanierService.get_panier_restaurants(client_id)
-            if len(restaurants) > 1:
-                return {"error": "Vous ne pouvez commander que dans un seul restaurant à la fois"}
-
             return {"success": True, "message": "Panier valide pour la commande"}
 
         except Exception as e:
@@ -426,6 +437,16 @@ class PanierService:
             from ..models import Commande, CommandeRepas, PointRecup, ModePaiement, StatutCommande, \
                 HistoriqueStatutCommande
             from django.db import transaction
+
+            # Vérifications des paramètres obligatoires
+            if not client_id:
+                return False, "ID client manquant"
+            
+            if not point_recup_id:
+                return False, "Point de récupération manquant"
+            
+            if not mode_paiement:
+                return False, "Mode de paiement manquant"
 
             # Vérifier que le panier n'est pas vide
             items = PanierService.get_panier_items(client_id)
@@ -464,85 +485,105 @@ class PanierService:
                     if last_statut and last_statut.statut_id == 1:
                         commande = c
                         break
-                if not commande:
-                    # Créer une nouvelle commande
-                    commande = Commande.objects.create(client_id=client_id, point_recup_id=None)
-                    # Ajouter le statut initial (id=1)
-                    HistoriqueStatutCommande.objects.create(commande=commande, statut_id=1)
 
-                # Ajouter les repas à la commande
-                for item in items:
-                    CommandeRepas.objects.create(
-                        commande=commande,
-                        repas_id=item['repas_id'],
-                        quantite=item['quantite']
-                    )
+                if not commande:
+                    return False, "Aucune commande en cours trouvée. Ajoutez d'abord des articles au panier."
+
+                # Vérifier que la commande a un ID valide
+                if not commande.id:
+                    return False, "Commande invalide (ID manquant)"
+
+                # Mettre à jour le point de récupération et le mode de paiement
+                commande.point_recup_id = point_recup_id
+                if mode_paiement_obj:
+                    commande.mode_paiement = mode_paiement_obj
+                commande.save()
+                print(f"Commande {commande.id} mise à jour avec point_recup_id={point_recup_id} et mode_paiement_id={mode_paiement}")
+
+                # Les repas sont déjà dans la commande (ajoutés via add_to_panier)
+                # On vérifie juste qu'ils sont bien présents
+                commande_repas = CommandeRepas.objects.filter(commande=commande)
+                repas_ids = [r.repas_id for r in commande_repas]
+                print(f"Repas déjà dans la commande : {repas_ids}")
+
+                # Vérifier qu'il y a bien des repas dans la commande
+                if not repas_ids:
+                    return False, "Aucun repas trouvé dans la commande"
 
                 # Créer l'historique de statut initial
                 try:
-                    statut_initial = StatutCommande.objects.filter(
-                        appellation__icontains='en attente'
+                    # Passer directement au statut "En cours" (id=2) après validation
+                    statut_en_cours = StatutCommande.objects.filter(
+                        appellation__icontains='En cours'
                     ).first()
-
-                    if not statut_initial:
-                        statut_initial = StatutCommande.objects.first()
-
-                    if statut_initial:
+                    
+                    if not statut_en_cours:
+                        # Fallback : utiliser l'ID 2 si pas trouvé par nom
+                        statut_en_cours = StatutCommande.objects.filter(id=2).first()
+                    
+                    if statut_en_cours:
                         HistoriqueStatutCommande.objects.create(
                             commande=commande,
-                            statut=statut_initial
+                            statut=statut_en_cours
                         )
-                except Exception:
+                        print(f"Commande {commande.id} mise à jour au statut 'En cours'")
+                except Exception as e:
+                    print(f"Erreur lors de la mise à jour du statut : {str(e)}")
                     pass  # Pas critique si l'historique échoue
-
+                
+                suivis_list = []
+                try:
+                    # Debug : vérifier la table RestaurantRepas pour les repas de la commande
+                    for repas_id in repas_ids:
+                        if not repas_id:
+                            print(f"ATTENTION: Repas avec ID null trouvé dans la commande")
+                            continue
+                        restaurant_repas = RestaurantRepas.objects.filter(repas_id=repas_id).first()
+                        if restaurant_repas:
+                            if not restaurant_repas.restaurant_id:
+                                print(f"ATTENTION: Restaurant ID null pour le repas {repas_id}")
+                                continue
+                            print(f"Repas {repas_id} -> Restaurant {restaurant_repas.restaurant_id} ({restaurant_repas.restaurant.nom})")
+                        else:
+                            print(f"ATTENTION: Repas {repas_id} n'a pas de restaurant associé dans RestaurantRepas")
+                    
+                    restaurant_ids = CommandeService.get_all_id_restaurant_from_commande(commande.id)
+                    print(f"Restaurants trouvés pour la commande : {restaurant_ids}")
+                    
+                    # Filtrer les IDs null ou invalides
+                    restaurant_ids = [rid for rid in restaurant_ids if rid is not None and rid > 0]
+                    print(f"Restaurants valides après filtrage : {restaurant_ids}")
+                    
+                    if not restaurant_ids:
+                        print("Aucun restaurant valide trouvé pour les repas de la commande. Vérifiez la table RestaurantRepas.")
+                        return False, "Aucun restaurant valide trouvé pour les repas de la commande. Impossible de créer les suivis."
+                    
+                    # Créer un suivi pour chaque restaurant via le service
+                    for restaurant_id in restaurant_ids:
+                        if not restaurant_id:
+                            print(f"ATTENTION: Restaurant ID null ignoré")
+                            continue
+                        suivi_data = SuivisCommandeService.ajouter_suivi(
+                            commande_id=commande.id,
+                            restaurant_id=restaurant_id,
+                        )
+                        print(f"Suivi créé pour restaurant {restaurant_id} : {suivi_data}")
+                        
+                        # Vérifier que le suivi a été créé avec succès
+                        if isinstance(suivi_data, dict) and 'error' in suivi_data:
+                            print(f"Erreur lors de la création du suivi pour restaurant {restaurant_id}: {suivi_data['error']}")
+                            return False, f"Erreur lors de la création du suivi: {suivi_data['error']}"
+                        
+                        suivis_list.append(suivi_data)
+                except Exception as e:
+                    print(f"Erreur lors de la création des suivis : {str(e)}")
+                    return False, f"Erreur lors de la création des suivis : {str(e)}"
                 # Vider le panier après création de la commande
                 PanierService.clear_panier(client_id)
-
                 return True, f"Commande #{commande.id} créée avec succès"
 
         except Exception as e:
             return False, f"Erreur lors de la validation de la commande : {str(e)}"
-
-    @staticmethod
-    def finalize_commande(client_id, point_recup_id, mode_paiement_id):
-        """
-        Met à jour le statut de la commande à 2 (par exemple : 'validée'),
-        et met à jour le point de récupération et le mode de paiement.
-        """
-        try:
-
-            from django.db import transaction
-
-            with transaction.atomic():
-                commande = None
-                commandes = Commande.objects.filter(client_id=client_id)
-                for c in commandes:
-                    last_statut = c.historiques.order_by('-mis_a_jour_le').first()
-                    if last_statut and last_statut.statut_id == 1:
-                        commande = c
-                        break
-
-                # Mettre à jour le point de récupération et le mode de paiement
-                commande.point_recup_id = point_recup_id
-                if hasattr(commande, 'mode_paiement_id'):
-                    commande.mode_paiement_id = mode_paiement_id
-                commande.save()
-
-                # Mettre à jour le statut à 3
-                statut = StatutCommande.objects.get(id=2)
-                HistoriqueStatutCommande.objects.create(
-                    commande=commande,
-                    statut=statut
-                )
-
-            return {"success": True, "message": "Commande finalisée avec succès."}
-
-        except Commande.DoesNotExist:
-            return {"error": "Commande non trouvée."}
-        except StatutCommande.DoesNotExist:
-            return {"error": "Statut de commande non trouvé."}
-        except Exception as e:
-            return {"error": f"Erreur lors de la finalisation de la commande : {str(e)}"}
 
     @staticmethod
     def get_all_modes_paiement():
@@ -554,3 +595,27 @@ class PanierService:
             return list(modes)
         except Exception as e:
             return {"error": f"Erreur lors de la récupération des modes de paiement : {str(e)}"}
+
+    @staticmethod
+    def finalize_commande(client_id, point_recup_id, mode_paiement):
+        """
+        Finalise une commande et retourne un dictionnaire avec le résultat
+        """
+        try:
+            success, message = PanierService.validate_commande(client_id, point_recup_id, mode_paiement)
+            
+            if success:
+                # Vider le panier après finalisation réussie
+                PanierService.clear_panier(client_id)
+                return {
+                    "success": True,
+                    "message": message
+                }
+            else:
+                return {
+                    "error": message
+                }
+        except Exception as e:
+            return {
+                "error": f"Erreur lors de la finalisation de la commande : {str(e)}"
+            }

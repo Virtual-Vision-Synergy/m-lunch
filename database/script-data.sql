@@ -252,53 +252,29 @@ INSERT INTO core_commission (restaurant_id, valeur, mis_a_jour_le) VALUES
 (8, 7, NOW());
 
 INSERT INTO core_restaurantrepas (restaurant_id, repas_id) VALUES
--- Restaurant 1
-(1, 1), (1, 2), (1, 3), (1, 4),    
-(1, 17), (1, 18), (1, 19),         
-(1, 33), (1, 34), (1, 35),         
-(1, 49), (1, 50), (1, 51),        
+-- Restaurant 1 - La Varangue (8 repas : ID 1-8)
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8),
 
--- Restaurant 2
-(2, 5), (2, 6), (2, 7), (2, 8),
-(2, 20), (2, 21), (2, 22),
-(2, 36), (2, 37), (2, 38),
-(2, 52), (2, 53), (2, 54),
+-- Restaurant 2 - Le Rossini (8 repas : ID 9-16) 
+(2, 9), (2, 10), (2, 11), (2, 12), (2, 13), (2, 14), (2, 15), (2, 16),
 
--- Restaurant 3
-(3, 9), (3, 10), (3, 11), (3, 12),
-(3, 23), (3, 24), (3, 25),
-(3, 39), (3, 40), (3, 41),
-(3, 55), (3, 56), (3, 57),
+-- Restaurant 3 - No Comment Bar (8 repas : ID 17-24)
+(3, 17), (3, 18), (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24),
 
--- Restaurant 4
-(4, 13), (4, 14), (4, 15), (4, 16),
-(4, 26), (4, 27), (4, 28),
-(4, 42), (4, 43), (4, 44),
-(4, 58), (4, 59), (4, 60),
+-- Restaurant 4 - Le Buffet du Jardin (8 repas : ID 25-32)
+(4, 25), (4, 26), (4, 27), (4, 28), (4, 29), (4, 30), (4, 31), (4, 32),
 
--- Restaurant 5
-(5, 1), (5, 5), (5, 9), (5, 13),
-(5, 17), (5, 21), (5, 25),
-(5, 33), (5, 37), (5, 41),
-(5, 49), (5, 53), (5, 57),
+-- Restaurant 5 - La Table d Andohalo (8 repas : ID 33-40)
+(5, 33), (5, 34), (5, 35), (5, 36), (5, 37), (5, 38), (5, 39), (5, 40),
 
--- Restaurant 6
-(6, 2), (6, 6), (6, 10), (6, 14),
-(6, 18), (6, 22), (6, 26),
-(6, 34), (6, 38), (6, 42),
-(6, 50), (6, 54), (6, 58),
+-- Restaurant 6 - Andohalo Cafe (8 repas : ID 41-48)
+(6, 41), (6, 42), (6, 43), (6, 44), (6, 45), (6, 46), (6, 47), (6, 48),
 
--- Restaurant 7
-(7, 3), (7, 7), (7, 11), (7, 15),
-(7, 19), (7, 23), (7, 27),
-(7, 35), (7, 39), (7, 43),
-(7, 51), (7, 55), (7, 59),
+-- Restaurant 7 - Rova Grill (8 repas : ID 49-56)
+(7, 49), (7, 50), (7, 51), (7, 52), (7, 53), (7, 54), (7, 55), (7, 56),
 
--- Restaurant 8
-(8, 4), (8, 8), (8, 12), (8, 16),
-(8, 20), (8, 24), (8, 28),
-(8, 36), (8, 40), (8, 44),
-(8, 52), (8, 56), (8, 60);
+-- Restaurant 8 - Maison des Saveurs (8 repas : ID 57-64)
+(8, 57), (8, 58), (8, 59), (8, 60), (8, 61), (8, 62), (8, 63), (8, 64);
 
 
 -- Association zones-restaurants
@@ -356,4 +332,36 @@ INSERT INTO core_historiquestatutlivreur (livreur_id, statut_id, mis_a_jour_le) 
 (4, 1, NOW()),
 (5, 1, NOW()),
 (6, 1, NOW());
+
+-- DONNÉES MANQUANTES CRITIQUES
+
+-- 1. Disponibilité des repas (CRITIQUE pour les suivis)
+INSERT INTO core_disponibiliterepas (repas_id, est_dispo, mis_a_jour_le) VALUES
+-- Tous les repas sont disponibles par défaut
+(1, TRUE, NOW()), (2, TRUE, NOW()), (3, TRUE, NOW()), (4, TRUE, NOW()),
+(5, TRUE, NOW()), (6, TRUE, NOW()), (7, TRUE, NOW()), (8, TRUE, NOW()),
+(9, TRUE, NOW()), (10, TRUE, NOW()), (11, TRUE, NOW()), (12, TRUE, NOW()),
+(13, TRUE, NOW()), (14, TRUE, NOW()), (15, TRUE, NOW()), (16, TRUE, NOW()),
+(17, TRUE, NOW()), (18, TRUE, NOW()), (19, TRUE, NOW()), (20, TRUE, NOW()),
+(21, TRUE, NOW()), (22, TRUE, NOW()), (23, TRUE, NOW()), (24, TRUE, NOW()),
+(25, TRUE, NOW()), (26, TRUE, NOW()), (27, TRUE, NOW()), (28, TRUE, NOW()),
+(29, TRUE, NOW()), (30, TRUE, NOW()), (31, TRUE, NOW()), (32, TRUE, NOW()),
+(33, TRUE, NOW()), (34, TRUE, NOW()), (35, TRUE, NOW()), (36, TRUE, NOW()),
+(37, TRUE, NOW()), (38, TRUE, NOW()), (39, TRUE, NOW()), (40, TRUE, NOW()),
+(41, TRUE, NOW()), (42, TRUE, NOW()), (43, TRUE, NOW()), (44, TRUE, NOW()),
+(45, TRUE, NOW()), (46, TRUE, NOW()), (47, TRUE, NOW()), (48, TRUE, NOW()),
+(49, TRUE, NOW()), (50, TRUE, NOW()), (51, TRUE, NOW()), (52, TRUE, NOW()),
+(53, TRUE, NOW()), (54, TRUE, NOW()), (55, TRUE, NOW()), (56, TRUE, NOW()),
+(57, TRUE, NOW()), (58, TRUE, NOW()), (59, TRUE, NOW()), (60, TRUE, NOW()),
+(61, TRUE, NOW()), (62, TRUE, NOW()), (63, TRUE, NOW()), (64, TRUE, NOW());
+
+
+-- 4. Historique des zones de récupération
+INSERT INTO core_historiquezonesrecuperation (zone_id, point_recup_id, mis_a_jour_le) VALUES
+(1, 1, NOW()), -- Antanimena -> Victoria Plaza
+(1, 2, NOW()), -- Antanimena -> Gare Soarano  
+(1, 3, NOW()), -- Antanimena -> Analakely Market
+(2, 4, NOW()), -- Andohalo -> Cathédrale
+(2, 5, NOW()), -- Andohalo -> Palais de justice
+(2, 6, NOW()); -- Andohalo -> Lycée Andohalo
 

@@ -273,7 +273,7 @@ def modifier_statut_commande(request, commande_id):
                 return redirect('restaurant_dashboard')
 
             # Mettre à jour le statut
-            nouveau_statut = StatutCommande.objects.get(appellation="en preparation")
+            nouveau_statut = StatutCommande.objects.get(appellation="En preparation")
 
             HistoriqueStatutCommande.objects.create(
                 commande=commande,

@@ -2,6 +2,7 @@ from django.utils.timezone import now
 from django.db import transaction
 import pdb
 from django.db.models import Sum
+import unicodedata
 
 from mlunch.core.models import (
     Commande, StatutCommande, HistoriqueStatutCommande, Repas, CommandeRepas,
@@ -36,7 +37,7 @@ class CommandeService:
                 # Créer un suivi pour chaque restaurant via le service
                 suivis_list = []
                 for restaurant_id in restaurant_ids:
-                    suivi_data = SuivisCommandeService.create_suivi(
+                    suivi_data = SuivisCommandeService.ajouter_suivi(
                         commande_id=commande.id,
                         restaurant_id=restaurant_id,
                     )
@@ -616,15 +617,19 @@ class CommandeService:
             if not dernier_statut_commande:
                 return {"error": "Aucun statut trouvé pour cette commande."}
 
-            # Vérifier que le statut actuel est "En cours" (variantes accent/casse)
-            appellations_en_cours = ['En cours', 'en cours', 'EN COURS', 'Encours', 'encours', 'ENCOURS']
+            # Vérifier que le statut actuel est "En préparation" (tolérance accent/casse)
+            appellation_en_preparation = 'En preparation'
             statut_actuel = dernier_statut_commande.statut.appellation or ""
 
-            if statut_actuel.lower().replace(" ", "") not in [a.lower().replace(" ", "") for a in appellations_en_cours]:
-                return {"success": False, "message": f"Le statut actuel de la commande n'est pas 'En cours' mais '{statut_actuel}'."}
+            def normalize(s):
+                import unicodedata
+                return unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').lower().replace(' ', '')
+
+            if normalize(statut_actuel) != normalize(appellation_en_preparation):
+                return {"success": False, "message": f"Le statut actuel de la commande n'est pas 'En préparation' mais '{statut_actuel}'."}
 
             # Trouver le statut "Prête" dans la base (avec variantes)
-            appellations_prete = ['Prête', 'Prete', 'prête', 'prete', 'PRÊTE', 'PRETE']
+            appellations_prete = ['Prete']
             statut_prete = None
             for appellation in appellations_prete:
                 try:

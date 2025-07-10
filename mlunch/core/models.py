@@ -254,7 +254,7 @@ class SuivisCommande(models.Model):
     mis_a_jour_le = models.DateTimeField(default=now)
 
     class Meta:
-        unique_together = ('commande', 'restaurant', 'mis_a_jour_le')
+        unique_together = ('commande', 'restaurant')
         ordering = ['-mis_a_jour_le']
 
     def __str__(self):
