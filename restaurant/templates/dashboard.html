@@ -72,7 +72,7 @@
                         <div class="plat-card" data-repas-id="{{ plat_info.repas.id }}">
                             <div class="plat-image-container">
                                 {% if plat_info.repas.image %}
-                                    <img src="/media/plats/{{ plat_info.repas.image }}" alt="{{ plat_info.repas.nom }}" class="plat-image">
+                                    <img src="{% static 'img/plats/' %}{{ plat_info.repas.image }}" alt="{{ plat_info.repas.nom }}" class="plat-image">
                                 {% else %}
                                     <div class="plat-image-placeholder">
                                         <span>🍽️</span>

@@ -44,7 +44,7 @@
     
     <div class="restaurant-info">
         <div class="image-container">
-            <img src="{{ restaurant.image }}" alt="{{ restaurant.nom }}">
+            <img src="{% static 'img/restaurants/' %}{{ restaurant.image }}" alt="{{ restaurant.nom }}">
         </div>
         <div class="name-location">
             <h2>{{ restaurant.nom }}</h2>
@@ -70,7 +70,7 @@
     <div class="menu">
         {% for r in repas %}
         <div class="menu-item {% if not r.est_dispo %}unavailable{% endif %}">
-            <img src="{% static 'frontoffice/img/plats/' %}{{ r.image }}" alt="{{ r.nom }}">
+            <img src="{% static 'img/plats/' %}{{ r.image }}" alt="{{ r.nom }}">
             <h3>{{ r.nom }}</h3>
             <p>{{ r.description }}</p>
             <div class="price-line">

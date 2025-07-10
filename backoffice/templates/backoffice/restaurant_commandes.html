@@ -88,7 +88,7 @@
                 </div>
                 <div class="col-md-4 text-center">
                     {% if commandes_resto.restaurant.image %}
-                        <img src="/media/{{ commandes_resto.restaurant.image }}"
+                        <img src="{% static 'img/restaurants/' %}{{ commandes_resto.restaurant.image }}"
                              alt="Image du restaurant"
                              class="img-fluid rounded shadow-sm"
                              style="max-width: 200px;">

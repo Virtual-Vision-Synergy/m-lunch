@@ -37,7 +37,7 @@
                 <div class="restaurant-preview-content">
                     <div class="restaurant-image" id="preview-image">
                         {% if restaurant.image %}
-                            <img src="/media/restaurants/{{ restaurant.image }}" alt="{{ restaurant.nom }}" />
+                            <img src="{% static 'img/restaurants/' %}{{ restaurant.image }}" alt="{{ restaurant.nom }}" />
                         {% else %}
                             <div class="placeholder">📸 Aucune image</div>
                         {% endif %}
@@ -115,7 +115,7 @@
                         {% if restaurant.image %}
                             <div class="current-image">
                                 <small>Image actuelle :</small>
-                                <img src="/media/restaurants/{{ restaurant.image }}" alt="Image actuelle" style="max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; margin-top: 5px;">
+                                <img src="{% static 'img/restaurants/' %}{{ restaurant.image }}" alt="Image actuelle" style="max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; margin-top: 5px;">
                             </div>
                         {% endif %}
                     </div>
@@ -212,7 +212,7 @@
             } else {
                 // Restaurer l'image par défaut
                 {% if restaurant.image %}
-                    previewImage.innerHTML = `<img src="/media/restaurants/{{ restaurant.image }}" alt="{{ restaurant.nom }}" />`;
+                    previewImage.innerHTML = `<img src="{% static 'img/restaurants/' %}{{ restaurant.image }}" alt="{{ restaurant.nom }}" />`;
                 {% else %}
                     previewImage.innerHTML = '<div class="placeholder">📸 Aucune image</div>';
                 {% endif %}
