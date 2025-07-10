@@ -5,7 +5,7 @@ from django.db.models import Q
 from mlunch.core.models import (
     Livreur, Zone, StatutLivreur, HistoriqueStatutLivreur,
     Livraison, StatutLivraison, HistoriqueStatutLivraison,
-    ZoneLivreur, Commande
+    ZoneLivreur, Commande, StatutCommande, HistoriqueStatutCommande
 )
 
 # ========== VUE PRINCIPALE UNIFIÉE ==========
@@ -106,9 +106,15 @@ def livraison_livreur_dashboard(request):
 # ========== GESTION DES ASSIGNATIONS ==========
 
 def livreur_assigner_commande(request, livreur_id):
-    """Vue pour assigner une commande à un livreur (inverse de commande_attribuer)"""
+    """Vue pour assigner une commande à un livreur (DÉSACTIVÉE)"""
     livreur = get_object_or_404(Livreur, id=livreur_id)
 
+    # Attribution désactivée - redirection vers le dashboard
+    messages.info(request, f"L'attribution de commandes via cette interface a été désactivée. Utilisez la page d'attribution des commandes.")
+    return redirect('livraison_livreur_dashboard')
+
+    # Code d'attribution commenté/désactivé
+    """
     # Récupérer les commandes non assignées
     commandes_disponibles = Commande.objects.filter(livraisons__isnull=True)
 
@@ -152,6 +158,7 @@ def livreur_assigner_commande(request, livreur_id):
         'commandes_disponibles': commandes_disponibles,
         'secteur_livreur': secteur_livreur.zone.nom if secteur_livreur else 'Non défini'
     })
+    """
 
 # ========== GESTION INDIVIDUELLE DES LIVREURS ==========
 
@@ -378,6 +385,11 @@ def livraison_edit(request, livraison_id):
     livraison = get_object_or_404(Livraison, id=livraison_id)
     latest_status = livraison.historiques.order_by('-mis_a_jour_le').first()
 
+    # Vérifier si la livraison est effectuée
+    if latest_status and latest_status.statut.appellation == 'Effectuée':
+        messages.error(request, "Impossible de modifier une livraison effectuée.")
+        return redirect('livraison_livreur_dashboard')
+
     statuts = StatutLivraison.objects.all()
     livreurs = Livreur.objects.all()
 
@@ -422,6 +434,12 @@ def livraison_edit(request, livraison_id):
             if new_statut != livraison_data['statut']:
                 statut_obj = StatutLivraison.objects.get(appellation=new_statut)
                 HistoriqueStatutLivraison.objects.create(livraison=livraison, statut=statut_obj)
+
+                # Changer le statut de la commande associée si le nouveau statut est 'Effectuée'
+                if new_statut == 'Effectuee':
+                    commande = livraison.commande
+                    statut_livree, created = StatutCommande.objects.get_or_create(appellation='Livrée')
+                    HistoriqueStatutCommande.objects.create(commande=commande, statut=statut_livree)
 
             # Mettre à jour le livreur
             if livraison_data['livreur_id'] != new_livreur_id:

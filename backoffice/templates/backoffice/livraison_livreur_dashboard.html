@@ -1,4 +1,4 @@
-   {% extends 'backoffice/base.html' %}
+{% extends 'backoffice/base.html' %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -21,55 +21,6 @@
 
     {% block content %}
     <!-- Stats Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Commandes en attente</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">{{ commandes_non_assignees|length|default:0 }}</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">En préparation</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-utensils"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">
-                {% with en_preparation=0 %}
-                    {% for livraison in livraisons %}
-                        {% if livraison.statut == 'En préparation' %}
-                            {% with en_preparation=en_preparation|add:1 %}{% endwith %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ en_preparation }}
-                {% endwith %}
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Livrés aujourd'hui</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">
-                {% with livrees=0 %}
-                    {% for livraison in livraisons %}
-                        {% if livraison.statut == 'Livrée' %}
-                            {% with livrees=livrees|add:1 %}{% endwith %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ livrees }}
-                {% endwith %}
-            </div>
-        </div>
-    </div>
 
     <!-- Filters Section -->
     <div class="filters-section">
@@ -201,10 +152,6 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{% url 'livreur_assigner_commande' livreur.id %}"
-                                                       class="btn btn-success" title="Assigner une commande">
-                                                        <i class="fas fa-plus"></i> Assigner
-                                                    </a>
                                                     <a href="{% url 'livreur_detail' livreur.id %}"
                                                        class="btn btn-orange-outline" title="Voir détails">
                                                         <i class="fas fa-eye"></i>
@@ -287,10 +234,16 @@
                                                        class="btn btn-orange-outline" title="Voir détails">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="{% url 'livraison_edit' livraison.id %}"
-                                                       class="btn btn-orange-outline" title="Modifier">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
+                                                    {% if livraison.statut != 'Effectuee' %}
+                                                        <a href="{% url 'livraison_edit' livraison.id %}"
+                                                           class="btn btn-orange-outline" title="Modifier">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    {% else %}
+                                                        <button class="btn btn-orange-outline" disabled title="Modification impossible - Livraison effectuée">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
                                                 </div>
                                             </td>
                                         </tr>
@@ -308,28 +261,6 @@
         </div>
     </div>
 
-    <!-- Stats supplémentaires en bas -->
-    <div class="stats-grid mt-4">
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Livraisons en cours</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-route"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">
-                {% with en_cours=0 %}
-                    {% for livraison in livraisons %}
-                        {% if livraison.statut == 'En cours' %}
-                            {% with en_cours=en_cours|add:1 %}{% endwith %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ en_cours }}
-                {% endwith %}
-            </div>
-        </div>
-
-    </div>
     {% endblock %}
 
     {% block extra_js %}
