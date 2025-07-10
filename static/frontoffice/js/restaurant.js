@@ -75,7 +75,7 @@ fetch('/api/restaurants/')
           <div class="restaurant-popup">
             <strong>${props.nom}</strong>
             <div class="rating">${horaireText}</div>
-            ${props.image_url ? `<img src="/static/frontoffice/img/restologo/${props.image_url}" alt="${props.nom}">` : ''}
+            ${props.image_url ? `<img src="/media/restaurants/${props.image_url}" alt="${props.nom}">` : ''}
             <div style="margin: 10px 0; color: #666; font-size: 14px;">
               <!--📍 ${props.adresse || 'Adresse non disponible'}-->
             </div>

@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
               restaurantsWithImages.forEach(restaurant => {
                 slides.push(`
                   <div class="slide">
-                    <img src="/static/frontoffice/img/restologo/${ restaurant.properties.image_url }" alt="${ restaurant.properties.nom }" />
+                    <img src="/media/restaurants/${ restaurant.properties.image_url }" alt="${ restaurant.properties.nom }" />
                   </div>
                 `);
               });
@@ -30,12 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
               // Fallback to default images if no restaurant images available
               const defaultSlides = [
-                '<div class="slide"><img src="assets/img/img1.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img2.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img3.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img4.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img5.jpg" alt="" /></div>',
-                '<div class="slide"><img src="assets/img/img6.jpg" alt="" /></div>'
+                '<div class="slide"><img src="/media/restaurants/nocomment.jpg" alt="" /></div>',
+                '<div class="slide"><img src="/media/restaurants/andohalocafe.png" alt="" /></div>',
+                '<div class="slide"><img src="/media/restaurants/buffetjardin.jpg" alt="" /></div>',
+                '<div class="slide"><img src="/media/restaurants/rovagrill.jpg" alt="" /></div>',
+                '<div class="slide"><img src="/media/restaurants/maisonsaveurs.jpeg" alt="" /></div>',
+                '<div class="slide"><img src="/media/restaurants/tabledandohalo.jpg" alt="" /></div>'
               ];
               carouselTrack.innerHTML = defaultSlides.join('') + defaultSlides.join('');
             }
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
             slide.innerHTML = `
               <div class="restaurant-item">
                 ${restaurant.properties.image_url ?
-                  `<img src="/static/frontoffice/img/restologo/${ restaurant.properties.image_url }" alt="${ restaurant.properties.nom }" class="restaurant-image" />` :
+                  `<img src="/media/restaurants/${ restaurant.properties.image_url }" alt="${ restaurant.properties.nom }" class="restaurant-image" />` :
                   '<div class="restaurant-image placeholder"></div>'}
                 <h2 class="restaurant-name">${restaurant.properties.nom}</h2>
                 <p class="restaurant-description">${restaurant.properties.description}</p>

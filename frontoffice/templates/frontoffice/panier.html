@@ -71,7 +71,7 @@
               </td>
               <td>
                 {% if item.image %}
-                <img src="{% static 'frontoffice/img/plats/' %}{{ item.image }}" alt="{{ item.nom }}" />
+                <img src="/media/plats/{{ item.image }}" alt="{{ item.nom }}" />
                 {% else %}
                 <div class="image-placeholder"></div>
                 {% endif %}
