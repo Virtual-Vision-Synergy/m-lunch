@@ -72,15 +72,15 @@ INSERT INTO core_typerepas (nom) VALUES
 INSERT INTO core_restaurant (nom, adresse, description, image, geo_position, mot_de_passe) VALUES
 -- Antanimena
 ('La Varangue', 'Rue Andrianary Ratianarivo, Antanimena', 'Cuisine raffinee franco malgache dans un cadre elegant', 'lavarangue.png', 'POINT(47.5234 -18.9078)', 'mdp'),
-('Le Rossini', 'Rue de Russie, Antanimena', 'Restaurant italien chic, pates maison et grillades', 'lerossini.png', 'POINT(47.5210 -18.9065)', 'mdp'),
-('No Comment Bar', 'Rue Ravelojaona, Antanimena', 'Bar restaurant branche, musique live et tapas', 'nocomment.png', 'POINT(47.5198 -18.9042)', 'mdp'),
-('Le Buffet du Jardin', 'Jardin Antaninarenina', 'Buffet a volonte en plein air, specialites locales', 'buffetjardin.png', 'POINT(47.5241 -18.9085)', 'mdp'),
+('Le Rossini', 'Rue de Russie, Antanimena', 'Restaurant italien chic, pates maison et grillades', 'lerossini.jpg', 'POINT(47.5210 -18.9065)', 'mdp'),
+('No Comment Bar', 'Rue Ravelojaona, Antanimena', 'Bar restaurant branche, musique live et tapas', 'nocomment.jpg', 'POINT(47.5198 -18.9042)', 'mdp'),
+('Le Buffet du Jardin', 'Jardin Antaninarenina', 'Buffet a volonte en plein air, specialites locales', 'buffetjardin.jpg', 'POINT(47.5241 -18.9085)', 'mdp'),
 
 -- Andohalo
-('La Table d Andohalo', 'Place Andohalo', 'Cuisine traditionnelle avec vue sur la ville', 'tabledandohalo.png', 'POINT(47.5309 -18.9172)', 'pbkdf2_sha256$600000$default$password5'),
+('La Table d Andohalo', 'Place Andohalo', 'Cuisine traditionnelle avec vue sur la ville', 'tabledandohalo.jpg', 'POINT(47.5309 -18.9172)', 'pbkdf2_sha256$600000$default$password5'),
 ('Andohalo Cafe', 'Rue du Lycee Andohalo', 'Cafe convivial avec patisseries artisanales', 'andohalocafe.png', 'POINT(47.5321 -18.9184)', 'pbkdf2_sha256$600000$default$password6'),
-('Rova Grill', 'Pres du Palais de la Reine, Andohalo', 'Viandes grillees et plats malgaches traditionnels', 'rovagrill.png', 'POINT(47.5317 -18.9168)', 'pbkdf2_sha256$600000$default$password7'),
-('Maison des Saveurs', 'Rue de la Cathedrale, Andohalo', 'Fusion de saveurs europeennes et malgaches', 'maisonsaveurs.png', 'POINT(47.5303 -18.9175)', 'pbkdf2_sha256$600000$default$password8');
+('Rova Grill', 'Pres du Palais de la Reine, Andohalo', 'Viandes grillees et plats malgaches traditionnels', 'rovagrill.jpg', 'POINT(47.5317 -18.9168)', 'pbkdf2_sha256$600000$default$password7'),
+('Maison des Saveurs', 'Rue de la Cathedrale, Andohalo', 'Fusion de saveurs europeennes et malgaches', 'maisonsaveurs.jpeg', 'POINT(47.5303 -18.9175)', 'pbkdf2_sha256$600000$default$password8');
 
 INSERT INTO core_repas (nom, description, image, type_id, prix) VALUES
 -- Plats principaux (16)
@@ -381,3 +381,4 @@ INSERT INTO core_historiquezonesrecuperation (zone_id, point_recup_id, mis_a_jou
 (2, 5, NOW()), -- Andohalo -> Palais de justice
 (2, 6, NOW()); -- Andohalo -> Lycée Andohalo
 
+INSERT INTO core_admin(nom, mot_de_passe, date_inscri) VALUES ('admin', 'admin', NOW());
